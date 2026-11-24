@@ -169,6 +169,21 @@ textarea { resize: vertical; min-height: 64px; }
 .filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.combo { position: relative; }
+.suggest { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; box-shadow: 0 12px 28px rgba(10, 20, 30, 0.18); max-height: 300px; overflow-y: auto; }
+.suggest li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.suggest li[aria-selected="true"], .suggest li:hover { background: var(--surface-2); }
+.suggest .s-text { display: flex; flex-direction: column; min-width: 0; }
+.suggest .s-main { font-weight: 600; overflow-wrap: anywhere; }
+.suggest .s-sub { font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
+.suggest .s-src { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+.suggest .s-empty { color: var(--muted); font-size: 0.85rem; cursor: default; }
+.map-wrap { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
+.map-wrap iframe { display: block; width: 100%; height: 240px; border: 0; }
+.route-info { margin: 10px 0 0; font-size: 0.88rem; color: var(--muted); }
+.route-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.route-links a, a.linkbtn { color: var(--info); font-weight: 600; font-size: 0.85rem; text-decoration: none; }
+.route-links a:hover, a.linkbtn:hover { text-decoration: underline; }
 .empty { text-align: center; color: var(--muted); padding: 26px 12px; border: 1.5px dashed var(--line); border-radius: 12px; font-size: 0.92rem; }
 .empty strong { display: block; color: var(--ink); font-family: var(--f-display); font-size: 1rem; margin-bottom: 4px; }
 
@@ -222,13 +237,15 @@ textarea { resize: vertical; min-height: 64px; }
         </div>
 
         <div class="fields">
-          <div class="field">
+          <div class="field combo">
             <label for="f-pickup">Pick-up</label>
-            <input id="f-pickup" list="places" autocomplete="off" value="Soweto" placeholder="e.g. Soweto">
+            <input id="f-pickup" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="pickup-list" autocomplete="off" value="Soweto" placeholder="Town, suburb, rank or address">
+            <ul id="pickup-list" class="suggest" role="listbox" aria-label="Pick-up suggestions" hidden></ul>
           </div>
-          <div class="field">
+          <div class="field combo">
             <label for="f-dropoff">Destination</label>
-            <input id="f-dropoff" list="places" autocomplete="off" value="Sandton" placeholder="e.g. Sandton">
+            <input id="f-dropoff" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dropoff-list" autocomplete="off" value="Sandton" placeholder="Town, suburb, rank or address">
+            <ul id="dropoff-list" class="suggest" role="listbox" aria-label="Destination suggestions" hidden></ul>
           </div>
           <div class="field full">
             <label for="f-address">Exact pick-up spot</label>
@@ -336,6 +353,15 @@ textarea { resize: vertical; min-height: 64px; }
           <div class="quote-note" id="q-note"></div>
         </div>
 
+        <div class="panel" id="route-panel" hidden>
+          <div class="panel-head">
+            <h2>Route</h2>
+            <div class="route-links"><a id="route-link" href="https://www.google.com/maps" target="_blank" rel="noopener">Open in Google Maps</a></div>
+          </div>
+          <div class="map-wrap" id="map-wrap" hidden><iframe id="map-frame" title="Route map from pick-up to destination" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
+          <p class="route-info" id="route-info"></p>
+        </div>
+
         <div class="panel">
           <div class="panel-head">
             <h2>My trips</h2>
@@ -433,40 +459,126 @@ textarea { resize: vertical; min-height: 64px; }
   </div>
 </main>
 
-<datalist id="places"></datalist>
 
 <script>
 (function () {
   "use strict";
 
   /* ---------- Reference data ---------- */
-  const PLACES = {
-    "Johannesburg CBD": [-26.2041, 28.0473], "Soweto": [-26.2485, 27.8540], "Sandton": [-26.1076, 28.0567],
-    "Alexandra": [-26.1033, 28.0957], "Tembisa": [-25.9964, 28.2268], "Midrand": [-25.9992, 28.1263],
-    "Diepsloot": [-25.9333, 28.0167], "Orange Farm": [-26.4833, 27.8667], "Germiston": [-26.2309, 28.1772],
-    "Benoni": [-26.1885, 28.3205], "Vereeniging": [-26.6731, 27.9261], "Krugersdorp": [-26.0857, 27.7756],
-    "OR Tambo Airport": [-26.1367, 28.2411], "Pretoria CBD": [-25.7479, 28.2293], "Mamelodi": [-25.7206, 28.3951],
-    "Soshanguve": [-25.5225, 28.1003], "Polokwane": [-23.9045, 29.4689], "Thohoyandou": [-22.9500, 30.4800],
-    "Giyani": [-23.3025, 30.7187], "Mbombela": [-25.4658, 30.9853], "Bushbuckridge": [-24.8400, 31.0700],
-    "Durban": [-29.8587, 31.0218], "Umlazi": [-29.9706, 30.8838], "KwaMashu": [-29.7400, 30.9800],
-    "King Shaka Airport": [-29.6144, 31.1197], "Pietermaritzburg": [-29.6006, 30.3794], "Richards Bay": [-28.7807, 32.0383],
-    "Newcastle": [-27.7580, 29.9320], "Port Shepstone": [-30.7414, 30.4550], "Cape Town CBD": [-33.9249, 18.4241],
-    "Khayelitsha": [-34.0402, 18.6776], "Gugulethu": [-33.9800, 18.5700], "Mitchells Plain": [-34.0500, 18.6200],
-    "Bellville": [-33.9000, 18.6300], "Stellenbosch": [-33.9321, 18.8602], "Cape Town Airport": [-33.9715, 18.6021],
-    "Gqeberha": [-33.9608, 25.6022], "East London": [-33.0153, 27.9116], "Mthatha": [-31.5889, 28.7844],
-    "Komani (Queenstown)": [-31.8976, 26.8753], "Bloemfontein": [-29.0852, 26.1596], "Welkom": [-27.9774, 26.7351],
-    "Kimberley": [-28.7282, 24.7499], "Upington": [-28.4478, 21.2561], "Rustenburg": [-25.6676, 27.2421],
-    "Mahikeng": [-25.8560, 25.6403]
+  // Built-in places, grouped by province. [latitude, longitude]
+  const PLACE_GROUPS = {
+    "Gauteng": {
+      "Johannesburg CBD": [-26.2041, 28.0473], "Park Station (Johannesburg)": [-26.1975, 28.0423], "Noord Taxi Rank": [-26.1975, 28.0468],
+      "Braamfontein": [-26.1929, 28.0305], "Hillbrow": [-26.1880, 28.0490], "Rosebank": [-26.1458, 28.0436], "Sandton": [-26.1076, 28.0567],
+      "Randburg": [-26.0936, 28.0064], "Fourways": [-26.0167, 28.0081], "Roodepoort": [-26.1625, 27.8725], "Soweto": [-26.2485, 27.8540],
+      "Bara Taxi Rank (Soweto)": [-26.2604, 27.9420], "Lenasia": [-26.3167, 27.8333], "Orange Farm": [-26.4833, 27.8667],
+      "Alexandra": [-26.1033, 28.0957], "Diepsloot": [-25.9333, 28.0167], "Cosmo City": [-26.0222, 27.9361], "Midrand": [-25.9992, 28.1263],
+      "Ivory Park": [-25.9978, 28.1964], "Tembisa": [-25.9964, 28.2268], "Kempton Park": [-26.1000, 28.2333], "OR Tambo Airport": [-26.1367, 28.2411],
+      "Lanseria Airport": [-25.9385, 27.9261], "Germiston": [-26.2309, 28.1772], "Alberton": [-26.2672, 28.1222], "Katlehong": [-26.3333, 28.1500],
+      "Thokoza": [-26.3500, 28.1300], "Vosloorus": [-26.3500, 28.2000], "Boksburg": [-26.2125, 28.2625], "Benoni": [-26.1885, 28.3205],
+      "Daveyton": [-26.1500, 28.4200], "Brakpan": [-26.2366, 28.3694], "Springs": [-26.2500, 28.4400], "KwaThema": [-26.3000, 28.3800],
+      "Tsakane": [-26.3500, 28.3700], "Nigel": [-26.4311, 28.4775], "Heidelberg": [-26.5050, 28.3594], "Vereeniging": [-26.6731, 27.9261],
+      "Vanderbijlpark": [-26.7114, 27.8378], "Sebokeng": [-26.5833, 27.8333], "Evaton": [-26.5333, 27.8500], "Sharpeville": [-26.6833, 27.8667],
+      "Krugersdorp": [-26.0857, 27.7756], "Kagiso": [-26.1500, 27.7800], "Randfontein": [-26.1844, 27.7022], "Westonaria": [-26.3189, 27.6489],
+      "Carletonville": [-26.3609, 27.3975], "Pretoria CBD": [-25.7479, 28.2293], "Bosman Station (Pretoria)": [-25.7550, 28.1840],
+      "Marabastad": [-25.7440, 28.1810], "Hatfield": [-25.7487, 28.2380], "Centurion": [-25.8603, 28.1894], "Atteridgeville": [-25.7731, 28.0703],
+      "Mamelodi": [-25.7206, 28.3951], "Soshanguve": [-25.5225, 28.1003], "Mabopane": [-25.4983, 28.1003], "Ga-Rankuwa": [-25.6167, 27.9833],
+      "Hammanskraal": [-25.4000, 28.2833], "Cullinan": [-25.6744, 28.5214], "Bronkhorstspruit": [-25.8100, 28.7400], "Ekangala": [-25.6950, 28.7480]
+    },
+    "Limpopo": {
+      "Polokwane": [-23.9045, 29.4689], "Seshego": [-23.8500, 29.3800], "Moria (ZCC)": [-23.9400, 29.8700], "Mankweng": [-23.8833, 29.7167],
+      "Lebowakgomo": [-24.2000, 29.5000], "Mokopane": [-24.1944, 29.0097], "Bela-Bela": [-24.8848, 28.2897], "Modimolle": [-24.7000, 28.4000],
+      "Lephalale": [-23.6667, 27.7500], "Tzaneen": [-23.8333, 30.1667], "Nkowankowa": [-23.8900, 30.2900], "Giyani": [-23.3025, 30.7187],
+      "Elim": [-23.1500, 30.0500], "Makhado (Louis Trichardt)": [-23.0436, 29.9031], "Thohoyandou": [-22.9500, 30.4800], "Musina": [-22.3500, 30.0333],
+      "Phalaborwa": [-23.9431, 31.1411], "Burgersfort": [-24.6667, 30.3333], "Jane Furse": [-24.7500, 29.8700], "Groblersdal": [-25.1700, 29.4000]
+    },
+    "Mpumalanga": {
+      "Mbombela (Nelspruit)": [-25.4658, 30.9853], "KaNyamazane": [-25.4700, 31.1700], "White River": [-25.3311, 31.0119], "Hazyview": [-25.0436, 31.1272],
+      "Bushbuckridge": [-24.8400, 31.0700], "Acornhoek": [-24.5800, 31.1000], "Barberton": [-25.7869, 31.0531], "Malelane": [-25.4800, 31.5100],
+      "Komatipoort": [-25.4333, 31.9500], "Kruger Mpumalanga Airport": [-25.3832, 31.1056], "eMalahleni (Witbank)": [-25.8711, 29.2333],
+      "Middelburg": [-25.7751, 29.4648], "KwaMhlanga": [-25.4300, 28.7000], "Siyabuswa": [-25.1200, 29.0500], "Secunda": [-26.5167, 29.1833],
+      "eMbalenhle": [-26.5500, 29.0700], "Ermelo": [-26.5333, 29.9833], "Standerton": [-26.9333, 29.2500], "Volksrust": [-27.3653, 29.8839],
+      "eMkhondo (Piet Retief)": [-27.0072, 30.8133], "Mashishing (Lydenburg)": [-25.0950, 30.4497]
+    },
+    "KwaZulu-Natal": {
+      "Durban": [-29.8587, 31.0218], "Durban Station": [-29.8470, 31.0270], "Umlazi": [-29.9706, 30.8838], "KwaMashu": [-29.7400, 30.9800],
+      "Inanda": [-29.7000, 30.9500], "Phoenix": [-29.7000, 31.0000], "Chatsworth": [-29.9167, 30.8833], "Pinetown": [-29.8167, 30.8667],
+      "Clermont": [-29.8200, 30.8800], "Umhlanga": [-29.7255, 31.0849], "Amanzimtoti": [-30.0500, 30.8833], "King Shaka Airport": [-29.6144, 31.1197],
+      "KwaDukuza (Stanger)": [-29.3333, 31.2833], "Pietermaritzburg": [-29.6006, 30.3794], "Edendale": [-29.6500, 30.3000], "Howick": [-29.4833, 30.2333],
+      "Estcourt": [-29.0000, 29.8833], "Ladysmith": [-28.5539, 29.7784], "Newcastle": [-27.7580, 29.9320], "Madadeni": [-27.7500, 30.0300],
+      "Dundee": [-28.1650, 30.2342], "Vryheid": [-27.7695, 30.7916], "Greytown": [-29.0640, 30.5928], "Ulundi": [-28.3333, 31.4167],
+      "Nongoma": [-27.9000, 31.6500], "Eshowe": [-28.8833, 31.4667], "Empangeni": [-28.7500, 31.9000], "Richards Bay": [-28.7807, 32.0383],
+      "Mtubatuba": [-28.4167, 32.1833], "Jozini": [-27.4300, 32.0700], "Pongola": [-27.3833, 31.6167], "Port Shepstone": [-30.7414, 30.4550],
+      "Margate": [-30.8636, 30.3706], "Ixopo": [-30.1500, 30.0600], "Harding": [-30.5800, 29.8800], "Kokstad": [-30.5472, 29.4241]
+    },
+    "Eastern Cape": {
+      "Gqeberha (Port Elizabeth)": [-33.9608, 25.6022], "Kariega (Uitenhage)": [-33.7578, 25.3971], "Jeffreys Bay": [-34.0500, 24.9167],
+      "Makhanda (Grahamstown)": [-33.3042, 26.5328], "Port Alfred": [-33.5906, 26.8910], "East London": [-33.0153, 27.9116], "Mdantsane": [-32.9500, 27.7300],
+      "Qonce (King William's Town)": [-32.8833, 27.4000], "Bhisho": [-32.8500, 27.4400], "Alice": [-32.7900, 26.8300], "Fort Beaufort": [-32.7800, 26.6300],
+      "Komani (Queenstown)": [-31.8976, 26.8753], "Whittlesea": [-32.1800, 26.8200], "Cofimvaba": [-32.0000, 27.5800], "Cala": [-31.5200, 27.7000],
+      "Khowa (Elliot)": [-31.3300, 27.8500], "Butterworth": [-32.3333, 28.1500], "Centane": [-32.5300, 28.3200], "Willowvale": [-32.2700, 28.5000],
+      "Dutywa (Idutywa)": [-32.1000, 28.3100], "Ngcobo": [-31.6700, 28.0000], "Mthatha": [-31.5889, 28.7844], "Libode": [-31.5400, 29.0300],
+      "Ngqeleni": [-31.6700, 29.0300], "Tsolo": [-31.3100, 28.7500], "Qumbu": [-31.1600, 28.8700], "Port St Johns": [-31.6229, 29.5448],
+      "Lusikisiki": [-31.3667, 29.5833], "Flagstaff": [-31.0800, 29.4900], "Bizana": [-30.8600, 29.8500], "Mount Ayliff": [-30.8100, 29.3700],
+      "KwaBhaca (Mount Frere)": [-30.9000, 28.9900], "Mount Fletcher": [-30.6900, 28.5000], "Maclear": [-31.0700, 28.3500], "Matatiele": [-30.3428, 28.8061],
+      "Aliwal North": [-30.6936, 26.7114], "Cradock": [-32.1641, 25.6192], "Graaff-Reinet": [-32.2522, 24.5308]
+    },
+    "Western Cape": {
+      "Cape Town CBD": [-33.9249, 18.4241], "Cape Town Station": [-33.9220, 18.4260], "Cape Town Airport": [-33.9715, 18.6021], "Langa": [-33.9431, 18.5283],
+      "Gugulethu": [-33.9800, 18.5700], "Nyanga": [-33.9917, 18.5842], "Philippi": [-34.0167, 18.6000], "Khayelitsha": [-34.0402, 18.6776],
+      "Mitchells Plain": [-34.0500, 18.6200], "Delft": [-33.9700, 18.6400], "Mfuleni": [-34.0042, 18.6808], "Bellville": [-33.9000, 18.6300],
+      "Dunoon": [-33.8200, 18.5400], "Wynberg": [-34.0000, 18.4667], "Claremont": [-33.9806, 18.4656], "Atlantis": [-33.5667, 18.4833],
+      "Stellenbosch": [-33.9321, 18.8602], "Somerset West": [-34.0844, 18.8511], "Strand": [-34.1100, 18.8200], "Paarl": [-33.7342, 18.9621],
+      "Mbekweni": [-33.7000, 18.9800], "Malmesbury": [-33.4608, 18.7272], "Worcester": [-33.6465, 19.4485], "Hermanus": [-34.4187, 19.2345],
+      "Vredenburg": [-32.9065, 17.9909], "George": [-33.9630, 22.4617], "Mossel Bay": [-34.1831, 22.1460], "Knysna": [-34.0363, 23.0471],
+      "Plettenberg Bay": [-34.0527, 23.3716], "Oudtshoorn": [-33.5900, 22.2014], "Beaufort West": [-32.3567, 22.5828]
+    },
+    "Free State": {
+      "Bloemfontein": [-29.0852, 26.1596], "Mangaung": [-29.1500, 26.2300], "Botshabelo": [-29.2333, 26.7333], "Thaba Nchu": [-29.2000, 26.8333],
+      "Welkom": [-27.9774, 26.7351], "Odendaalsrus": [-27.8667, 26.6833], "Virginia": [-28.1039, 26.8650], "Kroonstad": [-27.6500, 27.2333],
+      "Sasolburg": [-26.8136, 27.8169], "Parys": [-26.9000, 27.4500], "Bethlehem": [-28.2333, 28.3000], "Harrismith": [-28.2833, 29.1333],
+      "Phuthaditjhaba (QwaQwa)": [-28.5167, 28.8167], "Ladybrand": [-29.1950, 27.4600]
+    },
+    "North West": {
+      "Rustenburg": [-25.6676, 27.2421], "Marikana": [-25.7000, 27.4800], "Brits": [-25.6347, 27.7800], "Hartbeespoort": [-25.7419, 27.8965],
+      "Sun City": [-25.3346, 27.0928], "Mahikeng": [-25.8560, 25.6403], "Zeerust": [-25.5333, 26.0833], "Lichtenburg": [-26.1500, 26.1667],
+      "Klerksdorp": [-26.8667, 26.6667], "Potchefstroom": [-26.7167, 27.1000], "Vryburg": [-26.9500, 24.7333], "Taung": [-27.5500, 24.7833]
+    },
+    "Northern Cape": {
+      "Kimberley": [-28.7282, 24.7499], "Kuruman": [-27.4524, 23.4325], "Kathu": [-27.6950, 23.0500], "Postmasburg": [-28.3300, 23.0700],
+      "Upington": [-28.4478, 21.2561], "Springbok": [-29.6643, 17.8865], "De Aar": [-30.6500, 24.0167]
+    },
+    "Cross-border": {
+      "Maseru, Lesotho": [-29.3151, 27.4869], "Mbabane, Eswatini": [-26.3054, 31.1367], "Manzini, Eswatini": [-26.4833, 31.3667],
+      "Gaborone, Botswana": [-24.6282, 25.9231], "Maputo, Mozambique": [-25.9692, 32.5732], "Beitbridge, Zimbabwe": [-22.2167, 30.0000],
+      "Bulawayo, Zimbabwe": [-20.1325, 28.6265], "Harare, Zimbabwe": [-17.8292, 31.0522], "Windhoek, Namibia": [-22.5609, 17.0658]
+    }
   };
+  const PLACES = {}, PROVINCE = {};
+  for (const prov in PLACE_GROUPS) for (const name in PLACE_GROUPS[prov]) { PLACES[name] = PLACE_GROUPS[prov][name]; PROVINCE[name] = prov; }
+  const CROSS_BORDER_WORDS = /lesotho|eswatini|swaziland|botswana|mozambique|zimbabwe|namibia/i;
   const VEHICLES = {
     quantum:  { name: "Minibus taxi (Quantum)", short: "Quantum", seats: 14, mult: 1.0 },
-    sprinter: { name: "Sprinter", short: "Sprinter", seats: 22, mult: 1.35 },
+    sprinter: { name: "Sprinter", short: "Sprinter", seats: 22, mult: 1.4 },
     midibus:  { name: "Midibus", short: "Midibus", seats: 35, mult: 1.9 },
-    coach:    { name: "Bus", short: "Bus", seats: 60, mult: 2.8 }
+    coach:    { name: "Bus", short: "Bus", seats: 60, mult: 2.6 }
   };
+  // Prices in Rand for one minibus taxi (Quantum). Bigger vehicles use the "mult" above.
+  // Change these to your own rates. Last updated November 2026.
   const RATES = {
-    shortBase: 250, shortPerKm: 16, shortMin: 350, nightPct: 0.15,
-    longPerKm: 11, emptyReturn: 1.5, roundTrip: 2, nightStay: 1200, longMin: 1500, trailer: 450
+    // Short trips (in town, up to 60 km)
+    shortBase: 300,      // call-out fee
+    shortPerKm: 18,      // per km of the trip
+    shortMin: 450,       // smallest price for a short trip
+    nightPct: 0.15,      // +15% for trips between 20:00 and 05:00
+    trailerShort: 300,   // luggage trailer
+    // Long trips (between cities): every km is charged twice,
+    // because the taxi drives there and back even if the group stays
+    longPerKm: 9.5,      // per km driven
+    longMin: 2000,       // smallest price for a long trip
+    nightStay: 1500,     // per night the driver waits (accommodation, meals, standing time)
+    trailerLong: 800,    // luggage trailer
+    crossBorder: 1500    // cross-border permit and border costs, per vehicle
   };
   const SHORT_MAX_KM = 60;
 
@@ -561,19 +673,18 @@ textarea { resize: vertical; min-height: 64px; }
       let hour = new Date().getHours();
       if (q.when && q.when !== "now") { const d = new Date(q.when); if (!isNaN(d)) hour = d.getHours(); }
       if (hour >= 20 || hour < 5) { rows.push(["Night trip +15%", money(per * RATES.nightPct)]); per *= 1 + RATES.nightPct; }
+      if (q.luggage === "trailer") { per += RATES.trailerShort; rows.push(["Luggage trailer", money(RATES.trailerShort)]); }
     } else {
-      if (q.roundTrip) {
-        per = RATES.longPerKm * q.km * RATES.roundTrip + RATES.nightStay * q.nights;
-        rows.push(["There and back, " + (q.km * 2) + " km", money(RATES.longPerKm * q.km * 2)]);
-        if (q.nights > 0) rows.push(["Driver stays " + q.nights + " night" + (q.nights === 1 ? "" : "s"), money(RATES.nightStay * q.nights)]);
-      } else {
-        per = RATES.longPerKm * q.km * RATES.emptyReturn;
-        rows.push([q.km + " km one way", money(RATES.longPerKm * q.km)], ["Driver's empty trip home", money(RATES.longPerKm * q.km * (RATES.emptyReturn - 1))]);
-      }
+      const driveKm = q.km * 2;
+      per = RATES.longPerKm * driveKm;
+      rows.push(["Drive there, " + q.km + " km", money(RATES.longPerKm * q.km)]);
+      rows.push([q.roundTrip ? "Drive back with the group, " + q.km + " km" : "Driver's drive home, " + q.km + " km", money(RATES.longPerKm * q.km)]);
+      if (q.roundTrip && q.nights > 0) { per += RATES.nightStay * q.nights; rows.push(["Driver waits " + q.nights + " night" + (q.nights === 1 ? "" : "s"), money(RATES.nightStay * q.nights)]); }
+      if (q.crossBorder) { per += RATES.crossBorder; rows.push(["Cross-border permit and costs", money(RATES.crossBorder)]); }
+      if (q.luggage === "trailer") { per += RATES.trailerLong; rows.push(["Luggage trailer", money(RATES.trailerLong)]); }
       per = Math.max(RATES.longMin, per);
     }
-    if (q.luggage === "trailer") { per += RATES.trailer; rows.push(["Luggage trailer", money(RATES.trailer)]); }
-    if (veh.mult !== 1) rows.push([veh.short + " size ×" + veh.mult, ""]);
+    if (veh.mult !== 1) rows.push([veh.short + " (bigger vehicle) ×" + veh.mult, ""]);
     const total = round10(per * veh.mult * v.count);
     rows.push(["Vehicles", v.count + " × " + veh.short]);
     return { total, perPerson: total / q.pax, vehicle: v.key, count: v.count, rows };
@@ -638,7 +749,7 @@ textarea { resize: vertical; min-height: 64px; }
   let allRequests = [];
 
   /* ---------- Routing ---------- */
-  function route() {
+  function showView() {
     const r = location.hash === "#driver" ? "driver" : "passenger";
     $("view-passenger").hidden = r !== "passenger";
     $("view-driver").hidden = r !== "driver";
@@ -646,11 +757,10 @@ textarea { resize: vertical; min-height: 64px; }
     $("nav-driver").toggleAttribute("aria-current", r === "driver");
     if (r === "passenger") $("nav-passenger").setAttribute("aria-current", "page"); else $("nav-driver").setAttribute("aria-current", "page");
   }
-  window.addEventListener("hashchange", route);
+  window.addEventListener("hashchange", showView);
 
   /* ---------- Passenger form ---------- */
-  const dl = $("places");
-  Object.keys(PLACES).sort().forEach((p) => dl.append(h("option", { value: p })));
+  const MAPS_KEY = String(window.SIYAHAMBA_GOOGLE_MAPS_KEY || "").trim();
 
   function setType(t) {
     tripType = t;
@@ -679,19 +789,191 @@ textarea { resize: vertical; min-height: 64px; }
   }
   $("f-when").addEventListener("change", syncWhen);
 
+  /* ---------- Places: search, distance and map ---------- */
+  const sel = {
+    pickup: { text: "Soweto", ll: PLACES["Soweto"] },
+    dropoff: { text: "Sandton", ll: PLACES["Sandton"] }
+  };
+  const route = { km: 0, min: 0, source: "" };
   let kmManual = false;
-  function autoKm() {
-    const a = findPlace($("f-pickup").value), b = findPlace($("f-dropoff").value);
-    if (a && b) {
-      $("f-km").value = roadKm(a, b);
-      kmManual = false;
-      $("km-hint").textContent = "Worked out from the places you chose. You can change it.";
-    } else if (!kmManual) {
-      $("km-hint").textContent = "We don't know this place yet. Type the distance in km.";
+
+  function newToken() {
+    try { return crypto.randomUUID(); } catch (e) { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+  }
+  function localMatches(q) {
+    const n = q.trim().toLowerCase();
+    if (!n) return [];
+    const starts = [], has = [];
+    for (const name in PLACES) {
+      const l = name.toLowerCase();
+      if (l.startsWith(n)) starts.push(name); else if (l.includes(n)) has.push(name);
+    }
+    return starts.concat(has).slice(0, 6).map((name) => ({ label: name, main: name, sub: PROVINCE[name], ll: PLACES[name], src: "" }));
+  }
+  async function googleSuggest(input, token) {
+    const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Goog-Api-Key": MAPS_KEY },
+      body: JSON.stringify({ input, includedRegionCodes: ["za", "ls", "sz", "bw", "mz", "zw", "na"], languageCode: "en", sessionToken: token })
+    });
+    if (!res.ok) throw new Error("Places autocomplete " + res.status + ": " + (await res.text()).slice(0, 300));
+    const j = await res.json();
+    return (j.suggestions || []).filter((x) => x.placePrediction).slice(0, 5).map((x) => {
+      const p = x.placePrediction, sf = p.structuredFormat || {};
+      const full = (p.text && p.text.text) || "";
+      return { label: full.replace(/, South Africa$/, ""), main: (sf.mainText && sf.mainText.text) || full, sub: ((sf.secondaryText && sf.secondaryText.text) || "").replace(/, South Africa$/, ""), placeId: p.placeId, src: "Google" };
+    });
+  }
+
+  function setupCombo(key) {
+    const input = $("f-" + key), list = $(key + "-list");
+    let items = [], active = -1, token = newToken(), timer = null, seq = 0;
+    function close() { list.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); active = -1; }
+    function draw() {
+      list.replaceChildren(...items.map((it, i) => {
+        const li = h("li", { id: key + "-opt-" + i, role: "option", "aria-selected": i === active ? "true" : "false",
+          onmousedown: (e) => { e.preventDefault(); choose(it); } },
+          h("span", { class: "s-text" }, h("span", { class: "s-main", text: it.main }), it.sub ? h("span", { class: "s-sub", text: it.sub }) : null),
+          it.src ? h("span", { class: "s-src", text: it.src }) : null);
+        return li;
+      }));
+      if (!items.length) { close(); return; }
+      list.hidden = false; input.setAttribute("aria-expanded", "true");
+      if (active >= 0) input.setAttribute("aria-activedescendant", key + "-opt-" + active); else input.removeAttribute("aria-activedescendant");
+    }
+    function choose(it) {
+      input.value = it.label;
+      sel[key] = { text: it.label, placeId: it.placeId || null, ll: it.ll || null };
+      token = newToken();
+      close();
+      placesChanged();
+    }
+    input.addEventListener("input", () => {
+      const v = input.value;
+      sel[key] = { text: v.trim(), ll: findPlace(v) };
+      items = localMatches(v); active = -1; draw();
+      // Measure straight away for a known place; for anything typed freely,
+      // wait until the person picks a suggestion or leaves the field.
+      if (sel[key].ll || !v.trim()) placesChanged(); else { kmManual = false; refreshQuote(); }
+      clearTimeout(timer);
+      if (MAPS_KEY && v.trim().length >= 3) {
+        const my = ++seq;
+        timer = setTimeout(async () => {
+          try {
+            const g = await googleSuggest(v.trim(), token);
+            if (my !== seq || input.value !== v) return;
+            const seen = new Set(items.map((x) => x.label.toLowerCase()));
+            items = items.slice(0, 4).concat(g.filter((x) => !seen.has(x.label.toLowerCase())));
+            draw();
+          } catch (e) { console.warn(e); }
+        }, 300);
+      }
+    });
+    input.addEventListener("keydown", (e) => {
+      if (list.hidden) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); active = (active + 1) % items.length; draw(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); active = (active - 1 + items.length) % items.length; draw(); }
+      else if (e.key === "Enter" && active >= 0) { e.preventDefault(); choose(items[active]); }
+      else if (e.key === "Escape") { close(); }
+    });
+    input.addEventListener("blur", () => setTimeout(close, 120));
+    input.addEventListener("change", () => { if (!sel[key].placeId && !sel[key].ll) placesChanged(); });
+  }
+  setupCombo("pickup");
+  setupCombo("dropoff");
+
+  function isCrossBorder() {
+    return [sel.pickup, sel.dropoff].some((p) => p && p.text && (PROVINCE[p.text] === "Cross-border" || CROSS_BORDER_WORDS.test(p.text)));
+  }
+  function waypoint(p) {
+    if (p.placeId) return { placeId: p.placeId };
+    if (p.ll) return { location: { latLng: { latitude: p.ll[0], longitude: p.ll[1] } } };
+    return { address: p.text };
+  }
+  function mapParam(p) {
+    if (p.placeId) return "place_id:" + p.placeId;
+    if (p.ll) return p.ll[0] + "," + p.ll[1];
+    return p.text;
+  }
+  function dirUrl(o, d) {
+    const u = new URL("https://www.google.com/maps/dir/");
+    u.searchParams.set("api", "1");
+    if (o) {
+      u.searchParams.set("origin", o.ll && !o.placeId ? o.ll[0] + "," + o.ll[1] : o.text);
+      if (o.placeId) u.searchParams.set("origin_place_id", o.placeId);
+    }
+    u.searchParams.set("destination", d.ll && !d.placeId ? d.ll[0] + "," + d.ll[1] : d.text);
+    if (d.placeId) u.searchParams.set("destination_place_id", d.placeId);
+    u.searchParams.set("travelmode", "driving");
+    return u.toString();
+  }
+  async function googleRoute(o, d) {
+    const res = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Goog-Api-Key": MAPS_KEY, "X-Goog-FieldMask": "routes.distanceMeters,routes.duration" },
+      body: JSON.stringify({ origin: waypoint(o), destination: waypoint(d), travelMode: "DRIVE", regionCode: "za", languageCode: "en", units: "METRIC" })
+    });
+    if (!res.ok) throw new Error("Routes " + res.status + ": " + (await res.text()).slice(0, 300));
+    const j = await res.json();
+    const r = j.routes && j.routes[0];
+    if (!r || !r.distanceMeters) throw new Error("No driving route found");
+    return { km: Math.max(1, Math.round(r.distanceMeters / 1000)), min: Math.round(parseInt(r.duration || "0", 10) / 60) };
+  }
+  function durText(min) {
+    if (!min) return "";
+    const hrs = Math.floor(min / 60), m = min % 60;
+    return hrs ? hrs + " h " + (m ? m + " min" : "") : m + " min";
+  }
+
+  let routeTimer = null, routeSeq = 0, lastMapSrc = "";
+  function placesChanged() {
+    kmManual = false;
+    clearTimeout(routeTimer);
+    routeTimer = setTimeout(updateRoute, MAPS_KEY ? 500 : 0);
+    refreshQuote();
+  }
+  async function updateRoute() {
+    const o = sel.pickup, d = sel.dropoff, hint = $("km-hint");
+    const ready = o.text && d.text;
+    $("route-panel").hidden = !ready;
+    if (!ready) { route.km = 0; route.min = 0; route.source = ""; return; }
+    $("route-link").href = dirUrl(o, d);
+    if (MAPS_KEY) {
+      const src = "https://www.google.com/maps/embed/v1/directions?key=" + encodeURIComponent(MAPS_KEY) +
+        "&origin=" + encodeURIComponent(mapParam(o)) + "&destination=" + encodeURIComponent(mapParam(d)) + "&mode=driving&region=za";
+      if (src !== lastMapSrc) { $("map-frame").src = src; lastMapSrc = src; }
+      $("map-wrap").hidden = false;
+      const my = ++routeSeq;
+      $("route-info").textContent = "Finding the driving route…";
+      try {
+        const r = await googleRoute(o, d);
+        if (my !== routeSeq) return;
+        Object.assign(route, r, { source: "google" });
+        if (!kmManual) $("f-km").value = r.km;
+        hint.textContent = "Driving distance from Google Maps. You can change it.";
+        $("route-info").textContent = r.km + " km by road, about " + durText(r.min) + " of driving.";
+        refreshQuote();
+        return;
+      } catch (e) {
+        if (my !== routeSeq) return;
+        console.warn(e);
+        $("route-info").textContent = "Google Maps couldn't find this route. Check the place names, or type the distance yourself.";
+      }
+    } else {
+      $("map-wrap").hidden = true;
+      $("route-info").textContent = "Tap Open in Google Maps to see the route.";
+    }
+    if (o.ll && d.ll) {
+      const km = roadKm(o.ll, d.ll);
+      Object.assign(route, { km, min: 0, source: "estimate" });
+      if (!kmManual) $("f-km").value = km;
+      hint.textContent = "Estimated from the places you chose. You can change it.";
+    } else {
+      Object.assign(route, { km: 0, min: 0, source: "" });
+      if (!kmManual) hint.textContent = "We can't measure this place yet. Type the distance in km.";
     }
     refreshQuote();
   }
-  ["f-pickup", "f-dropoff"].forEach((id) => $(id).addEventListener("input", autoKm));
   $("f-km").addEventListener("input", () => { kmManual = true; $("km-hint").textContent = "Using the distance you typed."; refreshQuote(); });
   ["f-pax", "f-vehicle", "f-luggage", "f-nights", "f-datetime"].forEach((id) => $(id).addEventListener("input", refreshQuote));
 
@@ -712,7 +994,14 @@ textarea { resize: vertical; min-height: 64px; }
       contactName: $("f-name").value.trim(),
       contactPhone: $("f-phone").value.trim(),
       payment: $("f-pay").value,
-      notes: $("f-notes").value.trim()
+      notes: $("f-notes").value.trim(),
+      crossBorder: isCrossBorder(),
+      pickupPlaceId: sel.pickup.placeId || null,
+      dropoffPlaceId: sel.dropoff.placeId || null,
+      pickupLL: sel.pickup.ll || null,
+      dropoffLL: sel.dropoff.ll || null,
+      durationMin: !kmManual && route.source === "google" ? route.min : 0,
+      kmSource: kmManual ? "typed" : route.source || "typed"
     };
   }
 
@@ -734,6 +1023,7 @@ textarea { resize: vertical; min-height: 64px; }
     let w = "";
     if (f.type === "short" && f.km > SHORT_MAX_KM) w = "This is " + f.km + " km. Trips over " + SHORT_MAX_KM + " km are priced as long trips.";
     if (f.type === "long" && f.km <= SHORT_MAX_KM) w = "This is only " + f.km + " km. A short trip will cost you less.";
+    if (f.crossBorder) w = (f.type === "short" ? "Cross-border trips are long trips. " : "") + "Everyone needs a valid passport, and the driver needs a cross-border permit.";
     warn.textContent = w; warn.hidden = !w;
     $("q-note").textContent = "Estimate only. Toll fees are extra. The driver confirms the final price when they accept.";
   }
@@ -752,6 +1042,7 @@ textarea { resize: vertical; min-height: 64px; }
     if (!/^[+\d][\d\s-]{8,}$/.test(f.contactPhone)) problems.push("a cellphone number the driver can call");
     if (problems.length) { msg.classList.add("err"); msg.textContent = "Please add: " + problems.join(", ") + "."; return; }
     if (f.type === "short" && f.km > SHORT_MAX_KM) { msg.classList.add("err"); msg.textContent = "This trip is over " + SHORT_MAX_KM + " km. Choose Long trip."; return; }
+    if (f.type === "short" && f.crossBorder) { msg.classList.add("err"); msg.textContent = "Cross-border trips are long trips. Choose Long trip."; return; }
     const q = quote(f);
     const data = { ...f, vehicle: q.vehicle, vehicles: q.count, fare: q.total, status: "open", requesterId: store.me, createdAt: Date.now(), updatedAt: Date.now() };
     const btn = $("submit-btn"); btn.disabled = true; btn.textContent = "Sending…";
@@ -776,19 +1067,34 @@ textarea { resize: vertical; min-height: 64px; }
     return h("div", { class: "meta" },
       h("span", null, h("b", { text: String(r.pax) }), " people"),
       h("span", null, h("b", { text: (r.vehicles > 1 ? r.vehicles + " × " : "") + v.short })),
-      h("span", null, h("b", { text: String(r.km) }), " km"),
+      h("span", null, h("b", { text: String(r.km) }), " km", r.durationMin ? ", about " + durText(r.durationMin) : ""),
       h("span", { text: whenText(r.when) }),
       h("span", { text: r.purpose }),
       h("span", { text: lug }),
-      r.roundTrip ? h("span", null, "Return trip, ", h("b", { text: String(r.nights) }), " night" + (r.nights === 1 ? "" : "s")) : null
+      r.roundTrip ? h("span", null, "Return trip, ", h("b", { text: String(r.nights) }), " night" + (r.nights === 1 ? "" : "s")) : null,
+      r.crossBorder ? h("span", null, h("b", { text: "Cross-border" })) : null
     );
+  }
+  function placeOf(r, which) {
+    return { text: r[which], placeId: r[which + "PlaceId"] || null, ll: Array.isArray(r[which + "LL"]) ? r[which + "LL"] : null };
+  }
+  function routeLinks(r, forDriver) {
+    const o = placeOf(r, "pickup"), d = placeOf(r, "dropoff");
+    const links = h("div", { class: "route-links" });
+    if (forDriver) {
+      const pick = r.address ? { text: r.address + ", " + r.pickup } : o;
+      links.append(h("a", { href: dirUrl(null, pick), target: "_blank", rel: "noopener" }, "Directions to pick-up"));
+    }
+    links.append(h("a", { href: dirUrl(o, d), target: "_blank", rel: "noopener" }, forDriver ? "Trip route" : "View route"));
+    return links;
   }
   function typeTag(r) { return h("span", { class: "tag" + (r.type === "long" ? " long" : ""), text: r.type === "long" ? "Long trip" : "Short trip" }); }
 
   function passengerCard(r) {
     const card = h("article", { class: "trip", "data-status": r.status },
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
-      tripMeta(r)
+      tripMeta(r),
+      routeLinks(r, false)
     );
     if (r.driverName && ["accepted", "enroute", "ontrip", "completed"].includes(r.status)) {
       const v = VEHICLES[r.driverVehicle] || null;
@@ -829,7 +1135,8 @@ textarea { resize: vertical; min-height: 64px; }
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), h("span", { class: "fare", text: money(r.fare) })),
       tripMeta(r),
       r.address ? h("div", { class: "notes", text: "Pick-up spot: " + r.address }) : null,
-      r.notes ? h("div", { class: "notes", text: r.notes }) : null
+      r.notes ? h("div", { class: "notes", text: r.notes }) : null,
+      routeLinks(r, true)
     );
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "meta", style: "display:inline", text: r.payment + " · posted " + ago(r.createdAt) })));
     const msg = h("span", { class: "mismatch" });
@@ -863,7 +1170,8 @@ textarea { resize: vertical; min-height: 64px; }
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
       tripMeta(r),
       r.address ? h("div", { class: "notes", text: "Pick-up spot: " + r.address }) : null,
-      r.notes ? h("div", { class: "notes", text: r.notes }) : null
+      r.notes ? h("div", { class: "notes", text: r.notes }) : null,
+      r.status !== "cancelled" && r.status !== "completed" ? routeLinks(r, true) : null
     );
     if (r.status !== "cancelled") {
       card.append(h("div", { class: "driver-box" },
@@ -956,8 +1264,8 @@ textarea { resize: vertical; min-height: 64px; }
   }
 
   async function boot() {
-    route();
-    autoKm();
+    showView();
+    updateRoute();
     store.me = deviceId();
     store.loadLocal();
     store.subscribe((items) => { allRequests = items; render(); });

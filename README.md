@@ -43,6 +43,25 @@ Without Firebase, the app runs in **demo mode**: each phone keeps its own reques
 
 Firebase web keys are safe to put in a public repository. Access is controlled by the security rules.
 
+## Google Maps (place search, driving distance, route map)
+
+With a Google Maps key, passengers can search any address, suburb or taxi rank. The app measures the real driving distance and shows the route on a map. Drivers also get **Directions to pick-up** and **Trip route** buttons that open Google Maps on their phone.
+
+The directions buttons work even without a key. Without a key, distances are estimated from the built-in list of about 200 places.
+
+1. Open https://console.cloud.google.com and select your Firebase project (`siyahamba-group-taxi`).
+2. **Billing:** Google Maps needs a billing account linked to the project, even though you'll stay inside the free monthly usage. Go to **Billing** and link or create one.
+3. Go to **APIs & Services → Library** and enable these three APIs:
+   - **Places API (New)**: place search
+   - **Routes API**: driving distance and time
+   - **Maps Embed API**: the route map. It's free with no usage limit.
+4. Go to **APIs & Services → Credentials → Create credentials → API key**. Then edit the key:
+   - Under **Application restrictions**, choose **Websites** and add `https://sbugzoh2.github.io/*`
+   - Under **API restrictions**, choose **Restrict key** and tick only the three APIs above.
+5. Paste the key into `config.js` as `window.SIYAHAMBA_GOOGLE_MAPS_KEY = "AIza...";`, then commit and push.
+
+**Costs:** each Google product has a free monthly allowance, about 10,000 place searches and 10,000 route lookups, which is plenty for a small launch. To be safe, set a **budget alert** under **Billing → Budgets & alerts**.
+
 ## Try it on your computer
 
 Open `index.html` in a browser, or run a small local server:
@@ -59,16 +78,16 @@ The prices are **estimates** and should be changed to match real rates. They're 
 
 | Setting | Default |
 |---|---|
-| Short trip call-out | R250 |
-| Short trip per km | R16 (minimum R350) |
+| Short trip call-out | R300 |
+| Short trip per km | R18 (minimum R450) |
 | Night trips (20:00–05:00) | +15% |
-| Long trip per km | R11 |
-| Long one-way trip | × 1.5, to cover the driver's empty drive home |
-| Driver waits and returns | 2 × distance, plus R1,200 per night |
-| Luggage trailer | R450 |
-| Vehicle size | Sprinter × 1.35, Midibus × 1.9, Bus × 2.8 |
+| Long trip per km driven | R9.50, charged for the drive there and back (minimum R2,000) |
+| Driver waits and returns | + R1,500 per night |
+| Cross-border trip | + R1,500 per vehicle |
+| Luggage trailer | R300 short, R800 long |
+| Vehicle size | Sprinter × 1.4, Midibus × 1.9, Bus × 2.6 |
 
-Places and coordinates are in `PLACES`, and vehicle seats are in `VEHICLES`.
+Places and coordinates are in `PLACE_GROUPS`, and vehicle seats are in `VEHICLES`.
 
 ## Before real-world use
 

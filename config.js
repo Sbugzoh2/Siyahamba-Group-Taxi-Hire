@@ -25,3 +25,8 @@ window.SIYAHAMBA_FIREBASE = {
   appId: "1:1234567890:web:abc123"
 };
 */
+
+// Google Maps key (optional). It adds place search, real driving distances
+// and a route map. Leave it as "" to use the built-in places and estimates.
+// Setup steps are in README.md under "Google Maps".
+window.SIYAHAMBA_GOOGLE_MAPS_KEY = "";
