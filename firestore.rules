@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /requests/{requestId} {
+      // Everyone signed in (anonymous sign-in is fine) can see the job board.
+      allow read: if request.auth != null;
+
+      // A passenger can only create a request in their own name, as "open".
+      allow create: if request.auth != null
+        && request.resource.data.requesterId == request.auth.uid
+        && request.resource.data.status == 'open';
+
+      // Updates: the passenger who made it, the driver who has it,
+      // or a driver accepting an open job for themselves.
+      allow update: if request.auth != null && (
+        resource.data.requesterId == request.auth.uid
+        || resource.data.driverId == request.auth.uid
+        || (resource.data.status == 'open' && request.resource.data.driverId == request.auth.uid)
+      );
+
+      allow delete: if false;
+    }
+  }
+}

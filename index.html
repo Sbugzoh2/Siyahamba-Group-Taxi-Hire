@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Group taxi hire for South Africa: book a minibus taxi, Sprinter or bus for short or long group trips.">
+<meta name="theme-color" content="#1B2631">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+<title>Siyahamba Group Taxi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: app shell with a road-marked header; two-pane workspace (form | live panel) that stacks on phones */
+:root {
+  --bg: #EDF1F4;
+  --surface: #FFFFFF;
+  --surface-2: #F5F7F9;
+  --ink: #14202B;
+  --muted: #5A6876;
+  --line: #D3DBE2;
+  --accent: #F2B705;
+  --accent-ink: #2A1F00;
+  --accent-soft: #FFF3C7;
+  --road: #1B2631;
+  --go: #1A7F52;
+  --go-soft: #DDF3E8;
+  --warn: #B4400C;
+  --warn-soft: #FCE7DB;
+  --info: #2358C9;
+  --info-soft: #E1EAFB;
+  --focus: #2358C9;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E151C; --surface: #16202A; --surface-2: #1C2834; --ink: #E7ECF1; --muted: #93A1AE;
+    --line: #2A3845; --accent: #F5C030; --accent-ink: #231A00; --accent-soft: #3A2F0C; --road: #0A1016;
+    --go: #42C08A; --go-soft: #133426; --warn: #F08A4B; --warn-soft: #3A1F10; --info: #7EA6FF; --info-soft: #18284A;
+    --focus: #7EA6FF; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E151C; --surface: #16202A; --surface-2: #1C2834; --ink: #E7ECF1; --muted: #93A1AE;
+  --line: #2A3845; --accent: #F5C030; --accent-ink: #231A00; --accent-soft: #3A2F0C; --road: #0A1016;
+  --go: #42C08A; --go-soft: #133426; --warn: #F08A4B; --warn-soft: #3A1F10; --info: #7EA6FF; --info-soft: #18284A;
+  --focus: #7EA6FF; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--road); }
+
+.topbar { background: var(--road); color: #F3F5F7; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding-block: 14px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
+.road-line { height: 4px; background: repeating-linear-gradient(90deg, var(--accent) 0 28px, transparent 28px 46px); background-color: var(--road); }
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 118%; font-size: 1.45rem; letter-spacing: 0.01em; }
+.brand-name span { color: var(--accent); }
+.brand-tag { font-size: 0.8rem; color: #AAB6C1; }
+
+.roles { display: inline-flex; background: #26323E; border-radius: 999px; padding: 4px; gap: 4px; }
+.roles a { color: #DDE3E9; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 7px 16px; border-radius: 999px; }
+.roles a[aria-current="page"] { background: var(--accent); color: #2A1F00; }
+.roles a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+main { max-width: 1120px; margin: 0 auto; padding-block: 22px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.banner { border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; margin-bottom: 16px; }
+.banner.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+
+.view-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 18px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.5rem, 3.6vw, 2.1rem); font-weight: 800; font-stretch: 108%; line-height: 1.1; }
+h2 { font-size: 1.15rem; font-weight: 750; font-stretch: 105%; }
+h3 { font-size: 1rem; font-weight: 700; }
+.lede { color: var(--muted); max-width: 62ch; margin: 0; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.stack { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+.seg button { text-align: left; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 12px; padding: 12px 14px; cursor: pointer; font: inherit; display: flex; flex-direction: column; gap: 2px; }
+.seg button strong { font-family: var(--f-display); font-size: 1.02rem; font-weight: 750; }
+.seg button span { font-size: 0.82rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.seg button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fields .full { grid-column: 1 / -1; }
+@media (max-width: 520px) { .fields { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field label, .label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.field .hint { font-size: 0.8rem; color: var(--muted); }
+input, select, textarea { font: inherit; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; min-width: 0; }
+textarea { resize: vertical; min-height: 64px; }
+.check { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.route-swap { display: flex; justify-content: flex-end; }
+.linkbtn { background: none; border: none; color: var(--info); font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 2px 0; }
+
+.btn { font: inherit; font-weight: 700; border-radius: 10px; padding: 11px 18px; cursor: pointer; border: 1.5px solid transparent; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { filter: brightness(1.05); }
+.btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-go { background: var(--go); color: #fff; }
+.btn-danger { background: transparent; border-color: var(--warn); color: var(--warn); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sm { padding: 7px 12px; font-size: 0.85rem; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 18px; }
+.form-msg { font-size: 0.88rem; font-weight: 600; }
+.form-msg.err { color: var(--warn); }
+.form-msg.ok { color: var(--go); }
+
+/* Quote */
+.quote { background: var(--road); color: #EEF2F5; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.quote .label { color: #9FB0BF; }
+.quote-total { font-family: var(--f-mono); font-weight: 700; font-size: 2.1rem; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+.quote-per { color: #C8D3DC; font-size: 0.92rem; }
+.quote-rows { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 0.88rem; border-top: 1px dashed #3A4A59; padding-top: 12px; }
+.quote-rows dt { color: #AFBDC9; }
+.quote-rows dd { margin: 0; text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.quote-note { font-size: 0.8rem; color: #9FB0BF; }
+.quote-warn { font-size: 0.85rem; background: #3A2A10; color: #FFD27A; border-radius: 8px; padding: 8px 10px; }
+
+/* Trip cards */
+.list { display: flex; flex-direction: column; gap: 12px; }
+.trip { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface); display: flex; flex-direction: column; gap: 10px; border-left-width: 5px; min-width: 0; }
+.trip[data-status="open"] { border-left-color: var(--info); }
+.trip[data-status="accepted"], .trip[data-status="enroute"] { border-left-color: var(--go); }
+.trip[data-status="ontrip"] { border-left-color: var(--accent); }
+.trip[data-status="completed"] { border-left-color: var(--line); }
+.trip[data-status="cancelled"] { border-left-color: var(--warn); opacity: 0.8; }
+.trip-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.route { font-family: var(--f-display); font-weight: 750; font-size: 1.05rem; font-stretch: 104%; overflow-wrap: anywhere; }
+.route .arrow { color: var(--muted); font-weight: 500; padding: 0 4px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.85rem; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.open { background: var(--info-soft); color: var(--info); }
+.pill.go { background: var(--go-soft); color: var(--go); }
+.pill.trip-on { background: var(--accent-soft); color: var(--ink); }
+.pill.done { background: var(--surface-2); color: var(--muted); }
+.pill.cancel { background: var(--warn-soft); color: var(--warn); }
+.tag { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); }
+.tag.long { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.fare { font-family: var(--f-mono); font-weight: 700; font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+.trip-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.driver-box { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 0.88rem; }
+.plate { font-family: var(--f-mono); font-weight: 700; letter-spacing: 0.08em; background: #FDFBF2; color: #111; border: 2px solid #111; border-radius: 5px; padding: 1px 8px; font-size: 0.85rem; }
+.phone { font-family: var(--f-mono); user-select: all; }
+.copy { font: inherit; font-size: 0.78rem; font-weight: 600; background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+.notes { font-size: 0.86rem; color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; overflow-wrap: anywhere; }
+
+.filters { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.filters button { font: inherit; font-size: 0.85rem; font-weight: 600; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.empty { text-align: center; color: var(--muted); padding: 26px 12px; border: 1.5px dashed var(--line); border-radius: 12px; font-size: 0.92rem; }
+.empty strong { display: block; color: var(--ink); font-family: var(--f-display); font-size: 1rem; margin-bottom: 4px; }
+
+.how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 4px; }
+@media (max-width: 640px) { .how { grid-template-columns: 1fr; } }
+.how div { font-size: 0.86rem; color: var(--muted); }
+.how b { display: block; color: var(--ink); font-family: var(--f-display); font-size: 0.95rem; }
+
+.profile-sum { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 0.9rem; }
+.count { font-family: var(--f-mono); font-size: 0.8rem; background: var(--surface-2); border-radius: 999px; padding: 2px 9px; color: var(--muted); }
+.mismatch { font-size: 0.82rem; color: var(--warn); font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .trip { animation: rise .25s ease-out both; }
+  @keyframes rise { from { transform: translateY(4px); } to { transform: none; } }
+}
+</style>
+<script src="config.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-name">Siya<span>hamba</span></div>
+      <div class="brand-tag">Group taxi hire · South Africa</div>
+    </div>
+    <nav class="roles" aria-label="Choose your role">
+      <a href="#passenger" id="nav-passenger">I need a taxi</a>
+      <a href="#driver" id="nav-driver">I'm a driver</a>
+    </nav>
+  </div>
+  <div class="road-line" aria-hidden="true"></div>
+</header>
+
+<main>
+  <div id="conn-banner" class="banner" hidden></div>
+
+  <!-- PASSENGER -->
+  <section id="view-passenger">
+    <div class="view-head">
+      <h1>Book one taxi for the whole group</h1>
+      <p class="lede">Hire a minibus taxi, Sprinter or bus for your group. Short trips around town or long trips between cities and provinces. You see the price before you book.</p>
+    </div>
+
+    <div class="grid">
+      <form class="panel" id="req-form" novalidate>
+        <div class="seg" role="group" aria-label="Trip type">
+          <button type="button" id="t-short" aria-pressed="true"><strong>Short trip</strong><span>In town or nearby, up to 60 km</span></button>
+          <button type="button" id="t-long" aria-pressed="false"><strong>Long trip</strong><span>Between cities and provinces</span></button>
+        </div>
+
+        <div class="fields">
+          <div class="field">
+            <label for="f-pickup">Pick-up</label>
+            <input id="f-pickup" list="places" autocomplete="off" value="Soweto" placeholder="e.g. Soweto">
+          </div>
+          <div class="field">
+            <label for="f-dropoff">Destination</label>
+            <input id="f-dropoff" list="places" autocomplete="off" value="Sandton" placeholder="e.g. Sandton">
+          </div>
+          <div class="field full">
+            <label for="f-address">Exact pick-up spot</label>
+            <input id="f-address" placeholder="Street address, landmark or taxi rank" value="">
+          </div>
+          <div class="field">
+            <label for="f-km">Distance (km)</label>
+            <input id="f-km" type="number" inputmode="numeric" min="1" max="2500" value="">
+            <span class="hint" id="km-hint">Worked out from the places you chose. You can change it.</span>
+          </div>
+          <div class="field">
+            <label for="f-pax">People in the group</label>
+            <input id="f-pax" type="number" inputmode="numeric" min="2" max="240" value="12">
+          </div>
+          <div class="field">
+            <label for="f-vehicle">Vehicle</label>
+            <select id="f-vehicle">
+              <option value="auto">Best fit for my group</option>
+              <option value="quantum">Minibus taxi (Quantum), 14 seats</option>
+              <option value="sprinter">Sprinter, 22 seats</option>
+              <option value="midibus">Midibus, 35 seats</option>
+              <option value="coach">Bus, 60 seats</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-purpose">Reason for trip</label>
+            <select id="f-purpose">
+              <option>Work shuttle</option>
+              <option>Funeral</option>
+              <option>Wedding</option>
+              <option>Church or pilgrimage</option>
+              <option>Stokvel or social outing</option>
+              <option>School or sports team</option>
+              <option>Airport transfer</option>
+              <option>Going home for the holidays</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-when">When</label>
+            <select id="f-when">
+              <option value="now">As soon as possible</option>
+              <option value="later">Schedule for later</option>
+            </select>
+          </div>
+          <div class="field" id="when-wrap" hidden>
+            <label for="f-datetime">Date and time</label>
+            <input id="f-datetime" type="datetime-local">
+          </div>
+          <div class="field">
+            <label for="f-luggage">Luggage</label>
+            <select id="f-luggage">
+              <option value="none">Hand luggage only</option>
+              <option value="some">Some bags</option>
+              <option value="trailer">Lots, needs a trailer</option>
+            </select>
+          </div>
+
+          <div class="field full" id="return-wrap" hidden>
+            <label class="check" for="f-return"><input type="checkbox" id="f-return"> Driver waits and brings us back</label>
+            <span class="hint">For funerals, weddings and events. The driver stays over and you pay for their nights.</span>
+          </div>
+          <div class="field" id="nights-wrap" hidden>
+            <label for="f-nights">Nights driver stays</label>
+            <input id="f-nights" type="number" inputmode="numeric" min="0" max="14" value="2">
+          </div>
+
+          <div class="field">
+            <label for="f-name">Group leader's name</label>
+            <input id="f-name" autocomplete="name" placeholder="Who the driver should ask for">
+          </div>
+          <div class="field">
+            <label for="f-phone">Cellphone number</label>
+            <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 072 123 4567">
+          </div>
+          <div class="field">
+            <label for="f-pay">Payment</label>
+            <select id="f-pay">
+              <option>Cash to driver</option>
+              <option>EFT before the trip</option>
+              <option>Card</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="f-notes">Notes for the driver</label>
+            <textarea id="f-notes" placeholder="e.g. Pensioners in the group, a wheelchair, or extra stops on the way"></textarea>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" id="submit-btn">Request taxi</button>
+          <span class="form-msg" id="form-msg" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+
+      <div class="stack">
+        <div class="quote" aria-live="polite">
+          <div>
+            <div class="label">Estimated price for the group</div>
+            <div class="quote-total" id="q-total">R 0</div>
+            <div class="quote-per" id="q-per"></div>
+          </div>
+          <dl class="quote-rows" id="q-rows"></dl>
+          <div class="quote-warn" id="q-warn" hidden></div>
+          <div class="quote-note" id="q-note"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>My trips</h2>
+            <span class="count" id="my-count">0</span>
+          </div>
+          <div class="list" id="my-trips"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DRIVER -->
+  <section id="view-driver" hidden>
+    <div class="view-head">
+      <h1>Group jobs near you</h1>
+      <p class="lede">Accept a group request, keep the passengers updated, and get paid the quoted price. Short trips are local hires. Long trips are intercity, often booked days ahead.</p>
+    </div>
+
+    <div class="grid">
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Job board</h2>
+            <div class="filters" role="group" aria-label="Filter jobs">
+              <button type="button" data-filter="all" aria-pressed="true">All</button>
+              <button type="button" data-filter="short" aria-pressed="false">Short</button>
+              <button type="button" data-filter="long" aria-pressed="false">Long</button>
+            </div>
+          </div>
+          <div class="list" id="board"></div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <form class="panel" id="driver-form" novalidate>
+          <div class="panel-head">
+            <h2>My vehicle</h2>
+            <button type="button" class="linkbtn" id="edit-profile" hidden>Edit</button>
+          </div>
+          <div id="profile-summary" class="profile-sum" hidden></div>
+          <div class="fields" id="profile-fields">
+            <div class="field">
+              <label for="d-name">Your name</label>
+              <input id="d-name" autocomplete="name" placeholder="As passengers will see it">
+            </div>
+            <div class="field">
+              <label for="d-phone">Cellphone number</label>
+              <input id="d-phone" type="tel" inputmode="tel" placeholder="e.g. 083 555 0101">
+            </div>
+            <div class="field">
+              <label for="d-vehicle">Vehicle</label>
+              <select id="d-vehicle">
+                <option value="quantum">Minibus taxi (Quantum), 14 seats</option>
+                <option value="sprinter">Sprinter, 22 seats</option>
+                <option value="midibus">Midibus, 35 seats</option>
+                <option value="coach">Bus, 60 seats</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="d-reg">Registration</label>
+              <input id="d-reg" placeholder="e.g. JK 45 PL GP" autocapitalize="characters">
+            </div>
+            <div class="field full">
+              <label for="d-assoc">Taxi association or rank</label>
+              <input id="d-assoc" placeholder="e.g. Bara Rank, Soweto">
+            </div>
+            <div class="field full">
+              <label class="check" for="d-pdp"><input type="checkbox" id="d-pdp"> I have a valid PrDP and operating licence for long-distance routes</label>
+            </div>
+          </div>
+          <div class="actions" id="profile-actions">
+            <button type="submit" class="btn btn-primary">Save vehicle</button>
+            <span class="form-msg" id="driver-msg" role="status" aria-live="polite"></span>
+          </div>
+        </form>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>My jobs</h2>
+            <span class="count" id="job-count">0</span>
+          </div>
+          <div class="list" id="my-jobs"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="panel" style="margin-top:20px">
+    <h3 style="margin-bottom:10px">How it works</h3>
+    <div class="how">
+      <div><b>1. The group requests</b>One person books for everyone, picks a short or long trip, and sees the price for the whole group and per person.</div>
+      <div><b>2. A driver accepts</b>Drivers with the right size vehicle take the job. The group leader gets the driver's name, number and number plate.</div>
+      <div><b>3. Ride together</b>Follow the trip from "on the way" to "arrived". Pay the driver the way you agreed.</div>
+    </div>
+  </div>
+</main>
+
+<datalist id="places"></datalist>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Reference data ---------- */
+  const PLACES = {
+    "Johannesburg CBD": [-26.2041, 28.0473], "Soweto": [-26.2485, 27.8540], "Sandton": [-26.1076, 28.0567],
+    "Alexandra": [-26.1033, 28.0957], "Tembisa": [-25.9964, 28.2268], "Midrand": [-25.9992, 28.1263],
+    "Diepsloot": [-25.9333, 28.0167], "Orange Farm": [-26.4833, 27.8667], "Germiston": [-26.2309, 28.1772],
+    "Benoni": [-26.1885, 28.3205], "Vereeniging": [-26.6731, 27.9261], "Krugersdorp": [-26.0857, 27.7756],
+    "OR Tambo Airport": [-26.1367, 28.2411], "Pretoria CBD": [-25.7479, 28.2293], "Mamelodi": [-25.7206, 28.3951],
+    "Soshanguve": [-25.5225, 28.1003], "Polokwane": [-23.9045, 29.4689], "Thohoyandou": [-22.9500, 30.4800],
+    "Giyani": [-23.3025, 30.7187], "Mbombela": [-25.4658, 30.9853], "Bushbuckridge": [-24.8400, 31.0700],
+    "Durban": [-29.8587, 31.0218], "Umlazi": [-29.9706, 30.8838], "KwaMashu": [-29.7400, 30.9800],
+    "King Shaka Airport": [-29.6144, 31.1197], "Pietermaritzburg": [-29.6006, 30.3794], "Richards Bay": [-28.7807, 32.0383],
+    "Newcastle": [-27.7580, 29.9320], "Port Shepstone": [-30.7414, 30.4550], "Cape Town CBD": [-33.9249, 18.4241],
+    "Khayelitsha": [-34.0402, 18.6776], "Gugulethu": [-33.9800, 18.5700], "Mitchells Plain": [-34.0500, 18.6200],
+    "Bellville": [-33.9000, 18.6300], "Stellenbosch": [-33.9321, 18.8602], "Cape Town Airport": [-33.9715, 18.6021],
+    "Gqeberha": [-33.9608, 25.6022], "East London": [-33.0153, 27.9116], "Mthatha": [-31.5889, 28.7844],
+    "Komani (Queenstown)": [-31.8976, 26.8753], "Bloemfontein": [-29.0852, 26.1596], "Welkom": [-27.9774, 26.7351],
+    "Kimberley": [-28.7282, 24.7499], "Upington": [-28.4478, 21.2561], "Rustenburg": [-25.6676, 27.2421],
+    "Mahikeng": [-25.8560, 25.6403]
+  };
+  const VEHICLES = {
+    quantum:  { name: "Minibus taxi (Quantum)", short: "Quantum", seats: 14, mult: 1.0 },
+    sprinter: { name: "Sprinter", short: "Sprinter", seats: 22, mult: 1.35 },
+    midibus:  { name: "Midibus", short: "Midibus", seats: 35, mult: 1.9 },
+    coach:    { name: "Bus", short: "Bus", seats: 60, mult: 2.8 }
+  };
+  const RATES = {
+    shortBase: 250, shortPerKm: 16, shortMin: 350, nightPct: 0.15,
+    longPerKm: 11, emptyReturn: 1.5, roundTrip: 2, nightStay: 1200, longMin: 1500, trailer: 450
+  };
+  const SHORT_MAX_KM = 60;
+
+  const STATUS = {
+    open:      { label: "Waiting for a driver", cls: "open" },
+    accepted:  { label: "Driver assigned", cls: "go" },
+    enroute:   { label: "Driver on the way", cls: "go" },
+    ontrip:    { label: "On the trip", cls: "trip-on" },
+    completed: { label: "Arrived", cls: "done" },
+    cancelled: { label: "Cancelled", cls: "cancel" }
+  };
+
+  /* ---------- Helpers ---------- */
+  const $ = (id) => document.getElementById(id);
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    if (attrs) for (const k in attrs) {
+      const v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    return el;
+  }
+  const zar = new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", maximumFractionDigits: 0 });
+  const money = (n) => zar.format(Math.round(n));
+  const round10 = (n) => Math.round(n / 10) * 10;
+  const safeLS = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  function findPlace(name) {
+    if (!name) return null;
+    const n = name.trim().toLowerCase();
+    for (const p in PLACES) if (p.toLowerCase() === n) return PLACES[p];
+    return null;
+  }
+  function roadKm(a, b) {
+    const R = 6371, toR = Math.PI / 180;
+    const dLat = (b[0] - a[0]) * toR, dLon = (b[1] - a[1]) * toR;
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * toR) * Math.cos(b[0] * toR) * Math.sin(dLon / 2) ** 2;
+    const straight = 2 * R * Math.asin(Math.sqrt(x));
+    const factor = straight < 40 ? 1.35 : 1.2;
+    return Math.max(1, Math.round(straight * factor));
+  }
+  function whenText(w) {
+    if (!w || w === "now") return "As soon as possible";
+    const d = new Date(w);
+    if (isNaN(d)) return w;
+    return d.toLocaleString("en-ZA", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  }
+  function ago(ts) {
+    const s = Math.max(0, (Date.now() - ts) / 1000);
+    if (s < 60) return "just now";
+    if (s < 3600) return Math.floor(s / 60) + " min ago";
+    if (s < 86400) return Math.floor(s / 3600) + " h ago";
+    return Math.floor(s / 86400) + " d ago";
+  }
+  function copyBtn(text) {
+    return h("button", { type: "button", class: "copy", onclick: async (e) => {
+      const b = e.currentTarget;
+      try { await navigator.clipboard.writeText(text); b.textContent = "Copied"; }
+      catch (err) {
+        const span = b.previousElementSibling;
+        if (span) { const r = document.createRange(); r.selectNodeContents(span); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+        b.textContent = "Selected";
+      }
+      setTimeout(() => (b.textContent = "Copy"), 1600);
+    } }, "Copy");
+  }
+
+  /* ---------- Pricing ---------- */
+  function pickVehicle(pax, choice) {
+    if (choice && choice !== "auto") {
+      const v = VEHICLES[choice];
+      return { key: choice, count: Math.max(1, Math.ceil(pax / v.seats)) };
+    }
+    for (const k of ["quantum", "sprinter", "midibus", "coach"]) if (pax <= VEHICLES[k].seats) return { key: k, count: 1 };
+    return { key: "coach", count: Math.ceil(pax / VEHICLES.coach.seats) };
+  }
+  function quote(q) {
+    const v = pickVehicle(q.pax, q.vehicle);
+    const veh = VEHICLES[v.key];
+    const rows = [];
+    let per;
+    if (q.type === "short") {
+      per = Math.max(RATES.shortMin, RATES.shortBase + RATES.shortPerKm * q.km);
+      rows.push(["Call-out", money(RATES.shortBase)], [q.km + " km × " + money(RATES.shortPerKm), money(RATES.shortPerKm * q.km)]);
+      let hour = new Date().getHours();
+      if (q.when && q.when !== "now") { const d = new Date(q.when); if (!isNaN(d)) hour = d.getHours(); }
+      if (hour >= 20 || hour < 5) { rows.push(["Night trip +15%", money(per * RATES.nightPct)]); per *= 1 + RATES.nightPct; }
+    } else {
+      if (q.roundTrip) {
+        per = RATES.longPerKm * q.km * RATES.roundTrip + RATES.nightStay * q.nights;
+        rows.push(["There and back, " + (q.km * 2) + " km", money(RATES.longPerKm * q.km * 2)]);
+        if (q.nights > 0) rows.push(["Driver stays " + q.nights + " night" + (q.nights === 1 ? "" : "s"), money(RATES.nightStay * q.nights)]);
+      } else {
+        per = RATES.longPerKm * q.km * RATES.emptyReturn;
+        rows.push([q.km + " km one way", money(RATES.longPerKm * q.km)], ["Driver's empty trip home", money(RATES.longPerKm * q.km * (RATES.emptyReturn - 1))]);
+      }
+      per = Math.max(RATES.longMin, per);
+    }
+    if (q.luggage === "trailer") { per += RATES.trailer; rows.push(["Luggage trailer", money(RATES.trailer)]); }
+    if (veh.mult !== 1) rows.push([veh.short + " size ×" + veh.mult, ""]);
+    const total = round10(per * veh.mult * v.count);
+    rows.push(["Vehicles", v.count + " × " + veh.short]);
+    return { total, perPerson: total / q.pax, vehicle: v.key, count: v.count, rows };
+  }
+
+  /* ---------- Store (shared db, or this device only) ---------- */
+  const store = {
+    mode: "local", me: null, canWrite: true, db: null, listeners: [], items: [],
+    emit() { this.listeners.forEach((fn) => fn(this.items)); },
+    subscribe(fn) { this.listeners.push(fn); fn(this.items); },
+    loadLocal() { this.items = safeLS.get("siyahamba.requests") || []; this.emit(); },
+    saveLocal() { safeLS.set("siyahamba.requests", this.items); this.emit(); },
+    async create(data) {
+      if (this.mode === "db") { await this.db.collection("requests").add(data); return; }
+      this.items = [{ id: "r" + Date.now().toString(36), ...data }, ...this.items];
+      this.saveLocal();
+    },
+    async update(id, patch) {
+      patch.updatedAt = Date.now();
+      if (this.mode === "db") { await this.db.doc("requests/" + id).update(patch); return; }
+      this.items = this.items.map((r) => (r.id === id ? { ...r, ...patch } : r));
+      this.saveLocal();
+    },
+    async claim(id, patch) {
+      if (this.mode === "db") {
+        const ref = this.db.doc("requests/" + id);
+        return this.db.runTransaction(async (tx) => {
+          const snap = await tx.get(ref);
+          if (!snap.exists || snap.data().status !== "open") return false;
+          tx.update(ref, { ...patch, updatedAt: Date.now() });
+          return true;
+        });
+      }
+      const r = this.items.find((x) => x.id === id);
+      if (!r || r.status !== "open") return false;
+      await this.update(id, patch);
+      return true;
+    },
+    async loadProfile() {
+      if (this.mode === "db" && this.realId) {
+        try { const s = await this.db.doc("data/users/" + this.realId + "/driver").get(); if (s.exists) return s.data(); } catch (e) {}
+      }
+      return safeLS.get("siyahamba.driver");
+    },
+    async saveProfile(p) {
+      safeLS.set("siyahamba.driver", p);
+      if (this.mode === "db" && this.realId) await this.db.doc("data/users/" + this.realId + "/driver").set(p);
+    }
+  };
+
+  function deviceId() {
+    let id = safeLS.get("siyahamba.device");
+    if (!id) { id = "dev-" + Math.random().toString(36).slice(2, 10); safeLS.set("siyahamba.device", id); }
+    return id;
+  }
+
+  /* ---------- State ---------- */
+  let tripType = "short";
+  let boardFilter = "all";
+  let driver = null;
+  let editingProfile = true;
+  let allRequests = [];
+
+  /* ---------- Routing ---------- */
+  function route() {
+    const r = location.hash === "#driver" ? "driver" : "passenger";
+    $("view-passenger").hidden = r !== "passenger";
+    $("view-driver").hidden = r !== "driver";
+    $("nav-passenger").toggleAttribute("aria-current", r === "passenger");
+    $("nav-driver").toggleAttribute("aria-current", r === "driver");
+    if (r === "passenger") $("nav-passenger").setAttribute("aria-current", "page"); else $("nav-driver").setAttribute("aria-current", "page");
+  }
+  window.addEventListener("hashchange", route);
+
+  /* ---------- Passenger form ---------- */
+  const dl = $("places");
+  Object.keys(PLACES).sort().forEach((p) => dl.append(h("option", { value: p })));
+
+  function setType(t) {
+    tripType = t;
+    $("t-short").setAttribute("aria-pressed", t === "short");
+    $("t-long").setAttribute("aria-pressed", t === "long");
+    $("return-wrap").hidden = t !== "long";
+    $("nights-wrap").hidden = t !== "long" || !$("f-return").checked;
+    if (t === "long" && $("f-when").value === "now") { $("f-when").value = "later"; syncWhen(); }
+    refreshQuote();
+  }
+  $("t-short").addEventListener("click", () => setType("short"));
+  $("t-long").addEventListener("click", () => setType("long"));
+  $("f-return").addEventListener("change", () => { $("nights-wrap").hidden = !$("f-return").checked; refreshQuote(); });
+
+  function syncWhen() {
+    const later = $("f-when").value === "later";
+    $("when-wrap").hidden = !later;
+    if (later && !$("f-datetime").value) {
+      const d = new Date(Date.now() + (tripType === "long" ? 3 * 86400000 : 2 * 3600000));
+      d.setMinutes(0, 0, 0);
+      if (tripType === "long") d.setHours(5);
+      const pad = (n) => String(n).padStart(2, "0");
+      $("f-datetime").value = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+    }
+    refreshQuote();
+  }
+  $("f-when").addEventListener("change", syncWhen);
+
+  let kmManual = false;
+  function autoKm() {
+    const a = findPlace($("f-pickup").value), b = findPlace($("f-dropoff").value);
+    if (a && b) {
+      $("f-km").value = roadKm(a, b);
+      kmManual = false;
+      $("km-hint").textContent = "Worked out from the places you chose. You can change it.";
+    } else if (!kmManual) {
+      $("km-hint").textContent = "We don't know this place yet. Type the distance in km.";
+    }
+    refreshQuote();
+  }
+  ["f-pickup", "f-dropoff"].forEach((id) => $(id).addEventListener("input", autoKm));
+  $("f-km").addEventListener("input", () => { kmManual = true; $("km-hint").textContent = "Using the distance you typed."; refreshQuote(); });
+  ["f-pax", "f-vehicle", "f-luggage", "f-nights", "f-datetime"].forEach((id) => $(id).addEventListener("input", refreshQuote));
+
+  function readForm() {
+    return {
+      type: tripType,
+      pickup: $("f-pickup").value.trim(),
+      dropoff: $("f-dropoff").value.trim(),
+      address: $("f-address").value.trim(),
+      km: Math.round(Number($("f-km").value) || 0),
+      pax: Math.round(Number($("f-pax").value) || 0),
+      vehicle: $("f-vehicle").value,
+      purpose: $("f-purpose").value,
+      when: $("f-when").value === "now" ? "now" : $("f-datetime").value,
+      luggage: $("f-luggage").value,
+      roundTrip: tripType === "long" && $("f-return").checked,
+      nights: tripType === "long" && $("f-return").checked ? Math.max(0, Math.round(Number($("f-nights").value) || 0)) : 0,
+      contactName: $("f-name").value.trim(),
+      contactPhone: $("f-phone").value.trim(),
+      payment: $("f-pay").value,
+      notes: $("f-notes").value.trim()
+    };
+  }
+
+  function refreshQuote() {
+    const f = readForm();
+    const rows = $("q-rows"); rows.replaceChildren();
+    const warn = $("q-warn");
+    if (!f.km || f.pax < 1) {
+      $("q-total").textContent = "—";
+      $("q-per").textContent = "Choose where you're going and how many people.";
+      $("q-note").textContent = "";
+      warn.hidden = true;
+      return;
+    }
+    const q = quote(f);
+    $("q-total").textContent = money(q.total);
+    $("q-per").textContent = "About " + money(q.perPerson) + " per person for " + f.pax + " people";
+    q.rows.forEach(([k, v]) => rows.append(h("dt", { text: k }), h("dd", { text: v })));
+    let w = "";
+    if (f.type === "short" && f.km > SHORT_MAX_KM) w = "This is " + f.km + " km. Trips over " + SHORT_MAX_KM + " km are priced as long trips.";
+    if (f.type === "long" && f.km <= SHORT_MAX_KM) w = "This is only " + f.km + " km. A short trip will cost you less.";
+    warn.textContent = w; warn.hidden = !w;
+    $("q-note").textContent = "Estimate only. Toll fees are extra. The driver confirms the final price when they accept.";
+  }
+
+  $("req-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("form-msg"); msg.className = "form-msg";
+    const f = readForm();
+    const problems = [];
+    if (!f.pickup) problems.push("pick-up place");
+    if (!f.dropoff) problems.push("destination");
+    if (!f.km) problems.push("distance");
+    if (f.pax < 2) problems.push("group size (at least 2)");
+    if (f.when !== "now" && !f.when) problems.push("date and time");
+    if (!f.contactName) problems.push("group leader's name");
+    if (!/^[+\d][\d\s-]{8,}$/.test(f.contactPhone)) problems.push("a cellphone number the driver can call");
+    if (problems.length) { msg.classList.add("err"); msg.textContent = "Please add: " + problems.join(", ") + "."; return; }
+    if (f.type === "short" && f.km > SHORT_MAX_KM) { msg.classList.add("err"); msg.textContent = "This trip is over " + SHORT_MAX_KM + " km. Choose Long trip."; return; }
+    const q = quote(f);
+    const data = { ...f, vehicle: q.vehicle, vehicles: q.count, fare: q.total, status: "open", requesterId: store.me, createdAt: Date.now(), updatedAt: Date.now() };
+    const btn = $("submit-btn"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      await store.create(data);
+      msg.classList.add("ok"); msg.textContent = "Request sent. Drivers can see it now.";
+      $("f-notes").value = "";
+    } catch (err) {
+      msg.classList.add("err");
+      msg.textContent = err && err.code === "quota_exceeded" ? "The request list is full. Ask the app owner to clear old trips." : "Your request didn't send. Check your connection and try again.";
+    } finally { btn.disabled = !store.canWrite; btn.textContent = "Request taxi"; }
+  });
+
+  /* ---------- Cards ---------- */
+  function routeLine(r) {
+    return h("div", { class: "route" }, r.pickup, h("span", { class: "arrow", "aria-hidden": "true" }, "→"), h("span", { class: "sr" }, " to "), r.dropoff);
+  }
+  function statusPill(s) { const st = STATUS[s] || STATUS.open; return h("span", { class: "pill " + st.cls, text: st.label }); }
+  function tripMeta(r) {
+    const v = VEHICLES[r.vehicle] || VEHICLES.quantum;
+    const lug = { none: "Hand luggage", some: "Some bags", trailer: "Needs trailer" }[r.luggage] || "";
+    return h("div", { class: "meta" },
+      h("span", null, h("b", { text: String(r.pax) }), " people"),
+      h("span", null, h("b", { text: (r.vehicles > 1 ? r.vehicles + " × " : "") + v.short })),
+      h("span", null, h("b", { text: String(r.km) }), " km"),
+      h("span", { text: whenText(r.when) }),
+      h("span", { text: r.purpose }),
+      h("span", { text: lug }),
+      r.roundTrip ? h("span", null, "Return trip, ", h("b", { text: String(r.nights) }), " night" + (r.nights === 1 ? "" : "s")) : null
+    );
+  }
+  function typeTag(r) { return h("span", { class: "tag" + (r.type === "long" ? " long" : ""), text: r.type === "long" ? "Long trip" : "Short trip" }); }
+
+  function passengerCard(r) {
+    const card = h("article", { class: "trip", "data-status": r.status },
+      h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
+      tripMeta(r)
+    );
+    if (r.driverName && ["accepted", "enroute", "ontrip", "completed"].includes(r.status)) {
+      const v = VEHICLES[r.driverVehicle] || null;
+      card.append(h("div", { class: "driver-box" },
+        h("span", null, "Driver ", h("b", { text: r.driverName })),
+        r.driverPhone ? h("span", null, h("span", { class: "phone", text: r.driverPhone }), " ", copyBtn(r.driverPhone)) : null,
+        v ? h("span", { text: v.name }) : null,
+        r.driverReg ? h("span", { class: "plate", text: r.driverReg }) : null
+      ));
+    }
+    const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
+    if (["open", "accepted"].includes(r.status)) {
+      foot.append(h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: (e) => confirmInline(e.currentTarget, "Cancel this trip?", async () => {
+        await store.update(r.id, { status: "cancelled" });
+      }) }, "Cancel trip"));
+    } else {
+      foot.append(h("span", { class: "meta", text: "Requested " + ago(r.createdAt) }));
+    }
+    card.append(foot);
+    return card;
+  }
+
+  function confirmInline(btn, question, action) {
+    const wrap = btn.parentElement;
+    const box = h("span", { class: "actions", style: "margin:0" },
+      h("span", { class: "form-msg", text: question }),
+      h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: async () => { try { await action(); } catch (e) { box.firstChild.textContent = "That didn't work. Try again."; } } }, "Yes"),
+      h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => box.replaceWith(btn) }, "No")
+    );
+    btn.replaceWith(box);
+    void wrap;
+  }
+
+  function boardCard(r) {
+    const need = VEHICLES[r.vehicle] || VEHICLES.quantum;
+    const mine = driver && VEHICLES[driver.vehicle];
+    const card = h("article", { class: "trip", "data-status": "open" },
+      h("div", { class: "trip-top" }, h("div", null, routeLine(r)), h("span", { class: "fare", text: money(r.fare) })),
+      tripMeta(r),
+      r.address ? h("div", { class: "notes", text: "Pick-up spot: " + r.address }) : null,
+      r.notes ? h("div", { class: "notes", text: r.notes }) : null
+    );
+    const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "meta", style: "display:inline", text: r.payment + " · posted " + ago(r.createdAt) })));
+    const msg = h("span", { class: "mismatch" });
+    if (mine && mine.seats < need.seats) msg.textContent = "Needs a " + need.short + ". Your " + mine.short + " has " + mine.seats + " seats.";
+    else if (r.vehicles > 1) msg.textContent = "Needs " + r.vehicles + " vehicles. Bring drivers from your rank.";
+    if (r.type === "long" && driver && !driver.pdp) msg.textContent = "Long trips need a PrDP and operating licence.";
+    const btn = h("button", { type: "button", class: "btn btn-go btn-sm", disabled: !driver || !store.canWrite || (r.type === "long" && !driver.pdp) }, "Accept job");
+    btn.addEventListener("click", async () => {
+      btn.disabled = true; btn.textContent = "Accepting…";
+      try {
+        const ok = await store.claim(r.id, {
+          status: "accepted", driverId: store.me, driverName: driver.name, driverPhone: driver.phone,
+          driverVehicle: driver.vehicle, driverReg: driver.reg, acceptedAt: Date.now()
+        });
+        if (!ok) { msg.textContent = "Another driver took this job."; btn.textContent = "Taken"; }
+      } catch (e) { msg.textContent = "Couldn't accept. Try again."; btn.disabled = false; btn.textContent = "Accept job"; }
+    });
+    if (!driver) msg.textContent = "Save your vehicle details to accept jobs.";
+    foot.append(h("span", { class: "actions", style: "margin:0" }, msg, btn));
+    card.append(foot);
+    return card;
+  }
+
+  const NEXT = {
+    accepted: { to: "enroute", label: "I'm on my way" },
+    enroute:  { to: "ontrip", label: "Passengers picked up" },
+    ontrip:   { to: "completed", label: "Trip complete" }
+  };
+  function jobCard(r) {
+    const card = h("article", { class: "trip", "data-status": r.status },
+      h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
+      tripMeta(r),
+      r.address ? h("div", { class: "notes", text: "Pick-up spot: " + r.address }) : null,
+      r.notes ? h("div", { class: "notes", text: r.notes }) : null
+    );
+    if (r.status !== "cancelled") {
+      card.append(h("div", { class: "driver-box" },
+        h("span", null, "Group leader ", h("b", { text: r.contactName })),
+        h("span", null, h("span", { class: "phone", text: r.contactPhone }), " ", copyBtn(r.contactPhone)),
+        h("span", { text: r.payment })
+      ));
+    }
+    const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
+    const acts = h("span", { class: "actions", style: "margin:0" });
+    const nx = NEXT[r.status];
+    if (nx) acts.append(h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
+      e.currentTarget.disabled = true;
+      try { await store.update(r.id, { status: nx.to }); } catch (err) { e.currentTarget.disabled = false; }
+    } }, nx.label));
+    if (r.status === "accepted") acts.append(h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: (e) => confirmInline(e.currentTarget, "Give this job back?", async () => {
+      await store.update(r.id, { status: "open", driverId: null, driverName: null, driverPhone: null, driverVehicle: null, driverReg: null });
+    }) }, "Give job back"));
+    if (r.status === "cancelled") acts.append(h("span", { class: "meta", text: "The group cancelled" }));
+    foot.append(acts);
+    card.append(foot);
+    return card;
+  }
+
+  function empty(title, body) { return h("div", { class: "empty" }, h("strong", { text: title }), body); }
+
+  /* ---------- Render ---------- */
+  function render() {
+    const me = store.me;
+    const byNew = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);
+
+    const mine = allRequests.filter((r) => r.requesterId === me).sort(byNew);
+    $("my-count").textContent = mine.length;
+    $("my-trips").replaceChildren(...(mine.length ? mine.map(passengerCard) : [empty("No trips yet", "Fill in the form and tap Request taxi. Your trip and driver details show up here.")]));
+
+    const open = allRequests.filter((r) => r.status === "open" && (boardFilter === "all" || r.type === boardFilter))
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    $("board").replaceChildren(...(open.length ? open.map(boardCard) : [empty("No open requests right now", "New group requests appear here the moment a passenger sends one.")]));
+
+    const order = { accepted: 0, enroute: 0, ontrip: 0, completed: 1, cancelled: 2 };
+    const jobs = allRequests.filter((r) => r.driverId === me || (r.status === "cancelled" && r.lastDriverId === me))
+      .sort((a, b) => (order[a.status] - order[b.status]) || byNew(a, b));
+    $("job-count").textContent = jobs.length;
+    $("my-jobs").replaceChildren(...(jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
+  }
+
+  document.querySelectorAll(".filters button").forEach((b) => b.addEventListener("click", () => {
+    boardFilter = b.dataset.filter;
+    document.querySelectorAll(".filters button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    render();
+  }));
+
+  /* ---------- Driver profile ---------- */
+  function showProfile() {
+    const sum = $("profile-summary");
+    const show = driver && !editingProfile;
+    sum.hidden = !show; $("profile-fields").hidden = show; $("profile-actions").hidden = show; $("edit-profile").hidden = !show;
+    if (show) {
+      const v = VEHICLES[driver.vehicle];
+      sum.replaceChildren(...[
+        h("b", { text: driver.name }),
+        h("span", { text: v.name + ", " + v.seats + " seats" }),
+        h("span", { class: "plate", text: driver.reg }),
+        driver.assoc ? h("span", { class: "meta", text: driver.assoc }) : null,
+        h("span", { class: "pill " + (driver.pdp ? "go" : "done"), text: driver.pdp ? "Long trips allowed" : "Short trips only" })].filter(Boolean)
+      );
+    } else if (driver) {
+      $("d-name").value = driver.name || ""; $("d-phone").value = driver.phone || ""; $("d-vehicle").value = driver.vehicle || "quantum";
+      $("d-reg").value = driver.reg || ""; $("d-assoc").value = driver.assoc || ""; $("d-pdp").checked = !!driver.pdp;
+    }
+  }
+  $("edit-profile").addEventListener("click", () => { editingProfile = true; showProfile(); });
+  $("driver-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("driver-msg"); msg.className = "form-msg";
+    const p = { name: $("d-name").value.trim(), phone: $("d-phone").value.trim(), vehicle: $("d-vehicle").value,
+      reg: $("d-reg").value.trim().toUpperCase(), assoc: $("d-assoc").value.trim(), pdp: $("d-pdp").checked };
+    const miss = [];
+    if (!p.name) miss.push("name"); if (!/^[+\d][\d\s-]{8,}$/.test(p.phone)) miss.push("cellphone number"); if (!p.reg) miss.push("registration");
+    if (miss.length) { msg.classList.add("err"); msg.textContent = "Please add your " + miss.join(", ") + "."; return; }
+    try { await store.saveProfile(p); } catch (err) { /* kept on this device */ }
+    driver = p; editingProfile = false; showProfile(); render();
+  });
+
+  /* ---------- Boot ---------- */
+  function banner(text, warn) { const b = $("conn-banner"); b.textContent = text; b.className = "banner" + (warn ? " warn" : ""); b.hidden = !text; }
+
+  function loadScript(src) {
+    return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Failed to load " + src)); document.head.append(s); });
+  }
+
+  async function boot() {
+    route();
+    autoKm();
+    store.me = deviceId();
+    store.loadLocal();
+    store.subscribe((items) => { allRequests = items; render(); });
+    driver = await store.loadProfile();
+    editingProfile = !driver; showProfile(); render();
+
+    const cfg = window.SIYAHAMBA_FIREBASE;
+    if (!cfg || !cfg.apiKey) { banner("Demo mode: requests are saved on this device only. Add your Firebase settings to config.js to connect passengers and drivers.", false); return; }
+    banner("Connecting to the shared request list…", false);
+    let db;
+    try {
+      const V = "10.12.2", base = "https://www.gstatic.com/firebasejs/" + V + "/";
+      for (const f of ["firebase-app-compat.js", "firebase-auth-compat.js", "firebase-firestore-compat.js"]) await loadScript(base + f);
+      firebase.initializeApp(cfg);
+      const cred = await firebase.auth().signInAnonymously();
+      db = firebase.firestore();
+      store.mode = "db"; store.db = db; store.me = cred.user.uid;
+    } catch (e) {
+      console.error(e);
+      banner("Couldn't connect to Firebase. Check config.js and that Anonymous sign-in is turned on. Running in demo mode.", true);
+      return;
+    }
+    let loaded = false;
+    const timer = setTimeout(() => { if (!loaded) banner("Still connecting. Trips may be out of date until the connection comes back.", true); }, 10000);
+    db.collection("requests").onSnapshot((snap) => {
+      store.items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      if (!snap.metadata.fromCache && !loaded) { loaded = true; clearTimeout(timer); if (store.canWrite) banner("", false); }
+      store.emit();
+    }, (err) => {
+      clearTimeout(timer);
+      banner("Lost connection to the shared request list. Reload the page to reconnect.", true);
+    });
+    store.listeners = [(items) => { allRequests = items; render(); }];
+  }
+
+  // keep "posted x min ago" fresh
+  setInterval(render, 60000);
+  boot();
+})();
+</script>
+
+</body>
+</html>
