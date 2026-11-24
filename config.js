@@ -6,7 +6,14 @@
 // To share requests live between passengers and drivers, create a free
 // Firebase project and paste its web app settings here (see README.md).
 // These keys are safe to publish: access is controlled by firestore.rules.
-window.SIYAHAMBA_FIREBASE = null;
+window.SIYAHAMBA_FIREBASE = {
+  apiKey: "AIzaSyAKtPco6W-Cyw8GGXFvlsNKu6bLNNOJSEE",
+  authDomain: "siyahamba-group-taxi.firebaseapp.com",
+  projectId: "siyahamba-group-taxi",
+  storageBucket: "siyahamba-group-taxi.firebasestorage.app",
+  messagingSenderId: "482480534689",
+  appId: "1:482480534689:web:25ebb0be2bceea77836ce0"
+};
 
 /* Example:
 window.SIYAHAMBA_FIREBASE = {
