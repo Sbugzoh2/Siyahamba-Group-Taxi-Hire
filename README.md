@@ -45,7 +45,7 @@ Firebase web keys are safe to put in a public repository. Access is controlled b
 
 ## Google Maps (place search, driving distance, route map)
 
-With a Google Maps key, passengers can search any address, suburb or taxi rank. The app measures the real driving distance and shows the route on a map. Drivers also get **Directions to pick-up** and **Trip route** buttons that open Google Maps on their phone.
+With a Google Maps key, passengers can search any address, suburb or taxi rank. The app measures the real driving distance and shows the route on a map. The **Exact pick-up spot** field searches Google Maps too. When it's filled in, the distance and price are measured from that exact spot, not from the middle of the pick-up area. Drivers also get **Directions to pick-up** and **Trip route** buttons that open Google Maps on their phone.
 
 The directions buttons work even without a key. Without a key, distances are estimated from the built-in list of about 200 places.
 

@@ -247,9 +247,11 @@ textarea { resize: vertical; min-height: 64px; }
             <input id="f-dropoff" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dropoff-list" autocomplete="off" value="Sandton" placeholder="Town, suburb, rank or address">
             <ul id="dropoff-list" class="suggest" role="listbox" aria-label="Destination suggestions" hidden></ul>
           </div>
-          <div class="field full">
+          <div class="field full combo">
             <label for="f-address">Exact pick-up spot</label>
-            <input id="f-address" placeholder="Street address, landmark or taxi rank" value="">
+            <input id="f-address" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="address-list" autocomplete="off" placeholder="Street address, landmark or taxi rank" value="">
+            <ul id="address-list" class="suggest" role="listbox" aria-label="Pick-up spot suggestions" hidden></ul>
+            <span class="hint" id="address-hint">Optional. The price is measured from here when you add it.</span>
           </div>
           <div class="field">
             <label for="f-km">Distance (km)</label>
@@ -792,7 +794,8 @@ textarea { resize: vertical; min-height: 64px; }
   /* ---------- Places: search, distance and map ---------- */
   const sel = {
     pickup: { text: "Soweto", ll: PLACES["Soweto"] },
-    dropoff: { text: "Sandton", ll: PLACES["Sandton"] }
+    dropoff: { text: "Sandton", ll: PLACES["Sandton"] },
+    address: { text: "", placeId: null, ll: null }
   };
   const route = { km: 0, min: 0, source: "" };
   let kmManual = false;
@@ -810,11 +813,12 @@ textarea { resize: vertical; min-height: 64px; }
     }
     return starts.concat(has).slice(0, 6).map((name) => ({ label: name, main: name, sub: PROVINCE[name], ll: PLACES[name], src: "" }));
   }
-  async function googleSuggest(input, token) {
+  async function googleSuggest(input, token, near) {
     const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Goog-Api-Key": MAPS_KEY },
-      body: JSON.stringify({ input, includedRegionCodes: ["za", "ls", "sz", "bw", "mz", "zw", "na"], languageCode: "en", sessionToken: token })
+      body: JSON.stringify(Object.assign({ input, includedRegionCodes: ["za", "ls", "sz", "bw", "mz", "zw", "na"], languageCode: "en", sessionToken: token },
+        near ? { locationBias: { circle: { center: { latitude: near[0], longitude: near[1] }, radius: 30000 } } } : {}))
     });
     if (!res.ok) throw new Error("Places autocomplete " + res.status + ": " + (await res.text()).slice(0, 300));
     const j = await res.json();
@@ -860,7 +864,7 @@ textarea { resize: vertical; min-height: 64px; }
         const my = ++seq;
         timer = setTimeout(async () => {
           try {
-            const g = await googleSuggest(v.trim(), token);
+            const g = await googleSuggest(v.trim(), token, key === "address" ? sel.pickup.ll : null);
             if (my !== seq || input.value !== v) return;
             const seen = new Set(items.map((x) => x.label.toLowerCase()));
             items = items.slice(0, 4).concat(g.filter((x) => !seen.has(x.label.toLowerCase())));
@@ -881,7 +885,16 @@ textarea { resize: vertical; min-height: 64px; }
   }
   setupCombo("pickup");
   setupCombo("dropoff");
+  setupCombo("address");
 
+  // Where the trip starts: the exact pick-up spot when we can place it, else the pick-up area.
+  function startPoint() {
+    const a = sel.address, p = sel.pickup;
+    if (!a.text) return { point: p, exact: false };
+    if (a.placeId || a.ll) return { point: a, exact: true };
+    if (MAPS_KEY && p.text) return { point: { text: a.text + ", " + p.text }, exact: true };
+    return { point: p, exact: false };
+  }
   function isCrossBorder() {
     return [sel.pickup, sel.dropoff].some((p) => p && p.text && (PROVINCE[p.text] === "Cross-border" || CROSS_BORDER_WORDS.test(p.text)));
   }
@@ -933,8 +946,12 @@ textarea { resize: vertical; min-height: 64px; }
     refreshQuote();
   }
   async function updateRoute() {
-    const o = sel.pickup, d = sel.dropoff, hint = $("km-hint");
-    const ready = o.text && d.text;
+    const start = startPoint(), o = start.point, d = sel.dropoff, hint = $("km-hint");
+    const ready = sel.pickup.text && d.text;
+    const from = start.exact ? "your exact pick-up spot" : "the pick-up area";
+    $("address-hint").textContent = !sel.address.text ? "Optional. The price is measured from here when you add it."
+      : start.exact ? "The distance and price are measured from this spot."
+      : "We can't place this spot without Google Maps, so the price uses the pick-up area. The driver still sees this spot.";
     $("route-panel").hidden = !ready;
     if (!ready) { route.km = 0; route.min = 0; route.source = ""; return; }
     $("route-link").href = dirUrl(o, d);
@@ -950,8 +967,8 @@ textarea { resize: vertical; min-height: 64px; }
         if (my !== routeSeq) return;
         Object.assign(route, r, { source: "google" });
         if (!kmManual) $("f-km").value = r.km;
-        hint.textContent = "Driving distance from Google Maps. You can change it.";
-        $("route-info").textContent = r.km + " km by road, about " + durText(r.min) + " of driving.";
+        hint.textContent = "Driving distance from " + from + ", by Google Maps. You can change it.";
+        $("route-info").textContent = r.km + " km by road from " + from + ", about " + durText(r.min) + " of driving.";
         refreshQuote();
         return;
       } catch (e) {
@@ -967,7 +984,7 @@ textarea { resize: vertical; min-height: 64px; }
       const km = roadKm(o.ll, d.ll);
       Object.assign(route, { km, min: 0, source: "estimate" });
       if (!kmManual) $("f-km").value = km;
-      hint.textContent = "Estimated from the places you chose. You can change it.";
+      hint.textContent = "Estimated from " + from + ". You can change it.";
     } else {
       Object.assign(route, { km: 0, min: 0, source: "" });
       if (!kmManual) hint.textContent = "We can't measure this place yet. Type the distance in km.";
@@ -999,6 +1016,8 @@ textarea { resize: vertical; min-height: 64px; }
       pickupPlaceId: sel.pickup.placeId || null,
       dropoffPlaceId: sel.dropoff.placeId || null,
       pickupLL: sel.pickup.ll || null,
+      addressPlaceId: sel.address.text ? sel.address.placeId || null : null,
+      addressLL: sel.address.text ? sel.address.ll || null : null,
       dropoffLL: sel.dropoff.ll || null,
       durationMin: !kmManual && route.source === "google" ? route.min : 0,
       kmSource: kmManual ? "typed" : route.source || "typed"
@@ -1079,12 +1098,14 @@ textarea { resize: vertical; min-height: 64px; }
     return { text: r[which], placeId: r[which + "PlaceId"] || null, ll: Array.isArray(r[which + "LL"]) ? r[which + "LL"] : null };
   }
   function routeLinks(r, forDriver) {
-    const o = placeOf(r, "pickup"), d = placeOf(r, "dropoff");
-    const links = h("div", { class: "route-links" });
-    if (forDriver) {
-      const pick = r.address ? { text: r.address + ", " + r.pickup } : o;
-      links.append(h("a", { href: dirUrl(null, pick), target: "_blank", rel: "noopener" }, "Directions to pick-up"));
+    const area = placeOf(r, "pickup"), d = placeOf(r, "dropoff");
+    let o = area;
+    if (r.address) {
+      const ll = Array.isArray(r.addressLL) ? r.addressLL : null;
+      o = r.addressPlaceId || ll ? { text: r.address, placeId: r.addressPlaceId || null, ll } : { text: r.address + ", " + r.pickup };
     }
+    const links = h("div", { class: "route-links" });
+    if (forDriver) links.append(h("a", { href: dirUrl(null, o), target: "_blank", rel: "noopener" }, "Directions to pick-up"));
     links.append(h("a", { href: dirUrl(o, d), target: "_blank", rel: "noopener" }, forDriver ? "Trip route" : "View route"));
     return links;
   }
