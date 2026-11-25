@@ -381,6 +381,14 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
 .wel-roles button { font: inherit; text-align: left; border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface-2); color: var(--ink); cursor: pointer; font-weight: 700; font-size: 1rem; }
 .wel-roles button:hover { border-color: var(--accent); }
 @media (prefers-reduced-motion: no-preference) { .wel-slide { animation: wel-in .3s ease-out; } @keyframes wel-in { from { opacity: 0.4; transform: translateX(12px); } } }
+.support { border: 1.5px solid var(--warn); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; }
+.support.resolved { border-color: var(--go); }
+.support b.t { font-family: var(--f-display); }
+.thread { display: flex; flex-direction: column; gap: 6px; }
+.msg { border-radius: 10px; padding: 8px 10px; background: var(--surface-2); max-width: 92%; overflow-wrap: anywhere; }
+.msg.owner { background: var(--info-soft); align-self: flex-start; }
+.msg.mine { align-self: flex-end; background: var(--accent-soft); }
+.msg small { display: block; color: var(--muted); font-size: 0.72rem; margin-bottom: 2px; }
 .install { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
 .install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
 .install-text { flex: 1 1 220px; min-width: 0; font-size: 0.9rem; }
@@ -467,10 +475,16 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
             <ul id="dropoff-list" class="suggest" role="listbox" aria-label="Destination suggestions" hidden></ul>
           </div>
           <div class="field full combo">
-            <label for="f-address">Exact pick-up spot</label>
+            <label for="f-address">Pick-up street address</label>
             <input id="f-address" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="address-list" autocomplete="off" placeholder="Street address, landmark or taxi rank" value="">
             <ul id="address-list" class="suggest" role="listbox" aria-label="Pick-up spot suggestions" hidden></ul>
-            <span class="hint" id="address-hint">Optional. The price is measured from here when you add it.</span>
+            <span class="hint" id="address-hint">Needed. The driver comes to this address, and the price is measured from here.</span>
+          </div>
+          <div class="field full combo">
+            <label for="f-daddress">Destination street address</label>
+            <input id="f-daddress" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="daddress-list" autocomplete="off" placeholder="Street address, venue or landmark" value="">
+            <ul id="daddress-list" class="suggest" role="listbox" aria-label="Destination address suggestions" hidden></ul>
+            <span class="hint" id="daddress-hint">Needed. The driver drops you here, and the price is measured to here.</span>
           </div>
           <div class="field">
             <label for="f-km">Distance (km)</label>
@@ -527,7 +541,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
 
           <div class="field full" id="return-wrap" hidden>
             <label class="check" for="f-return"><input type="checkbox" id="f-return"> Driver waits and brings us back</label>
-            <span class="hint">For funerals, weddings and events. The driver stays over and you pay for their nights.</span>
+            <span class="hint">For funerals, weddings and events. The driver waits and brings you back. The driver pays for their own accommodation.</span>
           </div>
           <div class="field" id="nights-wrap" hidden>
             <label for="f-nights">Nights driver stays</label>
@@ -543,13 +557,15 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
             <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 072 123 4567">
           </div>
           <div class="field">
+            <label for="f-email">Email for receipts</label>
+            <input id="f-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+          </div>
+          <div class="field">
             <label for="f-pay">Payment</label>
             <select id="f-pay">
-              <option value="secure">Pay in the app (held until you arrive)</option>
-              <option value="cash">Cash to driver</option>
-              <option value="eft">EFT to driver</option>
+              <option value="wallet">From my Siyahamba wallet</option>
             </select>
-            <span class="hint" id="pay-hint">You pay Siyahamba. We only pay the driver once you've arrived safely and confirmed the trip.</span>
+            <span class="hint" id="pay-hint">The final amount comes off your wallet when you book. Siyahamba holds it and only pays the driver after you arrive.</span>
           </div>
           <div class="field full">
             <label for="f-notes">Notes for the driver</label>
@@ -566,7 +582,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       <div class="stack">
         <div class="quote" aria-live="polite">
           <div>
-            <div class="label">Estimated price for the group</div>
+            <div class="label">Final amount for the group</div>
             <div class="quote-total" id="q-total">R 0</div>
             <div class="quote-per" id="q-per"></div>
           </div>
@@ -582,6 +598,27 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           </div>
           <div class="map-wrap" id="map-wrap" hidden><iframe id="map-frame" title="Route map from pick-up to destination" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
           <p class="route-info" id="route-info"></p>
+        </div>
+
+        <div class="panel" id="wallet-panel">
+          <div class="panel-head"><h2>My wallet</h2><span class="count" id="wallet-ref">SP-…</span></div>
+          <div class="credit-row">
+            <div><div class="label">Balance</div><div class="credit-num" id="wallet-bal">R 0</div></div>
+            <button type="button" class="btn btn-ghost btn-sm" id="demo-wallet" hidden>Add R2,000 test money</button>
+          </div>
+          <p class="hint" id="wallet-note" style="margin:10px 0 0">Top up before you book. Every trip is paid from your wallet, so drivers know the money is there.</p>
+          <div class="topup-box">
+            <div class="label">How to top up</div>
+            <p id="wallet-info"></p>
+            <div>Your reference: <span class="ref" id="wallet-ref2">—</span></div>
+            <a class="btn btn-ghost btn-sm" id="wallet-card" target="_blank" rel="noopener" style="text-decoration:none;align-self:flex-start" hidden>Pay by card</a>
+            <div class="offer-form" id="wallet-claim-form">
+              <input type="number" id="w-amount" inputmode="numeric" min="50" max="100000" placeholder="Amount (R)" aria-label="Amount you sent in rand">
+              <button type="button" class="btn btn-primary btn-sm" id="w-claim">I've sent this amount</button>
+            </div>
+            <span class="form-msg" id="w-msg" role="status" aria-live="polite"></span>
+          </div>
+          <div class="mini-list" id="wallet-list"></div>
         </div>
 
         <div class="panel">
@@ -723,6 +760,10 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
             <div class="field">
               <label for="d-phone">Cellphone number</label>
               <input id="d-phone" type="tel" inputmode="tel" placeholder="e.g. 083 555 0101">
+            </div>
+            <div class="field">
+              <label for="d-email">Email</label>
+              <input id="d-email" type="email" inputmode="email" autocomplete="email" placeholder="For trip statements and messages">
             </div>
 
             <div class="form-section">Documents</div>
@@ -882,6 +923,14 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
         <div class="panel-head"><h2>Drivers to approve</h2><span class="count" id="admin-vet-count">0</span></div>
         <div class="list" id="admin-vetting"></div>
         <div id="admin-review" hidden></div>
+      </div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><h2>Issues</h2><span class="count" id="admin-issues-count">0</span></div>
+        <div class="list" id="admin-issues"></div>
+      </div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><h2>Wallet top-ups to confirm</h2><span class="count" id="admin-claims-count">0</span></div>
+        <div class="list" id="admin-claims"></div>
       </div>
       <div class="panel" style="margin-bottom:20px">
         <div class="panel-head"><h2>Passenger payments</h2></div>
@@ -1167,7 +1216,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     // because the taxi drives there and back even if the group stays
     longPerKm: 9.5,      // per km driven
     longMin: 2000,       // smallest price for a long trip
-    nightStay: 1500,     // per night the driver waits (accommodation, meals, standing time)
+    tollPerKm: 0.55,     // toll allowance per km driven on long trips (there and back)
     trailerLong: 800,    // luggage trailer
     crossBorder: 1500    // cross-border permit and border costs, per vehicle
   };
@@ -1296,7 +1345,9 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       per = RATES.longPerKm * driveKm;
       rows.push(["Drive there, " + q.km + " km", money(RATES.longPerKm * q.km)]);
       rows.push([q.roundTrip ? "Drive back with the group, " + q.km + " km" : "Driver's drive home, " + q.km + " km", money(RATES.longPerKm * q.km)]);
-      if (q.roundTrip && q.nights > 0) { per += RATES.nightStay * q.nights; rows.push(["Driver waits " + q.nights + " night" + (q.nights === 1 ? "" : "s"), money(RATES.nightStay * q.nights)]); }
+      const tolls = Math.round(RATES.tollPerKm * driveKm);
+      per += tolls; rows.push(["Toll allowance", money(tolls)]);
+      if (q.roundTrip && q.nights > 0) rows.push(["Driver waits " + q.nights + " night" + (q.nights === 1 ? "" : "s"), "Driver's own cost"]);
       if (q.crossBorder) { per += RATES.crossBorder; rows.push(["Cross-border permit and costs", money(RATES.crossBorder)]); }
       if (q.luggage === "trailer") { per += RATES.trailerLong; rows.push(["Luggage trailer", money(RATES.trailerLong)]); }
       per = Math.max(RATES.longMin, per);
@@ -1314,6 +1365,46 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     subscribe(fn) { this.listeners.push(fn); fn(this.items); },
     loadLocal() { this.items = safeLS.get("siyahamba.requests") || []; this.emit(); },
     saveLocal() { safeLS.set("siyahamba.requests", this.items); this.emit(); },
+    // Book a trip: the final amount comes off the wallet in the same write.
+    async book(data) {
+      if (this.mode === "db") {
+        const db = this.db, wRef = db.doc("wallets/" + this.me), rRef = db.collection("requests").doc();
+        return db.runTransaction(async (tx) => {
+          const w = await tx.get(wRef);
+          const bal = w.exists ? Number(w.data().balance) || 0 : 0;
+          if (!w.exists || bal < data.fare) return { ok: false, short: data.fare - bal };
+          tx.set(rRef, data);
+          tx.update(wRef, { balance: bal - data.fare, lastTrip: rRef.id, updatedAt: Date.now() });
+          return { ok: true, id: rRef.id };
+        });
+      }
+      const w = localWallet();
+      if (w.balance < data.fare) return { ok: false, short: data.fare - w.balance };
+      saveLocalWallet({ ...w, balance: w.balance - data.fare });
+      await this.create(data);
+      return { ok: true };
+    },
+    // Change the price of an open trip (taking or undoing an offer), or cancel it: the wallet moves by the difference.
+    async walletTripChange(r, patch, newFare, cancel) {
+      const delta = cancel ? r.fare : r.fare - newFare;   // + back to wallet, - from wallet
+      if (this.mode === "db") {
+        const db = this.db, wRef = db.doc("wallets/" + this.me), rRef = db.doc("requests/" + r.id);
+        return db.runTransaction(async (tx) => {
+          const w = await tx.get(wRef), rs = await tx.get(rRef);
+          if (!rs.exists || rs.data().status !== "open") return { ok: false, changed: true };
+          const bal = w.exists ? Number(w.data().balance) || 0 : 0;
+          if (bal + delta < 0) return { ok: false, short: -(bal + delta) };
+          tx.update(rRef, { ...patch, updatedAt: Date.now() });
+          tx.update(wRef, { balance: bal + delta, lastTrip: r.id, updatedAt: Date.now() });
+          return { ok: true };
+        });
+      }
+      const w = localWallet();
+      if (w.balance + delta < 0) return { ok: false, short: -(w.balance + delta) };
+      saveLocalWallet({ ...w, balance: w.balance + delta });
+      await this.update(r.id, patch);
+      return { ok: true };
+    },
     async create(data) {
       if (this.mode === "db") { await this.db.collection("requests").add(data); return; }
       this.items = [{ id: "r" + Date.now().toString(36), ...data }, ...this.items];
@@ -1482,7 +1573,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
   const sel = {
     pickup: { text: "Soweto", ll: PLACES["Soweto"] },
     dropoff: { text: "Sandton", ll: PLACES["Sandton"] },
-    address: { text: "", placeId: null, ll: null }
+    address: { text: "", placeId: null, ll: null },
+    daddress: { text: "", placeId: null, ll: null }
   };
   const route = { km: 0, min: 0, source: "" };
   let kmManual = false;
@@ -1551,7 +1643,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
         const my = ++seq;
         timer = setTimeout(async () => {
           try {
-            const g = await googleSuggest(v.trim(), token, key === "address" ? sel.pickup.ll : null);
+            const g = await googleSuggest(v.trim(), token, key === "address" ? sel.pickup.ll : key === "daddress" ? sel.dropoff.ll : null);
             if (my !== seq || input.value !== v) return;
             const seen = new Set(items.map((x) => x.label.toLowerCase()));
             items = items.slice(0, 4).concat(g.filter((x) => !seen.has(x.label.toLowerCase())));
@@ -1573,10 +1665,10 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
   setupCombo("pickup");
   setupCombo("dropoff");
   setupCombo("address");
+  setupCombo("daddress");
 
   // Where the trip starts: the exact pick-up spot when we can place it, else the pick-up area.
-  function startPoint() {
-    const a = sel.address, p = sel.pickup;
+  function exactPoint(a, p) {
     if (!a.text) return { point: p, exact: false };
     if (a.placeId || a.ll) return { point: a, exact: true };
     if (MAPS_KEY && p.text) return { point: { text: spotQuery(a.text, p.text) }, exact: true };
@@ -1584,6 +1676,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     if (found) return { point: { text: found, ll: PLACES[found] }, exact: false, suburb: found };
     return { point: p, exact: false };
   }
+  const startPoint = () => exactPoint(sel.address, sel.pickup);
+  const endPoint = () => exactPoint(sel.daddress, sel.dropoff);
   // What to ask Google for a typed spot: add the pick-up area only when the spot doesn't name a place itself.
   function spotQuery(spot, area) {
     const named = placeInText(spot);
@@ -1591,8 +1685,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     return spot + ", " + String(area || "").replace(/\s*\(.*\)$/, "") + ", South Africa";
   }
   // A typed spot that sits far from the chosen pick-up area is probably a mistake.
-  function spotMismatch() {
-    const a = sel.address, p = sel.pickup;
+  function spotMismatch(a, p) {
+    a = a || sel.address; p = p || sel.pickup;
     if (!a.text || !p.ll) return null;
     let ll = a.ll, label = a.text;
     if (!ll) { const f = placeInText(a.text); if (f) { ll = PLACES[f]; label = f; } }
@@ -1651,17 +1745,21 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     refreshQuote();
   }
   async function updateRoute() {
-    const start = startPoint(), o = start.point, d = sel.dropoff, hint = $("km-hint");
-    const ready = sel.pickup.text && d.text;
-    const from = start.exact ? "your exact pick-up spot" : start.suburb ? start.suburb : "the pick-up area";
-    const mm = spotMismatch();
-    const ah = $("address-hint");
-    ah.classList.toggle("warn-text", !!mm);
-    ah.textContent = mm ? "This spot looks like it's in " + mm.label + ", about " + mm.km + " km from " + sel.pickup.text + ". Check the Pick-up box. The price is measured from " + from + "."
-      : !sel.address.text ? "Optional. The price is measured from here when you add it."
-      : start.exact ? "The distance and price are measured from this spot."
-      : start.suburb ? "The price is measured from " + start.suburb + ". With Google Maps turned on, it's measured from the exact street address."
-      : "We can't place this spot without Google Maps, so the price uses the pick-up area. The driver still sees this spot.";
+    const start = startPoint(), end = endPoint(), o = start.point, d = end.point, hint = $("km-hint");
+    const ready = sel.pickup.text && sel.dropoff.text;
+    const from = start.exact ? "your pick-up address" : start.suburb ? start.suburb : "the pick-up area";
+    const to = end.exact ? "your destination address" : end.suburb ? end.suburb : "the destination area";
+    const addrHint = (el, a, p, pt, areaBox, word) => {
+      const mm = spotMismatch(a, p);
+      el.classList.toggle("warn-text", !!mm);
+      el.textContent = mm ? "This address looks like it's in " + mm.label + ", about " + mm.km + " km from " + p.text + ". Check the " + areaBox + " box."
+        : !a.text ? "Needed. The price is measured " + word + " this address."
+        : pt.exact ? "The distance and price are measured " + word + " this address."
+        : pt.suburb ? "The price is measured " + word + " " + pt.suburb + ". With Google Maps turned on, it's measured " + word + " the exact street address."
+        : "We can't place this address without Google Maps, so the price uses the area. The driver still sees the address.";
+    };
+    addrHint($("address-hint"), sel.address, sel.pickup, start, "Pick-up", "from");
+    addrHint($("daddress-hint"), sel.daddress, sel.dropoff, end, "Destination", "to");
     $("route-panel").hidden = !ready;
     if (!ready) { route.km = 0; route.min = 0; route.source = ""; return; }
     $("route-link").href = dirUrl(o, d);
@@ -1677,8 +1775,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
         if (my !== routeSeq) return;
         Object.assign(route, r, { source: "google" });
         if (!kmManual) $("f-km").value = r.km;
-        hint.textContent = "Driving distance from " + from + ", by Google Maps. You can change it.";
-        $("route-info").textContent = r.km + " km by road from " + from + ", about " + durText(r.min) + " of driving.";
+        hint.textContent = "Driving distance from " + from + " to " + to + ", by Google Maps.";
+        $("route-info").textContent = r.km + " km by road from " + from + " to " + to + ", about " + durText(r.min) + " of driving.";
         refreshQuote();
         return;
       } catch (e) {
@@ -1694,7 +1792,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       const km = roadKm(o.ll, d.ll);
       Object.assign(route, { km, min: 0, source: "estimate" });
       if (!kmManual) $("f-km").value = km;
-      hint.textContent = "Estimated from " + from + ". You can change it.";
+      hint.textContent = "Estimated from " + from + " to " + to + ". You can change it.";
     } else {
       Object.assign(route, { km: 0, min: 0, source: "" });
       if (!kmManual) hint.textContent = "We can't measure this place yet. Type the distance in km.";
@@ -1703,11 +1801,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
   }
   $("f-km").addEventListener("input", () => { kmManual = true; $("km-hint").textContent = "Using the distance you typed."; refreshQuote(); });
   ["f-pax", "f-vehicle", "f-luggage", "f-nights", "f-datetime"].forEach((id) => $(id).addEventListener("input", refreshQuote));
-  $("f-pay").addEventListener("change", () => {
-    $("pay-hint").textContent = $("f-pay").value === "secure"
-      ? "You pay Siyahamba. We only pay the driver once you've arrived safely and confirmed the trip."
-      : "You pay the driver directly. Siyahamba can't hold or refund this money.";
-  });
+
 
   function readForm() {
     return {
@@ -1715,6 +1809,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       pickup: $("f-pickup").value.trim(),
       dropoff: $("f-dropoff").value.trim(),
       address: $("f-address").value.trim(),
+      dropAddress: $("f-daddress").value.trim(),
       km: Math.round(Number($("f-km").value) || 0),
       pax: Math.round(Number($("f-pax").value) || 0),
       vehicle: $("f-vehicle").value,
@@ -1725,6 +1820,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       nights: tripType === "long" && $("f-return").checked ? Math.max(0, Math.round(Number($("f-nights").value) || 0)) : 0,
       contactName: $("f-name").value.trim(),
       contactPhone: $("f-phone").value.trim(),
+      contactEmail: $("f-email").value.trim(),
       payMode: $("f-pay").value,
       payment: $("f-pay").selectedOptions[0].textContent,
       notes: $("f-notes").value.trim(),
@@ -1734,6 +1830,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       pickupLL: sel.pickup.ll || null,
       addressPlaceId: sel.address.text ? sel.address.placeId || null : null,
       addressLL: sel.address.text ? sel.address.ll || null : null,
+      dropAddressPlaceId: sel.daddress.text ? sel.daddress.placeId || null : null,
+      dropAddressLL: sel.daddress.text ? sel.daddress.ll || null : null,
       dropoffLL: sel.dropoff.ll || null,
       durationMin: !kmManual && route.source === "google" ? route.min : 0,
       kmSource: kmManual ? "typed" : route.source || "typed"
@@ -1753,6 +1851,11 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     }
     const q = quote(f);
     $("q-total").textContent = money(q.total);
+    const bal = walletBalance(), shortBy = q.total - bal;
+    $("pay-hint").className = "hint" + (shortBy > 0 && walletKnown() ? " warn-text" : "");
+    $("pay-hint").textContent = !walletKnown() ? "The final amount comes off your wallet when you book. Siyahamba holds it and only pays the driver after you arrive."
+      : shortBy > 0 ? "Your wallet has " + money(bal) + ". Top up at least " + money(shortBy) + " more to book this trip."
+      : "Your wallet has " + money(bal) + ". " + money(q.total) + " comes off when you book. Siyahamba only pays the driver after you arrive.";
     $("q-per").textContent = "About " + money(q.perPerson) + " per person for " + f.pax + " people";
     q.rows.forEach(([k, v]) => rows.append(h("dt", { text: k }), h("dd", { text: v })));
     let w = "";
@@ -1760,7 +1863,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     if (f.type === "long" && f.km <= SHORT_MAX_KM) w = "This is only " + f.km + " km. A short trip will cost you less.";
     if (f.crossBorder) w = (f.type === "short" ? "Cross-border trips are long trips. " : "") + "Everyone needs a valid passport, and the driver needs a cross-border permit.";
     warn.textContent = w; warn.hidden = !w;
-    $("q-note").textContent = "Estimate only. Toll fees are extra. The driver confirms the final price when they accept.";
+    $("q-note").textContent = "This is the final amount. It includes the driver, fuel, " + (f.type === "long" ? "the drive back, toll allowance, " : "") + (f.luggage === "trailer" ? "the trailer, " : "") + "and Siyahamba's fee." + (f.roundTrip ? " The driver pays for their own accommodation." : "") + " Nothing more to pay.";
   }
 
   $("req-form").addEventListener("submit", async (e) => {
@@ -1770,11 +1873,14 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const problems = [];
     if (!f.pickup) problems.push("pick-up place");
     if (!f.dropoff) problems.push("destination");
+    if (!f.address) problems.push("the pick-up street address");
+    if (!f.dropAddress) problems.push("the destination street address");
     if (!f.km) problems.push("distance");
     if (f.pax < 2) problems.push("group size (at least 2)");
     if (f.when !== "now" && !f.when) problems.push("date and time");
     if (!f.contactName) problems.push("group leader's name");
     if (!/^[+\d][\d\s-]{8,}$/.test(f.contactPhone)) problems.push("a cellphone number the driver can call");
+    if (!/^\S+@\S+\.\S+$/.test(f.contactEmail)) problems.push("an email address for your receipts");
     if (problems.length) { msg.classList.add("err"); msg.textContent = "Please add: " + problems.join(", ") + "."; return; }
     if (f.type === "short" && f.km > SHORT_MAX_KM) { msg.classList.add("err"); msg.textContent = "This trip is over " + SHORT_MAX_KM + " km. Choose Long trip."; return; }
     if (f.type === "short" && f.crossBorder) { msg.classList.add("err"); msg.textContent = "Cross-border trips are long trips. Choose Long trip."; return; }
@@ -1784,13 +1890,23 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       return;
     }
     const q = quote(f);
-    const data = { ...f, vehicle: q.vehicle, vehicles: q.count, fare: q.total, status: "open", requesterId: store.me, createdAt: Date.now(), updatedAt: Date.now() };
-    if (f.payMode === "secure") data.payStatus = "unpaid";
-    const btn = $("submit-btn"); btn.disabled = true; btn.textContent = "Sending…";
+    const email = f.contactEmail; delete f.contactEmail;   // kept private in the profile, not on the trip
+    const data = { ...f, payMode: "wallet", payment: "Siyahamba wallet", payStatus: "held", heldAt: Date.now(), vehicle: q.vehicle, vehicles: q.count, fare: q.total, status: "open", requesterId: store.me, createdAt: Date.now(), updatedAt: Date.now() };
+    const btn = $("submit-btn"); btn.disabled = true; btn.textContent = "Paying and sending…";
     try {
-      await store.create(data);
-      if (store.mode === "db") store.db.doc("profiles/" + store.me).set({ name: f.contactName, phone: f.contactPhone, updatedAt: Date.now() }).catch((e) => console.warn(e));
-      msg.classList.add("ok"); msg.textContent = "Request sent. Drivers can see it now.";
+      if (store.mode === "db") {
+        // Save their details first, so Siyahamba knows who a top-up is from even before the first trip.
+        await store.db.doc("profiles/" + store.me).set({ name: f.contactName, phone: f.contactPhone, email, updatedAt: Date.now() }, { merge: true }).catch((e) => console.warn(e));
+        await ensureWallet();
+      }
+      const res = await store.book(data);
+      if (!res.ok) {
+        msg.classList.add("err");
+        msg.textContent = "Your wallet doesn't have enough. Top up at least " + money(res.short) + " more, then tap Request taxi.";
+        $("wallet-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      msg.classList.add("ok"); msg.textContent = money(data.fare) + " paid from your wallet. Request sent: drivers can see it now.";
       $("f-notes").value = "";
     } catch (err) {
       msg.classList.add("err");
@@ -1813,15 +1929,20 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       h("span", { text: whenText(r.when) }),
       h("span", { text: r.purpose }),
       h("span", { text: lug }),
-      r.roundTrip ? h("span", null, "Return trip, ", h("b", { text: String(r.nights) }), " night" + (r.nights === 1 ? "" : "s")) : null,
+      r.roundTrip ? h("span", null, "Return trip, driver waits ", h("b", { text: String(r.nights) }), " night" + (r.nights === 1 ? "" : "s") + " (driver's own accommodation)") : null,
       r.crossBorder ? h("span", null, h("b", { text: "Cross-border" })) : null
     );
   }
   function placeOf(r, which) {
     return { text: r[which], placeId: r[which + "PlaceId"] || null, ll: Array.isArray(r[which + "LL"]) ? r[which + "LL"] : null };
   }
+  function dropPoint(r) {
+    if (!r.dropAddress) return placeOf(r, "dropoff");
+    const ll = Array.isArray(r.dropAddressLL) ? r.dropAddressLL : null;
+    return r.dropAddressPlaceId || ll ? { text: r.dropAddress, placeId: r.dropAddressPlaceId || null, ll } : { text: spotQuery(r.dropAddress, r.dropoff) };
+  }
   function routeLinks(r, forDriver) {
-    const area = placeOf(r, "pickup"), d = placeOf(r, "dropoff");
+    const area = placeOf(r, "pickup"), d = dropPoint(r);
     let o = area;
     if (r.address) {
       const ll = Array.isArray(r.addressLL) ? r.addressLL : null;
@@ -1886,7 +2007,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       const note = h("div", { class: "map-note", text: "Waiting for the taxi's location…" });
       const map = L.map(el, { zoomControl: true, attributionControl: true, scrollWheelZoom: false }).setView([-26.2, 28.05], 11);
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
-      const o = placeOf(r, "pickup"), d = placeOf(r, "dropoff"), pts = [];
+      const o = placeOf(r, "pickup"), d = { ll: Array.isArray(r.dropAddressLL) ? r.dropAddressLL : placeOf(r, "dropoff").ll }, pts = [];
       const spot = Array.isArray(r.addressLL) ? r.addressLL : o.ll;
       if (spot) { L.circleMarker(spot, { radius: 8, color: "#1A7F52", fillColor: "#42C08A", fillOpacity: 1, weight: 3 }).bindTooltip("Pick-up").addTo(map); pts.push(spot); }
       if (d.ll) { L.circleMarker(d.ll, { radius: 8, color: "#1B2631", fillColor: "#ffffff", fillOpacity: 1, weight: 3 }).bindTooltip("Destination").addTo(map); pts.push(d.ll); }
@@ -2167,6 +2288,70 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
   $("welcome").addEventListener("cancel", () => safeLS.set("siyahamba.welcomed", true));
   document.querySelectorAll("#welcome [data-role]").forEach((b) => b.addEventListener("click", () => closeWelcome(b.dataset.role)));
 
+  /* ---------- Passenger wallet ---------- */
+  let wallet = null, walletClaimsMine = [], walletTopupsMine = [];
+  const walletCode = (id) => "SP-" + String(id || "").replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase();
+  function localWallet() { return safeLS.get("siyahamba.wallet") || { balance: 0 }; }
+  function saveLocalWallet(w) { safeLS.set("siyahamba.wallet", w); wallet = w; renderWallet(); refreshQuote(); }
+  const walletKnown = () => store.mode !== "db" || (isPermanent() && wallet != null);
+  const walletBalance = () => Number(wallet && wallet.balance) || 0;
+  async function ensureWallet() {
+    if (store.mode !== "db" || !isPermanent()) return;
+    const ref = store.db.doc("wallets/" + store.me);
+    const s = await ref.get();
+    if (!s.exists) await ref.set({ balance: 0, code: walletCode(store.me), createdAt: Date.now(), updatedAt: Date.now() });
+  }
+  function renderWallet() {
+    const code = (wallet && wallet.code) || walletCode(store.me);
+    $("wallet-bal").textContent = money(walletBalance());
+    $("wallet-ref").textContent = code; $("wallet-ref2").textContent = code;
+    $("wallet-info").textContent = PAYMENT_INFO;
+    $("wallet-card").hidden = !CARD_PAY_URL; if (CARD_PAY_URL) $("wallet-card").href = CARD_PAY_URL;
+    $("demo-wallet").hidden = store.mode === "db";
+    $("wallet-claim-form").hidden = store.mode !== "db";
+    const signedOut = store.mode === "db" && !isPermanent();
+    $("wallet-note").textContent = signedOut ? "Sign in to see your wallet. Every trip is paid from it before drivers see your request."
+      : "Top up before you book. Every trip is paid from your wallet, so drivers know the money is there.";
+    const rows = [
+      ...walletClaimsMine.filter((c) => c.status === "pending").map((c) => ({ at: c.at, label: "Top-up waiting for Siyahamba to confirm", amt: "+" + money(c.amount), muted: true })),
+      ...walletTopupsMine.map((t) => ({ at: t.at, label: (t.ref || "Top-up"), amt: "+" + money(t.amount) })),
+      ...allRequests.filter((r) => r.requesterId === store.me && r.payMode === "wallet").map((r) => ({ at: r.createdAt, label: "Trip " + r.pickup + " → " + r.dropoff, amt: "−" + money(r.originalFare || r.fare) })),
+      ...allRequests.filter((r) => r.requesterId === store.me && r.payMode === "wallet" && r.payStatus === "refunded").map((r) => ({ at: r.refundedAt || r.updatedAt, label: "Refund: trip " + r.pickup + " → " + r.dropoff, amt: "+" + money(r.fare) }))
+    ].sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 8);
+    $("wallet-list").replaceChildren(...rows.map((x) => h("div", { style: x.muted ? "opacity:0.7" : null },
+      h("span", { text: new Date(x.at || Date.now()).toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) + " · " + x.label }), h("b", { text: x.amt }))));
+  }
+  $("demo-wallet").addEventListener("click", () => { saveLocalWallet({ ...localWallet(), balance: localWallet().balance + 2000 }); });
+  $("w-claim").addEventListener("click", async () => {
+    const msg = $("w-msg"), amt = Math.round(Number($("w-amount").value) || 0);
+    msg.className = "form-msg";
+    if (store.mode === "db" && !isPermanent()) { openAuth("Sign in to top up your wallet."); return; }
+    if (!(amt >= 50 && amt <= 100000)) { msg.classList.add("err"); msg.textContent = "Enter the amount you sent, from R50."; return; }
+    $("w-claim").disabled = true;
+    try {
+      await ensureWallet();
+      await store.db.collection("walletClaims").add({ userId: store.me, amount: amt, ref: (wallet && wallet.code) || walletCode(store.me), at: Date.now(), status: "pending" });
+      msg.classList.add("ok"); msg.textContent = "Thanks. Siyahamba can see your top-up now and adds it once the money arrives.";
+      $("w-amount").value = "";
+    } catch (e) { console.warn(e); msg.classList.add("err"); msg.textContent = "That didn't send. Check your connection and try again."; }
+    $("w-claim").disabled = false;
+  });
+
+  /* ---------- Keep half-typed text when the screen redraws ---------- */
+  // Cards are rebuilt whenever trips change. These keep what someone typed, which forms are open, and the cursor.
+  const drafts = {};
+  let focusKey = null, focusSel = null;
+  document.addEventListener("focusin", (e) => { focusKey = e.target && e.target.dataset ? e.target.dataset.keep || null : null; });
+  document.addEventListener("focusout", (e) => { if (e.target && e.target.dataset && e.target.dataset.keep === focusKey) { try { focusSel = [e.target.selectionStart, e.target.selectionEnd]; } catch (err) {} } });
+  function keep(el, key) {
+    el.dataset.keep = key;
+    if (drafts[key] != null) el.value = drafts[key];
+    el.addEventListener("input", () => { drafts[key] = el.value; });
+    if (focusKey === key) requestAnimationFrame(() => { if (!el.isConnected) return; el.focus(); try { if (focusSel && el.setSelectionRange) el.setSelectionRange(focusSel[0], focusSel[1]); } catch (err) {} });
+    return el;
+  }
+  function clearDraft(...keys) { keys.forEach((k) => { delete drafts[k]; }); }
+
   /* ---------- Loading placeholders ---------- */
   function skeletons(n) { return Array.from({ length: n || 2 }, () => h("div", { class: "skel", "aria-hidden": "true" }, h("i", { class: "w1" }), h("i", { class: "w2" }), h("i", { class: "w3" }))); }
 
@@ -2348,7 +2533,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     myOfferCache[r.id] = null; render();
   }
   function driverOfferBox(r, approved) {
-    if (!approved || (r.payMode === "secure" && (r.payStatus || "unpaid") !== "unpaid")) return null;
+    if (!approved) return null;
     if (r.offerTo === store.me) return h("div", { class: "offer-box chosen" }, h("b", { text: "The group chose your offer of " + money(r.fare) + "." }), h("span", { text: "Tap Accept job to confirm. The fee is 10% of your price." }));
     loadMyOffer(r.id);
     const mine = myOfferCache[r.id];
@@ -2356,20 +2541,22 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       h("div", null, h("button", { type: "button", class: "linkbtn", onclick: () => withdrawOffer(r).catch((e) => console.warn(e)) }, "Withdraw offer")));
     const wrap = h("div");
     const openForm = () => {
+      drafts["offerOpen-" + r.id] = true;
       const base = r.originalFare || r.fare;
-      const amt = h("input", { type: "number", inputmode: "numeric", min: String(Math.ceil(base * 0.5)), max: String(Math.floor(base * 3)), placeholder: "Your price (R)", "aria-label": "Your price in rand" });
-      const note = h("input", { class: "note", maxlength: "200", placeholder: "Optional: why, e.g. toll roads", "aria-label": "Note for the group" });
+      const amt = keep(h("input", { type: "number", inputmode: "numeric", min: String(Math.ceil(base * 0.5)), max: String(Math.floor(base * 3)), placeholder: "Your price (R)", "aria-label": "Your price in rand" }), "offAmt-" + r.id);
+      const note = keep(h("input", { class: "note", maxlength: "200", placeholder: "Optional: why, e.g. toll roads", "aria-label": "Note for the group" }), "offNote-" + r.id);
       const msg = h("span", { class: "form-msg" });
       const send = h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async () => {
         const v = Math.round(Number(amt.value));
         if (!(v >= base * 0.5 && v <= base * 3)) { msg.className = "form-msg err"; msg.textContent = "Offer between " + money(Math.ceil(base * 0.5)) + " and " + money(Math.floor(base * 3)) + "."; return; }
         send.disabled = true;
-        try { await sendOffer(r, v, note.value.trim()); } catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "Your offer didn't send. Try again."; send.disabled = false; }
+        try { await sendOffer(r, v, note.value.trim()); clearDraft("offerOpen-" + r.id, "offAmt-" + r.id, "offNote-" + r.id); } catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "Your offer didn't send. Try again."; send.disabled = false; }
       } }, "Send offer");
       wrap.replaceChildren(h("div", { class: "offer-box" }, h("b", { text: "Offer your price for this trip" }), h("div", { class: "offer-form" }, amt, note, send), msg));
-      amt.focus();
+      if (!focusKey) amt.focus();
     };
-    wrap.append(h("button", { type: "button", class: "linkbtn", onclick: openForm }, "Offer a different price"));
+    if (drafts["offerOpen-" + r.id]) openForm();
+    else wrap.append(h("button", { type: "button", class: "linkbtn", onclick: () => { focusKey = "offAmt-" + r.id; openForm(); } }, "Offer a different price"));
     return wrap;
   }
   function passengerOffersBox(r) {
@@ -2381,7 +2568,11 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       return h("div", { class: "offer-box chosen" },
         h("b", { text: "You chose " + ((o && o.driverName) || "a driver") + "'s offer of " + money(r.fare) + "." }),
         h("span", { text: "Waiting for them to confirm. The original price was " + money(r.originalFare) + "." }),
-        h("div", null, h("button", { type: "button", class: "linkbtn", onclick: (e) => { e.currentTarget.disabled = true; store.update(r.id, { fare: r.originalFare, offerTo: "", offerAt: Date.now() }).catch((err) => console.warn(err)); } }, "Choose a different offer")));
+        h("div", null, h("button", { type: "button", class: "linkbtn", onclick: async (e) => {
+          const b = e.currentTarget; b.disabled = true;
+          const res = await store.walletTripChange(r, { fare: r.originalFare, offerTo: "", offerAt: Date.now() }, r.originalFare, false).catch((err) => { console.warn(err); return { ok: false }; });
+          if (!res.ok) { b.disabled = false; if (res.short) toast(h("span", { text: "Top up at least " + money(res.short) + " to go back to the original price." })); }
+        } }, "Choose a different offer")));
     }
     if (!list.length) return null;
     return h("div", { class: "offer-box" }, h("b", { text: "Price offers from drivers (" + list.length + ")" }),
@@ -2390,11 +2581,13 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           h("div", { class: "meta" }, h("span", { text: (VEHICLES[o.driverVehicle] || VEHICLES.quantum).short }), h("span", { class: "plate", text: o.driverReg || "" }), o.note ? h("span", { text: "“" + o.note + "”" }) : null)),
         h("span", { class: "amt", text: money(o.amount) }),
         h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
-          if (r.payMode === "secure" && (r.payStatus || "unpaid") !== "unpaid") return;
           e.currentTarget.disabled = true;
-          try { await store.update(r.id, { fare: o.amount, offerTo: o.driverId, offerAt: Date.now(), originalFare: r.originalFare || r.fare }); }
-          catch (err) { console.warn(err); e.currentTarget.disabled = false; }
-        } }, "Accept " + money(o.amount)))));
+          const b = e.currentTarget;
+          try {
+            const res = await store.walletTripChange(r, { fare: o.amount, offerTo: o.driverId, offerAt: Date.now(), originalFare: r.originalFare || r.fare }, o.amount, false);
+            if (!res.ok) { b.disabled = false; toast(h("span", { text: res.short ? "Top up at least " + money(res.short) + " to take this offer." : "This trip changed. Try again." })); if (res.short) $("wallet-panel").scrollIntoView({ behavior: "smooth" }); }
+          } catch (err) { console.warn(err); b.disabled = false; }
+        } }, "Accept " + money(o.amount) + (o.amount > r.fare ? " (pay " + money(o.amount - r.fare) + " more)" : o.amount < r.fare ? " (get " + money(r.fare - o.amount) + " back)" : "")))));
   }
 
   /* ---------- Owner: business charts ---------- */
@@ -2462,11 +2655,12 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
 
   /* ---------- Receipts ---------- */
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  function openReceipt(r, forDriver) {
+  function receiptHtml(r, forDriver) {
     const ref = tripRef(r.id), when = r.when && r.when !== "now" ? new Date(r.when) : new Date(r.acceptedAt || r.createdAt);
     const veh = VEHICLES[r.driverVehicle || r.vehicle] || VEHICLES.quantum;
     const fee = Number(r.commission) || 0;
-    const paidHow = r.payMode === "secure" ? ({ released: "Paid in the app. Paid out to the driver.", held: "Paid in the app. Held by Siyahamba.", refunded: "Paid in the app. Refunded." }[r.payStatus] || "Pay in the app")
+    const paidHow = r.payMode === "wallet" ? ({ released: "Paid from the Siyahamba wallet. Paid out to the driver.", refunded: "Paid from the Siyahamba wallet. Refunded." }[r.payStatus] || "Paid from the Siyahamba wallet. Held by Siyahamba until the trip is confirmed.")
+      : r.payMode === "secure" ? ({ released: "Paid in the app. Paid out to the driver.", held: "Paid in the app. Held by Siyahamba.", refunded: "Paid in the app. Refunded." }[r.payStatus] || "Pay in the app")
       : (r.payment || "Paid to the driver");
     const row = (k, v) => "<tr><th>" + esc(k) + "</th><td>" + esc(v) + "</td></tr>";
     const biz = [BUSINESS.name, BUSINESS.reg ? "Reg. " + BUSINESS.reg : "", BUSINESS.address, BUSINESS.email, BUSINESS.phone].filter(Boolean).map(esc).join("<br>");
@@ -2478,7 +2672,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       + "<header><div><h1>Siya<span>hamba</span></h1><div class='muted'>Group taxi hire</div></div><div class='muted' style='text-align:right'>" + biz + "</div></header>"
       + "<h2 style='margin:0 0 4px'>" + (forDriver ? "Trip statement" : "Receipt") + " " + esc(ref) + "</h2><div class='muted'>Issued " + esc(new Date().toLocaleDateString("en-ZA", { day: "numeric", month: "long", year: "numeric" })) + "</div><table>"
       + row("Trip date", when.toLocaleString("en-ZA", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }))
-      + row("From", (r.address ? r.address + ", " : "") + r.pickup) + row("To", r.dropoff)
+      + row("From", (r.address ? r.address + ", " : "") + r.pickup) + row("To", (r.dropAddress ? r.dropAddress + ", " : "") + r.dropoff)
       + row("Distance", r.km + " km" + (r.roundTrip ? " each way, return trip" : "")) + row("Group", r.pax + " people · " + (r.purpose || ""))
       + row("Group leader", r.contactName) + row("Driver", (r.driverName || "") + " · " + veh.name + " · " + (r.driverReg || ""))
       + row("Payment", paidHow)
@@ -2486,10 +2680,86 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
         : "<tr class='total'><th>Total</th><td>" + esc(money(r.fare)) + "</td></tr>")
       + "</table><p class='muted'>Thank you for travelling with Siyahamba. Keep this " + (forDriver ? "statement" : "receipt") + " for your records.</p>"
       + "<button class='btn' onclick='window.print()'>Print or save as PDF</button></main></body></html>";
+    return html;
+  }
+  function openReceipt(r, forDriver) {
+    const html = receiptHtml(r, forDriver);
     const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
     const w = window.open(url, "_blank");
     if (!w) toast(h("span", { text: "Allow pop-ups for this site to see the receipt." }));
     setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  // Queue both receipts when a trip completes. They're sent by Firebase's Trigger Email extension, if installed.
+  async function queueReceipts(r) {
+    if (store.mode !== "db") return;
+    const done = { ...r, status: "completed" }, ref = tripRef(r.id);
+    const mails = [
+      [r.id + "_receipt_p", r.requesterId, "Your Siyahamba receipt " + ref, receiptHtml(done, false)],
+      [r.id + "_receipt_d", r.driverId, "Your Siyahamba trip statement " + ref, receiptHtml(done, true)]
+    ];
+    for (const [id, to, subject, html] of mails) {
+      try { await store.db.doc("mail/" + id).set({ toUids: [to], message: { subject, html: html.replace(/<button[\s\S]*?<\/button>/, "") }, tripId: r.id, at: Date.now(), kind: "receipt" }); }
+      catch (e) { console.warn("receipt email not queued", e); }
+    }
+  }
+
+  /* ---------- Issues: report a problem, talk to Siyahamba ---------- */
+  const msgSubs = {}, msgData = {};
+  function watchMessages(rid) {
+    if (msgSubs[rid] || store.mode !== "db") return;
+    msgSubs[rid] = store.db.collection("requests/" + rid + "/messages").orderBy("at").onSnapshot((snap) => {
+      msgData[rid] = snap.docs.map((d) => d.data()); render();
+    }, (e) => { console.warn(e); delete msgSubs[rid]; setTimeout(render, 4000); });
+  }
+  function threadEl(rid, viewer) {
+    const list = msgData[rid] || [];
+    return h("div", { class: "thread" }, ...list.map((m) => h("div", { class: "msg" + (m.from === "owner" ? " owner" : m.from === viewer ? " mine" : "") },
+      h("small", { text: (m.from === "owner" ? "Siyahamba" + (m.to && m.to !== "both" && viewer === "owner" ? " to the " + m.to : "") : m.from === viewer ? "You" : m.from === "passenger" ? "Passenger" : "Driver") + " · " + ago(m.at) }),
+      h("span", { text: m.text }))));
+  }
+  async function sendMessage(r, from, text, to) {
+    await store.db.collection("requests/" + r.id + "/messages").add({ from, by: store.me, text: text.slice(0, 1000), at: Date.now(), to: to || "owner" });
+  }
+  function supportBox(r, role) {
+    if (store.mode !== "db") return null;
+    const canReport = role === "passenger" ? r.status !== "open" || r.issueStatus : ["accepted", "enroute", "ontrip", "completed", "cancelled"].includes(r.status);
+    if (!r.issueStatus && !canReport) return null;
+    if (r.issueStatus) watchMessages(r.id);
+    const wrap = h("div");
+    const form = (label, onSend, key) => {
+      const ta = keep(h("textarea", { maxlength: "1000", "aria-label": label, placeholder: label }), key);
+      const msg = h("span", { class: "form-msg" });
+      const send = h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async () => {
+        const text = ta.value.trim(); if (!text) { ta.focus(); return; }
+        send.disabled = true;
+        try { await onSend(text); ta.value = ""; clearDraft(key); } catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "That didn't send. Try again."; }
+        send.disabled = false;
+      } }, "Send");
+      return h("div", { style: "display:flex;flex-direction:column;gap:6px" }, ta, h("div", { class: "trip-actions" }, send, msg));
+    };
+    if (!r.issueStatus) {
+      const openReport = () => {
+        drafts["supOpen-" + r.id] = true;
+        wrap.replaceChildren(h("div", { class: "support" }, h("b", { class: "t", text: "Report a problem to Siyahamba" }),
+          h("span", { class: "hint", text: "Tell us what happened. We'll reply here and by email with what we're doing about it." + (r.payStatus === "held" ? " The payment is held until it's sorted out." : "") }),
+          form("What went wrong?", async (text) => {
+            const db = store.db, batch = db.batch(), now = Date.now();
+            batch.update(db.doc("requests/" + r.id), { issueStatus: "open", issueBy: role, issueAt: now, updatedAt: now });
+            batch.set(db.collection("requests/" + r.id + "/messages").doc(), { from: role, by: store.me, text: text.slice(0, 1000), at: now, to: "owner" });
+            await batch.commit();
+            clearDraft("supOpen-" + r.id);
+          }, "sup-" + r.id)));
+      };
+      if (drafts["supOpen-" + r.id]) openReport();
+      else wrap.append(h("button", { type: "button", class: "linkbtn", onclick: () => { focusKey = "sup-" + r.id; openReport(); } }, "Report a problem"));
+      return wrap;
+    }
+    const open = r.issueStatus === "open";
+    return h("div", { class: "support" + (open ? "" : " resolved") },
+      h("b", { class: "t", text: open ? "Problem reported. Siyahamba is looking into it." : "Siyahamba marked this problem as resolved." }),
+      threadEl(r.id, role),
+      open ? form("Add a message for Siyahamba", (text) => sendMessage(r, role, text, "owner"), "msg-" + r.id) : null);
   }
 
   /* ---------- Repeat booking ---------- */
@@ -2501,9 +2771,10 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     $("f-pickup").value = from.text; $("f-dropoff").value = to.text;
     sel.pickup = { text: from.text, placeId: from.placeId, ll: from.ll };
     sel.dropoff = { text: to.text, placeId: to.placeId, ll: to.ll };
-    const spot = reverse ? "" : r.address || "";
-    $("f-address").value = spot;
-    sel.address = spot ? { text: spot, placeId: r.addressPlaceId || null, ll: Array.isArray(r.addressLL) ? r.addressLL : null } : { text: "", placeId: null, ll: null };
+    const pa = { text: r.address || "", placeId: r.addressPlaceId || null, ll: Array.isArray(r.addressLL) ? r.addressLL : null };
+    const da = { text: r.dropAddress || "", placeId: r.dropAddressPlaceId || null, ll: Array.isArray(r.dropAddressLL) ? r.dropAddressLL : null };
+    sel.address = reverse ? da : pa; sel.daddress = reverse ? pa : da;
+    $("f-address").value = sel.address.text; $("f-daddress").value = sel.daddress.text;
     $("f-pax").value = r.pax; $("f-vehicle").value = VEHICLES[r.vehicle] ? r.vehicle : "auto";
     $("f-purpose").value = r.purpose || $("f-purpose").value; $("f-luggage").value = r.luggage || "none";
     if (r.payMode && $("f-pay").querySelector('option[value="' + r.payMode + '"]')) $("f-pay").value = r.payMode;
@@ -2574,15 +2845,15 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       const mine = store.mode === "db" ? null : localRatings().find((x) => x.id === rid);
       return h("div", { class: "rated-note" }, "You rated this trip", mine ? h("span", { class: "gold-stars", text: " " + "★".repeat(mine.stars) }) : ". Thank you.");
     }
-    let stars = 0;
-    const btns = [1, 2, 3, 4, 5].map((n) => h("button", { type: "button", "aria-pressed": "false", "aria-label": n + " star" + (n === 1 ? "" : "s"),
-      onclick: () => { stars = n; btns.forEach((b, i) => b.setAttribute("aria-pressed", i < n ? "true" : "false")); send.disabled = false; } }, "★"));
-    const note = h("textarea", { maxlength: "300", placeholder: role === "driver" ? "Optional: how was the driver and the taxi?" : "Optional: how was the group?", "aria-label": "Comment (optional)" });
+    let stars = Number(drafts["stars-" + rid]) || 0;
+    const btns = [1, 2, 3, 4, 5].map((n) => h("button", { type: "button", "aria-pressed": n <= stars ? "true" : "false", "aria-label": n + " star" + (n === 1 ? "" : "s"),
+      onclick: () => { stars = n; drafts["stars-" + rid] = n; btns.forEach((b, i) => b.setAttribute("aria-pressed", i < n ? "true" : "false")); send.disabled = false; } }, "★"));
+    const note = keep(h("textarea", { maxlength: "300", placeholder: role === "driver" ? "Optional: how was the driver and the taxi?" : "Optional: how was the group?", "aria-label": "Comment (optional)" }), "rate-" + rid);
     const msg = h("span", { class: "form-msg" });
-    const send = h("button", { type: "button", class: "btn btn-primary btn-sm", disabled: true, onclick: async () => {
+    const send = h("button", { type: "button", class: "btn btn-primary btn-sm", disabled: !stars, onclick: async () => {
       if (store.mode === "db" && !isPermanent()) { openAuth("Sign in to rate your trip."); return; }
       send.disabled = true; msg.textContent = "";
-      try { await giveRating(r, role, stars, note.value.trim()); }
+      try { await giveRating(r, role, stars, note.value.trim()); clearDraft("stars-" + rid, "rate-" + rid); }
       catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "Your rating didn't save. Try again."; send.disabled = false; }
     } }, "Send rating");
     return h("div", { class: "rate-box" },
@@ -2591,62 +2862,26 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
   }
 
   function payBox(r) {
-    if (r.payMode !== "secure") return null;
-    const ref = tripRef(r.id), ps = r.payStatus || "unpaid";
+    if (r.payMode !== "wallet" && r.payMode !== "secure") return null;
+    const ps = r.payStatus || "held";
     if (r.status === "cancelled") {
-      if (ps === "refunded") return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Refunded" }), h("p", { text: "Siyahamba refunded your payment of " + money(r.fare) + "." }));
-      if (ps === "held" || ps === "claimed" || ps === "disputed") return h("div", { class: "pay-box warn" }, h("b", { class: "t", text: "Refund on its way" }), h("p", { text: "You cancelled after paying. Siyahamba will refund you. Reference " + ref + "." }));
+      if (ps === "refunded") return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Refunded to your wallet" }), h("p", { text: money(r.fare) + " is back in your Siyahamba wallet." }));
+      if (ps === "held") return h("div", { class: "pay-box warn" }, h("b", { class: "t", text: "Siyahamba is reviewing your refund" }), h("p", { text: "You cancelled after a driver accepted. We'll let you know about your " + money(r.fare) + " in the messages on this trip." }));
       return null;
     }
-    if (ps === "unpaid") {
-      const box = h("div", { class: "pay-box" },
-        h("b", { class: "t", text: "Pay " + money(r.fare) + " to Siyahamba" }),
-        h("p", { text: PAYMENT_INFO }),
-        h("div", null, "Reference: ", h("span", { class: "ref", text: ref }), " ", copyBtn(ref)),
-        h("p", { class: "hint", text: "We keep the money safe and only pay the driver once you confirm you arrived." }));
-      const acts = h("div", { class: "actions", style: "margin:0" });
-      if (CARD_PAY_URL) acts.append(h("a", { class: "btn btn-ghost btn-sm", href: CARD_PAY_URL, target: "_blank", rel: "noopener", style: "text-decoration:none" }, "Pay by card"));
-      acts.append(h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
-        e.currentTarget.disabled = true;
-        try { await store.update(r.id, { payStatus: "claimed", paidClaimAt: Date.now() }); } catch (err) { console.warn(err); e.currentTarget.disabled = false; }
-      } }, "I've paid"));
-      box.append(acts);
-      return box;
-    }
-    if (ps === "claimed") return h("div", { class: "pay-box" }, h("b", { class: "t", text: "Checking your payment" }), h("p", { text: "Siyahamba will confirm once your " + money(r.fare) + " arrives. Reference " + ref + "." }), reportLink(r));
-    if (ps === "disputed") return h("div", { class: "pay-box warn" }, h("b", { class: "t", text: "Problem reported" }), h("p", { text: "Siyahamba is looking into it and is holding the payment until it's sorted out." }));
     if (ps === "released") return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Driver paid" }), h("p", { text: "Thank you for travelling with Siyahamba." }));
-    if (ps === "refunded") return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Refunded" }), h("p", { text: "Siyahamba refunded your payment." }));
-    // held
+    if (ps === "refunded") return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Refunded to your wallet" }));
     if (r.status === "completed" && !r.passengerConfirmed) {
-      const box = h("div", { class: "pay-box" }, h("b", { class: "t", text: "Did you arrive safely?" }),
-        h("p", { text: "When you confirm, Siyahamba pays your " + money(r.fare) + " to the driver." }));
-      box.append(h("div", { class: "actions", style: "margin:0" },
-        h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
+      return h("div", { class: "pay-box" }, h("b", { class: "t", text: "Did you arrive safely?" }),
+        h("p", { text: "When you confirm, Siyahamba pays your " + money(r.fare) + " to the driver. If something went wrong, report it below instead." }),
+        h("div", { class: "actions", style: "margin:0" }, h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
           e.currentTarget.disabled = true;
           try { await store.update(r.id, { passengerConfirmed: true }); } catch (err) { console.warn(err); e.currentTarget.disabled = false; }
-        } }, "Yes, pay the driver"), reportLink(r)));
-      return box;
+        } }, "Yes, pay the driver")));
     }
     if (r.passengerConfirmed) return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Thanks for confirming" }), h("p", { text: "Siyahamba is paying the driver." }));
-    return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Paid: " + money(r.fare) + " held safely" }), h("p", { text: "Siyahamba pays the driver only after you arrive and confirm." }), reportLink(r));
+    return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Paid from your wallet: " + money(r.fare) }), h("p", { text: "Siyahamba holds it safely and only pays the driver after you arrive and confirm." }));
   }
-  function reportLink(r) {
-    const wrap = h("span");
-    const open = h("button", { type: "button", class: "linkbtn", onclick: () => {
-      const ta = h("textarea", { "aria-label": "What went wrong?", placeholder: "What went wrong?" });
-      const send = h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: async () => {
-        const issue = ta.value.trim().slice(0, 1000);
-        if (!issue) { ta.focus(); return; }
-        send.disabled = true;
-        try { await store.update(r.id, { payStatus: "disputed", issue }); } catch (err) { console.warn(err); send.disabled = false; }
-      } }, "Send to Siyahamba");
-      wrap.replaceChildren(h("div", { style: "display:flex;flex-direction:column;gap:8px;width:100%" }, ta, h("div", null, send)));
-    } }, "Report a problem");
-    wrap.append(open);
-    return wrap;
-  }
-
   function passengerCard(r) {
     const card = h("article", { class: "trip", "data-status": r.status },
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
@@ -2677,6 +2912,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     if (offers) card.append(offers);
     const pb = payBox(r);
     if (pb) card.append(pb);
+    const sb = supportBox(r, "passenger");
+    if (sb) card.append(sb);
     if (r.status === "completed" && r.driverId) card.append(rateBox(r, "driver"));
     if (r.status === "completed" || r.status === "cancelled") card.append(h("div", { class: "trip-actions" },
       r.status === "completed" ? h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => openReceipt(r, false) }, "Receipt") : null,
@@ -2685,8 +2922,11 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
     if (["open", "accepted"].includes(r.status)) {
       const paid = r.payMode === "secure" && ["claimed", "held"].includes(r.payStatus);
-      foot.append(h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: (e) => confirmInline(e.currentTarget, paid ? "Cancel this trip? Siyahamba will refund you." : "Cancel this trip?", async () => {
-        await store.update(r.id, { status: "cancelled" });
+      const toWallet = r.payMode === "wallet" && r.status === "open";
+      foot.append(h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: (e) => confirmInline(e.currentTarget,
+        toWallet ? "Cancel this trip? " + money(r.fare) + " goes back to your wallet." : paid || r.payMode === "wallet" ? "Cancel this trip? A driver has accepted, so Siyahamba will review your refund." : "Cancel this trip?", async () => {
+        if (toWallet) { const res = await store.walletTripChange(r, { status: "cancelled", payStatus: "refunded", refundedAt: Date.now() }, 0, true); if (!res.ok) throw new Error("changed"); }
+        else await store.update(r.id, { status: "cancelled" });
       }) }, "Cancel trip"));
     } else {
       foot.append(h("span", { class: "meta", text: "Requested " + ago(r.createdAt) }));
@@ -2712,7 +2952,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const card = h("article", { class: "trip", "data-status": "open" },
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), h("span", { class: "fare", text: money(r.fare) })),
       tripMeta(r),
-      r.address ? h("div", { class: "notes", text: "Pick-up spot: " + r.address }) : null,
+      r.address ? h("div", { class: "notes", text: "Pick-up: " + r.address }) : null,
+      r.dropAddress ? h("div", { class: "notes", text: "Drop-off: " + r.dropAddress }) : null,
       r.notes ? h("div", { class: "notes", text: r.notes }) : null,
       routeLinks(r, true)
     );
@@ -2744,7 +2985,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       } catch (e) { console.warn(e); msg.textContent = isPermanent() || store.mode !== "db" ? "Couldn't accept. Try again." : "Sign in to accept jobs."; btn.disabled = false; btn.textContent = "Accept job"; }
     });
     if (!driver) msg.textContent = "Complete your driver profile to accept jobs.";
-    if (r.payMode === "secure") card.insertBefore(h("div", { class: "split" }, "The group pays in the app. Siyahamba pays you after the trip."), card.lastChild);
+    card.insertBefore(h("div", { class: "split" }, "Paid: " + money(r.fare) + " is held by Siyahamba. You're paid after the trip."), card.lastChild);
     card.insertBefore(h("div", { class: "split", style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }, "Group leader", ratingFor(r.requesterId)), card.lastChild);
     const km = kmFromMe(r);
     if (km != null) card.insertBefore(h("div", { class: "dist", text: "Pick-up about " + km + " km from you" }), card.children[1]);
@@ -2763,7 +3004,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
       timeline(r),
       tripMeta(r),
-      r.address ? h("div", { class: "notes", text: "Pick-up spot: " + r.address }) : null,
+      r.address ? h("div", { class: "notes", text: "Pick-up: " + r.address }) : null,
+      r.dropAddress ? h("div", { class: "notes", text: "Drop-off: " + r.dropAddress }) : null,
       r.notes ? h("div", { class: "notes", text: r.notes }) : null,
       r.status !== "cancelled" && r.status !== "completed" ? routeLinks(r, true) : null
     );
@@ -2778,7 +3020,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       ));
       if (isActive(r)) card.append(h("div", { class: "trip-actions" }, sosButton(r, "driver")));
     }
-    if (r.payMode === "secure" && r.status !== "cancelled") {
+    if ((r.payMode === "secure" || r.payMode === "wallet") && r.status !== "cancelled") {
       const ps = r.payStatus || "unpaid";
       const line = ps === "released" ? "Paid out to your bank account. Thank you."
         : ps === "held" ? (r.passengerConfirmed ? "The group confirmed. Siyahamba is paying you " + money(r.fare) + "." : money(r.fare) + " is paid and held by Siyahamba. You're paid after the group confirms they arrived.")
@@ -2788,6 +3030,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       card.append(h("div", { class: "pay-box" + (ps === "held" || ps === "released" ? " ok" : ps === "disputed" ? " warn" : "") }, h("p", { text: line })));
     }
     if (r.commission && r.status !== "cancelled") card.append(h("div", { class: "split" }, "You receive ", h("b", { text: money(r.fare - r.commission) }), " · Siyahamba fee ", h("b", { text: money(r.commission) }), " paid from credit"));
+    const dsb = supportBox(r, "driver");
+    if (dsb) card.append(dsb);
     if (r.status === "completed") card.append(rateBox(r, "passenger"));
     if (r.status === "completed") card.append(h("div", { class: "trip-actions" }, h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => openReceipt(r, true) }, "Trip statement")));
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
@@ -2795,7 +3039,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const nx = NEXT[r.status];
     if (nx) acts.append(h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
       e.currentTarget.disabled = true;
-      try { await store.update(r.id, { status: nx.to }); } catch (err) { e.currentTarget.disabled = false; }
+      const b = e.currentTarget;
+      try { await store.update(r.id, { status: nx.to }); if (nx.to === "completed") queueReceipts(r); } catch (err) { b.disabled = false; }
     } }, nx.label));
     if (r.status === "accepted") acts.append(h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: (e) => confirmInline(e.currentTarget, r.commission ? "Give this job back? Your " + money(r.commission) + " fee comes back to your credit." : "Give this job back?", async () => {
       const res = await store.giveBack(r.id);
@@ -2821,7 +3066,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const loading = !!store.expectDb && !store.loaded;
     $("my-trips").replaceChildren(...(loading ? skeletons(2) : mine.length ? mine.map(passengerCard) : [empty("No trips yet", "Fill in the form and tap Request taxi. Your trip and driver details show up here.")]));
 
-    const allOpen = allRequests.filter((r) => r.status === "open" && (!r.offerTo || r.offerTo === me));
+    const allOpen = allRequests.filter((r) => r.status === "open" && r.payStatus === "held" && (!r.offerTo || r.offerTo === me));
     if (!loading) checkNewJobs(allOpen);
     const open = allOpen.filter((r) => boardFilter === "all" || (boardFilter === "near" ? (kmFromMe(r) ?? Infinity) <= 40 : r.type === boardFilter))
       .sort((a, b) => avail.pos ? ((kmFromMe(a) ?? 1e9) - (kmFromMe(b) ?? 1e9)) : (a.createdAt || 0) - (b.createdAt || 0));
@@ -2834,11 +3079,16 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     $("job-count").textContent = jobs.length;
     $("my-jobs").replaceChildren(...(loading ? skeletons(1) : jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
     renderCredit();
+    renderWallet();
     renderEarnings();
     showAvailability();
     renderAdmin();
     renderGeoNotes();
     updateLocationSharing();
+    Object.keys(msgSubs).forEach((id) => {
+      const r = allRequests.find((x) => x.id === id);
+      if (r && !r.issueStatus) { msgSubs[id](); delete msgSubs[id]; delete msgData[id]; }
+    });
     Object.keys(offerSubs).forEach((id) => {
       const r = allRequests.find((x) => x.id === id);
       if (r && r.status !== "open") { offerSubs[id](); delete offerSubs[id]; delete offersData[id]; }
@@ -2910,11 +3160,16 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       stat("Earned all time", money(earned), paid.length + " job" + (paid.length === 1 ? "" : "s") + " with a fee"),
       stat("Driver credit held", money(held), "Paid in, not yet used"),
       stat("Fees to review", String(pending.length), pending.length ? money(pending.reduce((t, r) => t + r.commission, 0)) + " waiting" : "Nothing waiting"),
-      stat("Passenger money held", money(allRequests.filter((r) => r.payMode === "secure" && ["held", "disputed"].includes(r.payStatus)).reduce((t, r) => t + (Number(r.fare) || 0), 0)), "Not yet paid to drivers"));
+      stat("Trips completed", String(allRequests.filter((r) => r.status === "completed").length), "all time"),
+      stat("Paid out to drivers", money(allRequests.filter((r) => r.payStatus === "released").reduce((t, r) => t + (Number(r.fare) || 0), 0)), "all time"),
+      stat("Owed to drivers", money(allRequests.filter((r) => r.payStatus === "held" && r.status === "completed").reduce((t, r) => t + (Number(r.fare) || 0), 0)), "trips done, not paid out yet"),
+      stat("Held for booked trips", money(allRequests.filter((r) => r.payStatus === "held" && ["open", "accepted", "enroute", "ontrip"].includes(r.status)).reduce((t, r) => t + (Number(r.fare) || 0), 0)), "trips not finished yet"),
+      stat("In passenger wallets", money(adminWallets.reduce((t, w) => t + (Number(w.balance) || 0), 0)), adminWallets.length + " wallet" + (adminWallets.length === 1 ? "" : "s")));
     renderVetting();
     renderPayments();
     renderBusiness();
     renderReferrals();
+    renderIssues();
 
     const feesBy = {};
     paid.forEach((r) => { if (r.driverId || r.status === "cancelled") feesBy[r.driverId] = (feesBy[r.driverId] || 0) + earnedFrom(r); });
@@ -3016,12 +3271,21 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
 
   // ---- Passenger payments ----
   function renderPayments() {
-    const sec = allRequests.filter((r) => r.payMode === "secure");
+    const sec = allRequests.filter((r) => r.payMode === "secure" || r.payMode === "wallet");
     const drivers = Object.fromEntries(admin.drivers.map((d) => [d.id, d]));
     const claimed = sec.filter((r) => r.payStatus === "claimed" && r.status !== "cancelled");
-    const ready = sec.filter((r) => r.payStatus === "held" && r.status === "completed" && r.passengerConfirmed);
-    const problems = sec.filter((r) => r.payStatus === "disputed" || (r.status === "cancelled" && ["held", "claimed"].includes(r.payStatus)));
-    const waiting = sec.filter((r) => r.payStatus === "held" && r.status !== "cancelled" && !(r.status === "completed" && r.passengerConfirmed));
+    const ready = sec.filter((r) => r.payStatus === "held" && r.status === "completed" && r.passengerConfirmed && r.issueStatus !== "open");
+    const problems = sec.filter((r) => r.payStatus === "disputed" || (r.status === "cancelled" && ["held", "claimed"].includes(r.payStatus)) || (r.payStatus === "held" && r.issueStatus === "open"));
+    const waiting = sec.filter((r) => r.payStatus === "held" && r.status !== "cancelled" && r.issueStatus !== "open" && !(r.status === "completed" && r.passengerConfirmed));
+    const refundToWallet = (r) => async (e) => {
+      e.currentTarget.disabled = true;
+      try {
+        const db = store.db, batch = db.batch(), now = Date.now();
+        batch.update(db.doc("requests/" + r.id), { payStatus: "refunded", refundedAt: now, updatedAt: now });
+        batch.update(db.doc("wallets/" + r.requesterId), { balance: firebase.firestore.FieldValue.increment(r.fare), updatedAt: now });
+        await batch.commit();
+      } catch (err) { console.warn(err); e.currentTarget.disabled = false; }
+    };
     const act = (r, patch) => async (e) => { e.currentTarget.disabled = true; try { await store.update(r.id, patch); } catch (err) { console.warn(err); e.currentTarget.disabled = false; } };
     const head = (r, extra) => h("div", { class: "trip-top" }, h("div", null, routeLine(r),
       h("div", { class: "meta" }, h("span", { class: "ref", text: tripRef(r.id) }), h("span", null, h("b", { text: r.contactName || "" })), h("span", { class: "phone", text: r.contactPhone || "" }), extra || null)),
@@ -3030,21 +3294,110 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const section = (title, items, emptyText) => [h("h3", { text: title + " (" + items.length + ")", style: "margin-top:6px" }), ...(items.length ? items : [h("p", { class: "meta", style: "margin:0", text: emptyText })])];
     const bank = (d) => d ? [d.bankName, d.bankHolder, d.bankAccount, d.bankBranch].filter(Boolean).join(" · ") || "No bank details saved" : "Driver not found";
     $("admin-payments").replaceChildren(
-      ...section("Payments to check", claimed.map((r) => card(r, [head(r, h("span", { text: "says paid " + (r.paidClaimAt ? ago(r.paidClaimAt) : "") })),
-        h("p", { class: "hint", style: "margin:0", text: "Look for " + money(r.fare) + " with reference " + tripRef(r.id) + " in your bank account." }),
-        h("div", { class: "actions", style: "margin:0" },
-          h("button", { type: "button", class: "btn btn-go btn-sm", onclick: act(r, { payStatus: "held", heldAt: Date.now() }) }, "Money received"),
-          h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: act(r, { payStatus: "unpaid" }) }, "Not received"))])), "No payments to check."),
       ...section("Ready to pay the driver", ready.map((r) => card(r, [head(r),
         h("div", { class: "driver-box" }, h("span", null, "Pay ", h("b", { text: r.driverName || "the driver" })), h("span", { class: "phone", text: bank(drivers[r.driverId]) })),
         h("p", { class: "hint", style: "margin:0", text: "Both sides confirmed: the driver marked the trip complete and the group confirmed they arrived." }),
         h("div", { class: "actions", style: "margin:0" }, h("button", { type: "button", class: "btn btn-go btn-sm", onclick: act(r, { payStatus: "released", releasedAt: Date.now() }) }, "I've paid the driver"))])), "Nothing to pay out."),
       ...section("Problems and refunds", problems.map((r) => card(r, [head(r),
-        h("div", { class: "notes", text: r.issue ? "Passenger: " + r.issue : r.status === "cancelled" ? "The group cancelled after paying." : "" }),
+        h("div", { class: "notes", text: r.issueStatus === "open" ? "Issue reported by the " + (r.issueBy || "passenger") + ". See Issues below." : r.status === "cancelled" ? "The group cancelled after a driver accepted." : "" }),
         h("div", { class: "actions", style: "margin:0" },
-          h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: act(r, { payStatus: "refunded", refundedAt: Date.now() }) }, "I've refunded the group"),
+          r.payMode === "wallet" ? h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: refundToWallet(r) }, "Refund " + money(r.fare) + " to their wallet")
+            : h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: act(r, { payStatus: "refunded", refundedAt: Date.now() }) }, "I've refunded the group"),
           r.driverId ? h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: act(r, { payStatus: "released", releasedAt: Date.now() }) }, "I've paid the driver") : null)])), "No problems."),
       ...section("Held, trip not finished yet", waiting.map((r) => card(r, [head(r, h("span", { text: STATUS[r.status] ? STATUS[r.status].label : r.status }))])), "Nothing held."));
+  }
+
+  // ---- Issues ----
+  // Goodwill credit or partial refund straight into the passenger's wallet.
+  function creditForm(r) {
+    if (!r.requesterId) return null;
+    const amt = keep(h("input", { type: "number", inputmode: "numeric", min: "1", max: String(Math.max(1, r.fare)), placeholder: "Amount (R)", "aria-label": "Amount to add to the passenger's wallet" }), "cred-" + r.id);
+    const msg = h("span", { class: "form-msg" });
+    const add = h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: async () => {
+      const v = Math.round(Number(amt.value) || 0);
+      if (!(v > 0 && v <= 100000)) { amt.focus(); return; }
+      add.disabled = true;
+      try {
+        const db = store.db, batch = db.batch(), now = Date.now();
+        batch.set(db.doc("wallets/" + r.requesterId), { balance: firebase.firestore.FieldValue.increment(v), updatedAt: now }, { merge: true });
+        batch.set(db.collection("walletTopups").doc(), { userId: r.requesterId, amount: v, ref: "Credit from Siyahamba: trip " + tripRef(r.id), at: now, by: store.me });
+        await batch.commit();
+        amt.value = ""; clearDraft("cred-" + r.id); toast(h("span", { text: money(v) + " added to " + (r.contactName || "the passenger") + "'s wallet." }));
+      } catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "That didn't save."; }
+      add.disabled = false;
+    } }, "Add to passenger's wallet");
+    return h("div", { class: "offer-form" }, amt, add, msg);
+  }
+  function renderIssues() {
+    const list = allRequests.filter((r) => r.issueStatus).sort((a, b) => (a.issueStatus === "open" ? 0 : 1) - (b.issueStatus === "open" ? 0 : 1) || (b.issueAt || 0) - (a.issueAt || 0)).slice(0, 20);
+    const open = list.filter((r) => r.issueStatus === "open");
+    $("admin-issues-count").textContent = open.length;
+    $("admin-issues").replaceChildren(...(list.length ? list.map((r) => {
+      watchMessages(r.id);
+      const to = h("select", { "aria-label": "Send to" }, h("option", { value: r.issueBy || "passenger", text: "To the " + (r.issueBy || "passenger") }),
+        h("option", { value: r.issueBy === "driver" ? "passenger" : "driver", text: "To the " + (r.issueBy === "driver" ? "passenger" : "driver") }), h("option", { value: "both", text: "To both" }));
+      const ta = keep(h("textarea", { maxlength: "1000", placeholder: "What are we doing to resolve it? They see this on the trip and by email.", "aria-label": "Reply" }), "iss-" + r.id);
+      keep(to, "issTo-" + r.id);
+      const msg = h("span", { class: "form-msg" });
+      const reply = h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async () => {
+        const text = ta.value.trim(); if (!text) { ta.focus(); return; }
+        reply.disabled = true;
+        try {
+          await sendMessage(r, "owner", text, to.value);
+          const uids = to.value === "both" ? [r.requesterId, r.driverId] : [to.value === "driver" ? r.driverId : r.requesterId];
+          await store.db.collection("mail").add({ toUids: uids.filter(Boolean), message: { subject: "Siyahamba: update on your trip " + tripRef(r.id), text: text + "\n\nOpen the Siyahamba app to reply." }, tripId: r.id, at: Date.now(), kind: "issue" });
+          ta.value = ""; clearDraft("iss-" + r.id); toast(h("span", { text: "Reply sent to the " + (to.value === "both" ? "passenger and driver" : to.value) + "." }));
+        } catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "That didn't send."; }
+        reply.disabled = false;
+      } }, "Send reply");
+      const resolved = r.issueStatus !== "open";
+      return h("article", { class: "trip", "data-status": resolved ? "completed" : "cancelled" },
+        h("div", { class: "trip-top" }, h("div", null, routeLine(r), h("div", { class: "meta" }, h("span", { class: "ref", text: tripRef(r.id) }),
+          h("span", { text: "Reported by the " + (r.issueBy || "passenger") + " " + (r.issueAt ? ago(r.issueAt) : "") }), h("span", { text: (r.contactName || "") + (r.driverName ? " · driver " + r.driverName : "") }))),
+          h("span", { class: "pill " + (resolved ? "done" : "cancel"), text: resolved ? "Resolved" : "Open" })),
+        threadEl(r.id, "owner"),
+        resolved ? null : creditForm(r),
+        resolved ? null : h("div", { style: "display:flex;flex-direction:column;gap:6px" }, ta, h("div", { class: "trip-actions" }, to, reply,
+          h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: async (e) => { e.currentTarget.disabled = true; try { await store.update(r.id, { issueStatus: "resolved", resolvedAt: Date.now() }); } catch (err) { e.currentTarget.disabled = false; } } }, "Mark resolved"), msg)),
+        h("p", { class: "hint", style: "margin:0", text: r.payStatus === "held" ? "Payment of " + money(r.fare) + " is on hold. Refund or pay out under Passenger payments once you've decided." : "" }));
+    }) : [empty("No issues", "When a passenger or driver reports a problem, it shows here with their messages.")]));
+  }
+
+  // ---- Wallet top-ups to confirm ----
+  let adminClaims = [], adminWallets = [], adminProfiles = {};
+  function loadProfiles(ids) {
+    ids.filter((id) => !(id in adminProfiles)).forEach((id) => {
+      adminProfiles[id] = null;
+      store.db.doc("profiles/" + id).get().then((s) => { adminProfiles[id] = s.exists ? s.data() : {}; renderClaims(); }).catch(() => { adminProfiles[id] = {}; });
+    });
+  }
+  function renderClaims() {
+    const pending = adminClaims.filter((c) => c.status === "pending").sort((a, b) => a.at - b.at);
+    loadProfiles(pending.map((c) => c.userId));
+    $("admin-claims-count").textContent = pending.length;
+    $("admin-claims").replaceChildren(...(pending.length ? pending.map((c) => {
+      const pr = adminProfiles[c.userId] || {}, w = adminWallets.find((x) => x.id === c.userId) || {};
+      const decide = (ok) => async (e) => {
+        e.currentTarget.disabled = true;
+        try {
+          const db = store.db, batch = db.batch(), now = Date.now();
+          batch.update(db.doc("walletClaims/" + c.id), { status: ok ? "confirmed" : "rejected" });
+          if (ok) {
+            batch.set(db.doc("wallets/" + c.userId), { balance: firebase.firestore.FieldValue.increment(c.amount), updatedAt: now }, { merge: true });
+            batch.set(db.collection("walletTopups").doc(), { userId: c.userId, amount: c.amount, ref: "Top-up " + (c.ref || ""), at: now, by: store.me });
+          }
+          await batch.commit();
+        } catch (err) { console.warn(err); e.currentTarget.disabled = false; }
+      };
+      return h("article", { class: "trip", "data-status": "open" },
+        h("div", { class: "trip-top" }, h("div", null, h("div", { class: "route", text: (pr.name || "Passenger") + " says they sent " + money(c.amount) }),
+          h("div", { class: "meta" }, h("span", { class: "ref", text: c.ref || walletCode(c.userId) }), h("span", { text: ago(c.at) }), pr.phone ? h("span", { class: "phone", text: pr.phone }) : null, pr.email ? h("span", { text: pr.email }) : null)),
+          h("span", { class: "fare", text: money(c.amount) })),
+        h("p", { class: "hint", style: "margin:0", text: "Look for " + money(c.amount) + " with reference " + (c.ref || walletCode(c.userId)) + " in your bank account. Their wallet has " + money(Number(w.balance) || 0) + " now." }),
+        h("div", { class: "actions", style: "margin:0" },
+          h("button", { type: "button", class: "btn btn-go btn-sm", onclick: decide(true) }, "Money received: add " + money(c.amount)),
+          h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: decide(false) }, "Not received")));
+    }) : [empty("No top-ups waiting", "When a passenger says they've sent money, it shows here straight away.")]));
   }
 
   async function adminDecide(btn, r, decision) {
@@ -3162,7 +3515,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
         myPublic.vehiclePhoto ? h("img", { class: "vehicle-shot", style: "margin-top:12px", src: myPublic.vehiclePhoto, alt: "Your vehicle" }) : null,
         vet === "approved" ? inviteBox() : null);
     } else if (driver) {
-      $("d-name").value = driver.name || ""; $("d-phone").value = driver.phone || ""; $("d-vehicle").value = driver.vehicle || "quantum";
+      $("d-name").value = driver.name || ""; $("d-phone").value = driver.phone || ""; $("d-email").value = driver.email || (store.user && store.user.email) || ""; $("d-vehicle").value = driver.vehicle || "quantum";
       $("d-reg").value = driver.reg || ""; $("d-assoc").value = driver.assoc || ""; $("d-pdp").checked = !!driver.pdp;
       $("d-idtype").value = driver.idType || "sa_id"; $("d-idnumber").value = driver.idNumber || "";
       $("d-nationality").value = driver.nationality || "South African"; $("d-race").value = driver.race || "";
@@ -3182,7 +3535,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     e.preventDefault();
     const msg = $("driver-msg"); msg.className = "form-msg";
     const f = {
-      name: $("d-name").value.trim().replace(/\s+/g, " "), phone: $("d-phone").value.trim(), assoc: $("d-assoc").value.trim(), race: $("d-race").value,
+      name: $("d-name").value.trim().replace(/\s+/g, " "), phone: $("d-phone").value.trim(), email: $("d-email").value.trim(), assoc: $("d-assoc").value.trim(), race: $("d-race").value,
       idType: $("d-idtype").value, idNumber: $("d-idnumber").value.replace(/\s+/g, "").toUpperCase(), nationality: $("d-nationality").value.trim(),
       vehicle: $("d-vehicle").value, reg: $("d-reg").value.trim().toUpperCase(), pdp: $("d-pdp").checked,
       bankName: $("d-bankName").value.trim(), bankHolder: $("d-bankHolder").value.trim(), bankAccount: $("d-bankAccount").value.replace(/\s+/g, ""), bankBranch: $("d-bankBranch").value.replace(/\s+/g, "")
@@ -3194,6 +3547,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const miss = [];
     if (!f.name || f.name.split(" ").length < 2) miss.push("your full names and surname");
     if (!/^[+\d][\d\s-]{8,}$/.test(f.phone)) miss.push("a cellphone number");
+    if (!/^\S+@\S+\.\S+$/.test(f.email)) miss.push("an email address");
     if (f.idType === "sa_id" ? !saIdValid(f.idNumber) : !/^[A-Z0-9]{6,12}$/.test(f.idNumber)) miss.push(f.idType === "sa_id" ? "a valid 13-digit ID number" : "your passport number");
     if (!f.nationality) miss.push("your nationality");
     if (!f.reg) miss.push("your registration");
@@ -3209,7 +3563,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const prev = account || driver || {};
     const identityChanged = !prev.vetting || prev.vetting !== "approved" || IDENTITY.some((k) => String(prev[k] ?? "") !== String(f[k] ?? ""))
       || !!(newFiles.photo || newFiles.vehiclePhoto || DOC_KINDS.some((k) => newFiles[k]));
-    const fields = { phone: f.phone, assoc: f.assoc, race: f.race };
+    const fields = { phone: f.phone, email: f.email, assoc: f.assoc, race: f.race };
     if (identityChanged) Object.assign(fields, f, { docs, submittedAt: Date.now(), consentAt: prev.consentAt || Date.now() });
     const publicDoc = identityChanged ? { name: f.name, vehicle: f.vehicle, reg: f.reg } : null;
     if (publicDoc && newFiles.photo) publicDoc.photo = newFiles.photo.data;
@@ -3219,6 +3573,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     const btn = $("driver-save"); btn.disabled = true; btn.textContent = "Sending…";
     try {
       const saved = await store.saveRegistration(fields, publicDoc, files, "pending", identityChanged);
+      // Also keep the email in the private profile, which is where Siyahamba's emails are addressed.
+      if (store.mode === "db") store.db.doc("profiles/" + store.me).set({ name: f.name, phone: f.phone, email: f.email, updatedAt: Date.now() }, { merge: true }).catch((e) => console.warn(e));
       driver = { ...prev, ...saved };
       if (store.mode !== "db") account = { ...store.localAccount(), ...driver };
       if (publicDoc) myPublic = { ...myPublic, ...publicDoc };
@@ -3236,7 +3592,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
   /* ---------- Accounts: Google or email, the same on every phone ---------- */
   const isPermanent = () => store.mode === "db" && !!store.user && !store.user.isAnonymous;
   const DRAFT_KEY = "siyahamba.draft";
-  const DRAFT_IDS = ["f-pickup", "f-dropoff", "f-address", "f-km", "f-pax", "f-vehicle", "f-purpose", "f-when", "f-datetime", "f-luggage", "f-return", "f-nights", "f-name", "f-phone", "f-pay", "f-notes"];
+  const DRAFT_IDS = ["f-pickup", "f-dropoff", "f-address", "f-daddress", "f-email", "f-km", "f-pax", "f-vehicle", "f-purpose", "f-when", "f-datetime", "f-luggage", "f-return", "f-nights", "f-name", "f-phone", "f-pay", "f-notes"];
   function saveDraft() {
     const v = {}; DRAFT_IDS.forEach((id) => { const el = $(id); v[id] = el.type === "checkbox" ? el.checked : el.value; });
     try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ v, tripType, sel, kmManual })); } catch (e) {}
@@ -3373,6 +3729,8 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       $("admin-uid").textContent = user.uid; $("admin-uid-box").hidden = false; return;
     }
     admin.on = true;
+    store.db.collection("walletClaims").orderBy("at", "desc").limit(100).onSnapshot((snap) => { adminClaims = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderClaims(); }, (e) => console.warn(e));
+    store.db.collection("wallets").onSnapshot((snap) => { adminWallets = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderAdmin(); }, (e) => console.warn(e));
     store.db.collection("sos").orderBy("at", "desc").limit(30).onSnapshot((snap) => { sosAlerts = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderSOS(); }, (e) => console.warn(e));
     $("admin-gate").hidden = true; $("admin-body").hidden = false;
     store.db.collection("drivers").onSnapshot((snap) => { admin.drivers = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderAdmin(); }, (e) => console.warn(e));
@@ -3403,6 +3761,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     driver = await store.loadProfile();
     myPublic = await store.loadPublic(store.me);
     account = { ...store.localAccount(), ...(driver || {}) };
+    wallet = localWallet();
     editingProfile = !driver || !driver.vetting; showProfile(); render();
     adminGate("demo");
     if (safeLS.get("siyahamba.online") && driver) setOnline(true, false);
@@ -3423,7 +3782,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       if (!user) user = (await auth.signInAnonymously()).user;
       db = firebase.firestore();
       store.mode = "db"; store.db = db; store.me = user.uid; store.user = user;
-      account = null; myTopups = [];
+      account = null; myTopups = []; wallet = null;
       try { await auth.getRedirectResult(); } catch (e) { console.warn(e); }
     } catch (e) {
       console.error(e);
@@ -3445,6 +3804,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       try {
         const pr = await db.doc("profiles/" + store.me).get();
         if (pr.exists) { myProfile = pr.data(); if (!$("f-name").value) $("f-name").value = pr.data().name || ""; if (!$("f-phone").value) $("f-phone").value = pr.data().phone || ""; }
+        if (!$("f-email").value) $("f-email").value = (pr.exists && pr.data().email) || store.user.email || "";
         else if (store.user.displayName && !$("f-name").value) $("f-name").value = store.user.displayName;
       } catch (e) { console.warn(e); }
     }
@@ -3455,6 +3815,11 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       if (account) driver = { ...(driver || {}), ...account };
       showProfile(); render();
     }, (e) => console.warn(e));
+    if (isPermanent()) {
+      db.doc("wallets/" + store.me).onSnapshot((s) => { wallet = s.exists ? s.data() : { balance: 0 }; renderWallet(); refreshQuote(); }, (e) => console.warn(e));
+      db.collection("walletClaims").where("userId", "==", store.me).onSnapshot((snap) => { walletClaimsMine = snap.docs.map((d) => d.data()); renderWallet(); }, (e) => console.warn(e));
+      db.collection("walletTopups").where("userId", "==", store.me).onSnapshot((snap) => { walletTopupsMine = snap.docs.map((d) => d.data()); renderWallet(); }, (e) => console.warn(e));
+    }
     myRated = new Set();
     db.collection("ratings").where("from", "==", store.me).onSnapshot((snap) => {
       myRated = new Set(snap.docs.map((d) => d.id)); render();

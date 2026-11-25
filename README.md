@@ -164,24 +164,37 @@ Photos are shrunk on the phone and stored in Firestore, so you stay on the free 
 
 On the owner dashboard, open **Drivers to approve → Review** to see everything, then click **Approve driver** or **Don't approve** with a reason, which the driver sees. If an approved driver changes their name, ID, documents, photos, vehicle or bank details, they go back to review automatically.
 
-## Paying in the app (held until the trip is done)
+## Payments: the passenger wallet
 
-Passengers can choose **Pay in the app**. The money goes to your company account, and you pay the driver once the trip is done:
+**Every trip is paid in the app, before any driver sees it.** There is no cash or EFT to the driver.
 
-1. The passenger pays by EFT with their trip reference (`TR-…`) and taps **I've paid**.
-2. Under **Passenger payments → Payments to check**, you check your bank and click **Money received**. The passenger and driver now see the money as **held**.
-3. The driver completes the trip. The passenger taps **Yes, pay the driver**, or **Report a problem**.
-4. The trip moves to **Ready to pay the driver**, showing the driver's bank details. Pay them by EFT and click **I've paid the driver**.
-5. Cancellations after paying, and reported problems, show under **Problems and refunds**.
+1. **Top up:** passengers pay into your account by EFT using their wallet reference (`SP-…`), then tap **I've sent this amount**. It appears on your dashboard immediately, under **Wallet top-ups to confirm**, with their name, phone and email. When the money is in your bank, click **Money received**, and their wallet updates on their phone straight away. To take card payments, add a PayFast or Yoco payment link as `SIYAHAMBA_CARD_PAY_URL` in `config.js`. Card payments that confirm themselves automatically need a payment provider plus server code (Firebase's paid plan).
+2. **Book:** the **final amount** comes off the wallet in the same database write that creates the trip. The database rules refuse a booking that isn't fully paid. Drivers only ever see paid trips, marked "Paid: R… is held by Siyahamba".
+3. **Price offers:** if the passenger accepts a higher offer, the difference comes off the wallet. If they accept a lower one, the difference goes back.
+4. **Cancelling:** before a driver accepts, the full amount goes back to the wallet automatically. After a driver accepts, the trip appears under **Problems and refunds**, where you click **Refund to their wallet** or pay the driver.
+5. **After the trip:** the driver marks it complete and the passenger taps **Yes, pay the driver**. The trip then shows under **Ready to pay the driver**, with the driver's bank details. Pay them and click **I've paid the driver**. If an issue is open, the payout waits until you resolve it.
 
-Optional settings in `config.js`:
+`config.js`:
 
 ```js
-window.SIYAHAMBA_PAYMENT_INFO = "FNB Business\nAccount: 62xxxxxxxxx\nBranch: 250655";  // defaults to SIYAHAMBA_TOPUP_INFO
-window.SIYAHAMBA_CARD_PAY_URL = "https://payf.st/xxxxx";  // a PayFast or Yoco payment link, if you have one
+window.SIYAHAMBA_PAYMENT_INFO = "Capitec Business\nAccount: …\nBranch: …";  // shown for wallet top-ups; defaults to SIYAHAMBA_TOPUP_INFO
+window.SIYAHAMBA_CARD_PAY_URL = "https://…";                               // optional PayFast or Yoco link
 ```
 
-Before taking passengers' money at scale, check with your bank or payment provider whether collecting money on behalf of drivers requires registration as a Third Party Payment Provider (PASA).
+Before taking passengers' money at scale, check with your bank or payment provider whether holding money on behalf of drivers requires registration as a Third Party Payment Provider (PASA).
+
+## Addresses and the final amount
+
+- Passengers must give the **pick-up street address** and the **destination street address**, as well as the area. The distance, and so the price, is measured **between the two addresses**. Exact street-level distances need the Google Maps key (see *Google Maps*). Without it, the app measures to the suburb named in each address, and drivers still see the exact addresses.
+- The passenger sees one **Final amount for the group**. It includes the driver, fuel, the drive back on long trips, a **toll allowance** (R0.55 per km driven on long trips), any luggage trailer, and Siyahamba's fee, with "Nothing more to pay".
+- **Return trips:** the driver waits for the group, but **the driver pays for their own accommodation**. It isn't charged to passengers.
+
+## Emails, issues and owner totals
+
+- **Email:** passengers give an email for receipts when booking, and drivers give one when registering. Emails are kept in each person's private profile, not on trips.
+- **Receipts by email:** when the driver marks a trip complete, the passenger's receipt and the driver's statement are queued in the `mail` collection. To actually send them, install Firebase's free **Trigger Email from Firestore** extension. It needs the paid (Blaze) plan, plus an email service such as SendGrid or Gmail. In its settings, set **Email documents collection** to `mail`, **Users collection** to `profiles`, and **email field** to `email`. Until then, emails wait in the `mail` collection.
+- **Issues:** a passenger or driver taps **Report a problem** on a trip and describes it. It appears on your dashboard under **Issues**, with the conversation. Reply to the passenger, the driver or both; they see your reply on the trip and get it by email. You can **add a credit to the passenger's wallet** there, then **Mark resolved**. Payouts wait while an issue is open.
+- **Owner totals:** trips completed, paid out to drivers, owed to drivers (trips done but not yet paid out), money held for booked trips, and the total in passenger wallets.
 
 ## Google Maps (place search, driving distance, route map)
 
@@ -245,7 +258,8 @@ The prices are **estimates** and should be changed to match real rates. They're 
 | Short trip per km | R18 (minimum R450) |
 | Night trips (20:00–05:00) | +15% |
 | Long trip per km driven | R9.50, charged for the drive there and back (minimum R2,000) |
-| Driver waits and returns | + R1,500 per night |
+| Toll allowance (long trips) | R0.55 per km driven |
+| Driver waits and returns | no extra charge; the driver pays their own accommodation |
 | Cross-border trip | + R1,500 per vehicle |
 | Luggage trailer | R300 short, R800 long |
 | Vehicle size | Sprinter × 1.4, Midibus × 1.9, Bus × 2.6 |

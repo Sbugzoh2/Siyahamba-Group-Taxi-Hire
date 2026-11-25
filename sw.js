@@ -1,6 +1,6 @@
 // Siyahamba service worker: lets the app open fast and show its screens with no signal.
 // Files are always fetched fresh when online, so new versions arrive straight away.
-const CACHE = "siyahamba-v11";
+const CACHE = "siyahamba-v12";
 const SHELL = ["./", "index.html", "config.js", "translations.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 

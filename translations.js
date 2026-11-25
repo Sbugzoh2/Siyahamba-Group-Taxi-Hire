@@ -900,6 +900,62 @@ window.SIYAHAMBA_I18N = {
       "st": "Lefa ka app mme Siyahamba e boloka tjhelete ho fihlela o netefatsa hore o fihlile. Kapa lefa mokganni ka kotloloho.",
       "tn": "Duela mo app mme Siyahamba e boloka madi go fitlha o netefatsa gore o gorogile. Kgotsa duela mokgweetsi ka tlhamalalo.",
       "af": "Betaal in die app en Siyahamba hou die geld totdat jy bevestig dat jy aangekom het. Of betaal die bestuurder direk."
+    },
+    "Final amount for the group": {
+      "zu": "Inani lokugcina leqembu",
+      "xh": "Isixa sokugqibela seqela",
+      "st": "Tjhelete ya ho qetela ya sehlopha",
+      "tn": "Tlhwatlhwa ya bofelo ya setlhopha",
+      "af": "Finale bedrag vir die groep"
+    },
+    "My wallet": {
+      "zu": "Isikhwama sami",
+      "xh": "Isipaji sam",
+      "st": "Sepache sa ka",
+      "tn": "Sepache sa me",
+      "af": "My beursie"
+    },
+    "Pick-up street address": {
+      "zu": "Ikheli lomgwaqo lokulandwa",
+      "xh": "Idilesi yesitrato yokuthathwa",
+      "st": "Aterese ya seterata ya ho latwa",
+      "tn": "Aterese ya mmila ya go tsewa",
+      "af": "Oplaai-straatadres"
+    },
+    "Destination street address": {
+      "zu": "Ikheli lomgwaqo lapho uya khona",
+      "xh": "Idilesi yesitrato apho uya khona",
+      "st": "Aterese ya seterata moo o yang teng",
+      "tn": "Aterese ya mmila fa o yang teng",
+      "af": "Bestemming-straatadres"
+    },
+    "Email for receipts": {
+      "zu": "I-imeyili yamarisidi",
+      "xh": "I-imeyile yeerisithi",
+      "st": "Imeile bakeng sa dirasiti",
+      "tn": "Imeile ya dirasiti",
+      "af": "E-pos vir kwitansies"
+    },
+    "From my Siyahamba wallet": {
+      "zu": "Esikhwameni sami seSiyahamba",
+      "xh": "Kwisipaji sam seSiyahamba",
+      "st": "Ho tswa sepacheng sa ka sa Siyahamba",
+      "tn": "Go tswa mo sepacheng sa me sa Siyahamba",
+      "af": "Uit my Siyahamba-beursie"
+    },
+    "I've sent this amount": {
+      "zu": "Ngithumele le mali",
+      "xh": "Ndithumele esi sixa",
+      "st": "Ke rometse tjhelete ena",
+      "tn": "Ke romeletse madi a",
+      "af": "Ek het hierdie bedrag gestuur"
+    },
+    "Send": {
+      "zu": "Thumela",
+      "xh": "Thumela",
+      "st": "Romela",
+      "tn": "Romela",
+      "af": "Stuur"
     }
   }
 };

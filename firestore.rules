@@ -10,6 +10,8 @@ service cloud.firestore {
     function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
     function driverDoc(id) { return /databases/$(database)/documents/drivers/$(id); }
     function requestDoc(id) { return /databases/$(database)/documents/requests/$(id); }
+    function walletDoc(id) { return /databases/$(database)/documents/wallets/$(id); }
+    function profileDoc(id) { return /databases/$(database)/documents/profiles/$(id); }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
     // Siyahamba's fee: 10% of the trip price. Keep this in step with COMMISSION_PCT in index.html.
     function feeFor(fare) { return fare / 10; }
@@ -25,43 +27,53 @@ service cloud.firestore {
     match /requests/{id} {
       allow read: if signedIn();
 
-      // A passenger creates a request in their own name, as "open", with no driver, fee or payment progress.
+      // A passenger books by paying the full final amount from their wallet in the same write.
+      // So every trip drivers can see is already paid and held by Siyahamba.
       allow create: if permanent()
         && request.resource.data.requesterId == uid()
         && request.resource.data.status == 'open'
         && request.resource.data.fare is number && request.resource.data.fare > 0
-        && request.resource.data.get('payStatus', 'unpaid') == 'unpaid'
-        && !request.resource.data.keys().hasAny(['commission', 'driverId', 'heldAt', 'releasedAt', 'refundedAt', 'passengerConfirmed', 'issue', 'commissionDecision']);
+        && request.resource.data.payMode == 'wallet'
+        && request.resource.data.payStatus == 'held'
+        && !request.resource.data.keys().hasAny(['commission', 'driverId', 'releasedAt', 'refundedAt', 'passengerConfirmed', 'issue', 'issueStatus', 'commissionDecision', 'offerTo', 'originalFare'])
+        && exists(walletDoc(uid()))
+        && getAfter(walletDoc(uid())).data.balance == get(walletDoc(uid())).data.balance - request.resource.data.fare
+        && getAfter(walletDoc(uid())).data.balance >= 0;
 
-      allow update: if isAdmin() || passengerCancels() || passengerClaimsPaid() || passengerConfirms() || passengerReports()
+      allow update: if isAdmin() || passengerCancels() || passengerConfirms() || raisesIssue()
         || passengerTakesOffer() || passengerUndoesOffer()
         || driverAccepts() || driverMovesOn() || driverGivesBack();
       allow delete: if isAdmin();
 
       function isPassenger() { return resource.data.requesterId == uid(); }
 
+      function walletAdjusted(by) {
+        return resource.data.get('payMode', '') != 'wallet'
+          || getAfter(walletDoc(uid())).data.balance == get(walletDoc(uid())).data.balance + by;
+      }
+      // Before a driver accepts: the full amount goes back to the wallet. After: the owner decides.
       function passengerCancels() {
-        return isPassenger()
-          && resource.data.status in ['open', 'accepted']
-          && request.resource.data.status == 'cancelled'
-          && changed().hasOnly(['status', 'updatedAt']);
+        return isPassenger() && request.resource.data.status == 'cancelled' && (
+          (resource.data.status == 'open'
+            && changed().hasOnly(['status', 'payStatus', 'refundedAt', 'updatedAt'])
+            && (resource.data.get('payMode', '') != 'wallet' || request.resource.data.payStatus == 'refunded')
+            && walletAdjusted(resource.data.fare))
+          || (resource.data.status == 'accepted' && changed().hasOnly(['status', 'updatedAt'])));
       }
-      // "I've paid": only the owner can later mark the money as received.
-      function passengerClaimsPaid() {
-        return isPassenger()
-          && resource.data.get('payMode', '') == 'secure'
-          && resource.data.get('payStatus', '') == 'unpaid'
-          && resource.data.status != 'cancelled'
-          && request.resource.data.payStatus == 'claimed'
-          && changed().hasOnly(['payStatus', 'paidClaimAt', 'updatedAt']);
+      // A passenger or the trip's driver reports a problem. The owner replies in the trip's messages.
+      function raisesIssue() {
+        return changed().hasOnly(['issueStatus', 'issueBy', 'issueAt', 'updatedAt'])
+          && request.resource.data.issueStatus == 'open'
+          && ((isPassenger() && request.resource.data.issueBy == 'passenger')
+            || (resource.data.get('driverId', '') == uid() && request.resource.data.issueBy == 'driver'));
       }
-      // The passenger picks a driver's price offer. The price changes to the offer, before any payment.
+      // The passenger picks a driver's price offer. The wallet pays (or gets back) the difference in the same write.
       function passengerTakesOffer() {
         let off = get(/databases/$(database)/documents/requests/$(id)/offers/$(request.resource.data.offerTo)).data;
         return isPassenger()
           && resource.data.status == 'open'
-          && resource.data.get('payStatus', 'unpaid') == 'unpaid'
           && changed().hasOnly(['fare', 'offerTo', 'offerAt', 'originalFare', 'updatedAt'])
+          && walletAdjusted(resource.data.fare - request.resource.data.fare)
           && request.resource.data.originalFare == resource.data.get('originalFare', resource.data.fare)
           && request.resource.data.fare == off.amount
           && off.driverId == request.resource.data.offerTo;
@@ -73,7 +85,8 @@ service cloud.firestore {
           && resource.data.get('offerTo', '') != ''
           && changed().hasOnly(['fare', 'offerTo', 'offerAt', 'updatedAt'])
           && request.resource.data.offerTo == ''
-          && request.resource.data.fare == resource.data.originalFare;
+          && request.resource.data.fare == resource.data.originalFare
+          && walletAdjusted(resource.data.fare - request.resource.data.fare);
       }
       // "We arrived safely": the passenger's half of releasing the payment.
       function passengerConfirms() {
@@ -82,15 +95,6 @@ service cloud.firestore {
           && request.resource.data.passengerConfirmed == true
           && changed().hasOnly(['passengerConfirmed', 'updatedAt']);
       }
-      // "Report a problem": stops the payment from being released until the owner decides.
-      function passengerReports() {
-        return isPassenger()
-          && resource.data.get('payStatus', '') in ['claimed', 'held']
-          && request.resource.data.payStatus == 'disputed'
-          && request.resource.data.issue is string && request.resource.data.issue.size() <= 1000
-          && changed().hasOnly(['payStatus', 'issue', 'updatedAt']);
-      }
-
       // Accepting a job: approved drivers only, paying exactly 10% from their own credit in the same write.
       function driverAccepts() {
         return permanent()
@@ -132,7 +136,7 @@ service cloud.firestore {
       allow create, update: if permanent() && did == uid()
         && get(driverDoc(uid())).data.get('vetting', '') == 'approved'
         && get(requestDoc(rid)).data.status == 'open'
-        && get(requestDoc(rid)).data.get('payStatus', 'unpaid') == 'unpaid'
+        && get(requestDoc(rid)).data.get('payStatus', 'unpaid') in ['unpaid', 'held']
         && request.resource.data.keys().hasOnly(['driverId', 'driverName', 'driverReg', 'driverVehicle', 'amount', 'note', 'at'])
         && request.resource.data.driverId == uid()
         && request.resource.data.amount is number
@@ -153,7 +157,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       // Fields a driver can change at any time.
-      function openKeys() { return ['phone', 'assoc', 'race', 'online', 'onlineAt', 'updatedAt']; }
+      function openKeys() { return ['phone', 'email', 'assoc', 'race', 'online', 'onlineAt', 'updatedAt']; }
       // Fields the owner checks. Changing any of them sends the driver back for review.
       function identityKeys() {
         return ['name', 'idType', 'idNumber', 'nationality', 'vehicle', 'reg', 'pdp',
@@ -203,9 +207,9 @@ service cloud.firestore {
 
     // A person's saved name and cellphone, so the booking form is filled in on any phone.
     match /profiles/{id} {
-      allow read: if signedIn() && uid() == id;
+      allow read: if signedIn() && (uid() == id || isAdmin());
       allow write: if permanent() && uid() == id
-        && request.resource.data.keys().hasOnly(['name', 'phone', 'emergencyName', 'emergencyPhone', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'email', 'emergencyName', 'emergencyPhone', 'updatedAt'])
         && request.resource.data.get('name', '').size() <= 120
         && request.resource.data.get('phone', '').size() <= 30;
     }
@@ -296,6 +300,75 @@ service cloud.firestore {
         && onTrip(request.resource.data.tripId);
       allow read: if isAdmin() || (signedIn() && resource.data.by == uid());
       allow update, delete: if isAdmin();
+    }
+
+    // ---------------- Passenger wallets ----------------
+    // Money only goes in when an owner confirms a top-up. It only moves with the passenger's own trips.
+    match /wallets/{id} {
+      allow read: if signedIn() && (uid() == id || isAdmin());
+      allow create: if isAdmin() || (permanent() && uid() == id
+        && request.resource.data.balance == 0
+        && request.resource.data.keys().hasOnly(['balance', 'code', 'createdAt', 'updatedAt']));
+      allow update: if isAdmin() || (permanent() && uid() == id && tripPayment());
+      allow delete: if isAdmin();
+
+      function tripPayment() {
+        let t = request.resource.data.lastTrip;
+        let after = getAfter(requestDoc(t)).data;
+        return changed().hasOnly(['balance', 'lastTrip', 'updatedAt'])
+          && request.resource.data.balance >= 0
+          && after.requesterId == uid()
+          && ((!exists(requestDoc(t)) && request.resource.data.balance == resource.data.balance - after.fare)
+            || (exists(requestDoc(t)) && get(requestDoc(t)).data.requesterId == uid() && get(requestDoc(t)).data.status == 'open'
+              && ((after.status == 'open' && request.resource.data.balance == resource.data.balance - (after.fare - get(requestDoc(t)).data.fare))
+                || (after.status == 'cancelled' && request.resource.data.balance == resource.data.balance + get(requestDoc(t)).data.fare))));
+      }
+    }
+    // "I've sent a top-up": shows on the owner dashboard straight away. Only an owner adds the money.
+    match /walletClaims/{id} {
+      allow read: if signedIn() && (isAdmin() || resource.data.userId == uid());
+      allow create: if permanent()
+        && request.resource.data.keys().hasOnly(['userId', 'amount', 'ref', 'at', 'status'])
+        && request.resource.data.userId == uid()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.amount is number && request.resource.data.amount > 0 && request.resource.data.amount <= 100000
+        && request.resource.data.get('ref', '').size() <= 60;
+      allow update, delete: if isAdmin();
+    }
+    match /walletTopups/{id} {
+      allow read: if signedIn() && (isAdmin() || resource.data.userId == uid());
+      allow write: if isAdmin();
+    }
+
+    // ---------------- Messages about a trip (issues and the owner's replies) ----------------
+    match /requests/{rid}/messages/{mid} {
+      allow read: if signedIn() && (isAdmin() || get(requestDoc(rid)).data.requesterId == uid() || get(requestDoc(rid)).data.get('driverId', '') == uid());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['from', 'by', 'text', 'at', 'to'])
+        && request.resource.data.by == uid()
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+        && ((request.resource.data.from == 'owner' && isAdmin())
+          || (request.resource.data.from == 'passenger' && get(requestDoc(rid)).data.requesterId == uid())
+          || (request.resource.data.from == 'driver' && get(requestDoc(rid)).data.get('driverId', '') == uid()));
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------------- Emails waiting to be sent ----------------
+    // Uses the format of Firebase's "Trigger Email from Firestore" extension, set up with "profiles" as the
+    // users collection, so emails go to each person's saved address. Without the extension, emails just wait here.
+    // Trip participants may queue exactly one receipt per side, addressed only to that side's account.
+    match /mail/{id} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isAdmin() || (permanent() && receiptMail(id));
+      function receiptMail(id) {
+        let d = request.resource.data;
+        let t = get(requestDoc(d.tripId)).data;
+        return d.keys().hasOnly(['toUids', 'message', 'tripId', 'at', 'kind'])
+          && t.status == 'completed'
+          && (t.requesterId == uid() || t.get('driverId', '') == uid())
+          && ((id == d.tripId + '_receipt_p' && d.toUids == [t.requesterId])
+            || (id == d.tripId + '_receipt_d' && d.toUids == [t.driverId]));
+      }
     }
 
     // Credit top-ups, recorded by an owner. Drivers can see their own.
