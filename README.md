@@ -60,6 +60,16 @@ Turn on both sign-in methods in Firebase, under **Authentication → Sign-in met
 
 Keep **Anonymous** turned on. It lets people browse before they sign in.
 
+## Live tracking, sharing, SOS and WhatsApp
+
+- **Trip progress:** every trip shows a progress line: Booked → Driver assigned → On the way → Picked up → Arrived.
+- **Live map:** when the driver taps **I'm on my way**, their phone shares its location every 15 seconds, or every 100 m, until the trip is complete. The passenger sees the taxi moving on a map. The driver must allow location access and **keep Siyahamba open during the trip**, because phones pause web apps in the background. The maps are free [OpenStreetMap](https://www.openstreetmap.org) maps via Leaflet, so no Google key is needed. If you grow to thousands of trips a day, switch to a paid map tile provider.
+- **Share my trip:** the passenger taps **Share my trip** and sends a private link, by WhatsApp or any app. Family can follow the taxi live **without an account**. They see the driver's name, photo, rating, vehicle and plate, but **not phone numbers**. The link stops showing the location when the trip ends.
+- **SOS:** a red **SOS** button for passengers and drivers during a trip. It shows **10111** (police), **112** and **10177** (ambulance) to call, alerts the owner with the trip and location, and sends a WhatsApp message to the person's emergency contact with their location and the live trip link. Owners see alerts in a red **Emergency alerts** panel at the top of the dashboard.
+- **Call and WhatsApp buttons:** passengers can call or WhatsApp their driver, and drivers their group leader, with a ready-written message. SA numbers like 082… become +27 82… automatically.
+
+Only the passenger, the driver, owners and people with the share link can see where the taxi is, and the database rules enforce it.
+
 ## Ratings and badges
 
 When a trip is complete, the **passenger rates the driver** and the **driver rates the group leader**. Each gives 1 to 5 stars and an optional comment of up to 300 characters. Each side rates a trip **once**, and ratings can't be changed afterwards.

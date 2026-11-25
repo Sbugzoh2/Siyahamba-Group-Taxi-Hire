@@ -167,7 +167,7 @@ service cloud.firestore {
     match /profiles/{id} {
       allow read: if signedIn() && uid() == id;
       allow write: if permanent() && uid() == id
-        && request.resource.data.keys().hasOnly(['name', 'phone', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'emergencyName', 'emergencyPhone', 'updatedAt'])
         && request.resource.data.get('name', '').size() <= 120
         && request.resource.data.get('phone', '').size() <= 30;
     }
@@ -215,6 +215,49 @@ service cloud.firestore {
           && request.resource.data.sum == oldSum + rd.stars
           && request.resource.data.count == oldCount + 1;
       }
+    }
+
+    // ---------------- Live tracking, trip sharing and SOS ----------------
+    function trip(id) { return get(requestDoc(id)).data; }
+    function onTrip(id) { return trip(id).requesterId == uid() || trip(id).get('driverId', '') == uid(); }
+    function tripActive(id) { return trip(id).status in ['accepted', 'enroute', 'ontrip']; }
+
+    // The taxi's last known position during a trip. Written only by that trip's driver while the trip is on.
+    match /tracking/{tripId} {
+      allow read: if signedIn() && (isAdmin() || onTrip(tripId)
+        || (tripActive(tripId) && exists(/databases/$(database)/documents/shareGrants/$(uid() + '_' + tripId))));
+      allow write: if permanent() && trip(tripId).get('driverId', '') == uid() && tripActive(tripId)
+        && request.resource.data.keys().hasOnly(['lat', 'lng', 'acc', 'heading', 'speed', 'at', 'driverId'])
+        && request.resource.data.driverId == uid()
+        && request.resource.data.lat is number && request.resource.data.lng is number;
+    }
+
+    // "Share my trip": a secret link the passenger sends to family. The link's code is the document ID.
+    match /shares/{token} {
+      allow get: if signedIn();
+      allow create: if permanent() && token.size() >= 20
+        && request.resource.data.keys().hasOnly(['tripId', 'by', 'createdAt'])
+        && request.resource.data.by == uid()
+        && trip(request.resource.data.tripId).requesterId == uid();
+      allow delete: if signedIn() && resource.data.by == uid();
+    }
+    // Someone who opened a share link may follow that one trip while it's on.
+    match /shareGrants/{gid} {
+      allow get: if signedIn() && gid == uid() + '_' + resource.data.tripId;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['tripId', 'token', 'at'])
+        && gid == uid() + '_' + request.resource.data.tripId
+        && get(/databases/$(database)/documents/shares/$(request.resource.data.token)).data.tripId == request.resource.data.tripId;
+    }
+
+    // SOS alerts from a passenger or driver on a trip. Owners see them all.
+    match /sos/{id} {
+      allow create: if permanent()
+        && request.resource.data.keys().hasOnly(['tripId', 'by', 'role', 'at', 'lat', 'lng', 'note'])
+        && request.resource.data.by == uid()
+        && onTrip(request.resource.data.tripId);
+      allow read: if isAdmin() || (signedIn() && resource.data.by == uid());
+      allow update, delete: if isAdmin();
     }
 
     // Credit top-ups, recorded by an owner. Drivers can see their own.

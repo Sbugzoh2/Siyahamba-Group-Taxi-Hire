@@ -20,6 +20,8 @@ img { max-width: 100%; }
 </style>
 <title>Siyahamba Group Taxi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
 /* Layout: app shell with a road-marked header; two-pane workspace (form | live panel) that stacks on phones */
@@ -278,6 +280,35 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
 .stars button:focus-visible { outline: 2px solid var(--focus); border-radius: 4px; }
 .rated-note { font-size: 0.85rem; color: var(--muted); }
 .rated-note .gold-stars { color: var(--accent); letter-spacing: 1px; }
+.timeline { display: flex; list-style: none; margin: 2px 0 4px; padding: 0; }
+.timeline li { flex: 1; position: relative; text-align: center; font-size: 0.72rem; line-height: 1.2; color: var(--muted); padding-top: 20px; min-width: 0; }
+.timeline li::before { content: ""; position: absolute; top: 3px; left: 50%; transform: translateX(-50%); width: 13px; height: 13px; border-radius: 50%; background: var(--line); z-index: 1; }
+.timeline li::after { content: ""; position: absolute; top: 8px; left: -50%; width: 100%; height: 3px; background: var(--line); }
+.timeline li:first-child::after { display: none; }
+.timeline li.done, .timeline li.now { color: var(--ink); font-weight: 600; }
+.timeline li.done::before, .timeline li.done::after, .timeline li.now::after { background: var(--go); }
+.timeline li.now::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+@media (prefers-reduced-motion: no-preference) { .timeline li.now::before { animation: pulse 1.6s ease-in-out infinite; } @keyframes pulse { 50% { box-shadow: 0 0 0 7px var(--accent-soft); } } }
+.trip-map { position: relative; height: 230px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); z-index: 0; }
+.map-note { position: absolute; left: 8px; bottom: 8px; z-index: 500; background: var(--surface); color: var(--ink); border-radius: 8px; padding: 4px 9px; font-size: 0.78rem; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.2); max-width: calc(100% - 16px); }
+.taxi-pin { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); border: 3px solid #1B2631; box-shadow: 0 0 0 6px rgba(242,183,5,0.35); display: grid; place-items: center; }
+.taxi-pin svg { width: 16px; height: 16px; }
+.contact { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.contact a { text-decoration: none; }
+.btn-wa { background: #1FA855; color: #fff; }
+.btn-wa:hover { filter: brightness(1.05); }
+.trip-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn-sos { background: #C62828; color: #fff; font-weight: 800; letter-spacing: 0.04em; }
+.btn-sos:hover { filter: brightness(1.08); }
+.geo-note { font-size: 0.84rem; border-radius: 8px; padding: 8px 10px; background: var(--go-soft); color: var(--go); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.geo-note.off { background: var(--warn-soft); color: var(--warn); }
+.share-box { display: flex; flex-direction: column; gap: 8px; background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 0.86rem; }
+.share-box .link { font-family: var(--f-mono); font-size: 0.78rem; overflow-wrap: anywhere; user-select: all; }
+.sos-call { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #C62828; color: #fff; text-decoration: none; font-weight: 700; }
+.sos-call b { font-family: var(--f-mono); font-size: 1.3rem; }
+.sos-call.alt { background: var(--surface-2); color: var(--ink); border: 1.5px solid var(--line); }
+.sos-panel { border: 2px solid #C62828; margin-bottom: 20px; }
+.sos-panel h2 { color: #C62828; }
 .install { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
 .install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
 .install-text { flex: 1 1 220px; min-width: 0; font-size: 0.9rem; }
@@ -693,6 +724,15 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     </div>
   </section>
 
+  <!-- FOLLOW A SHARED TRIP -->
+  <section id="view-track" hidden>
+    <div class="view-head">
+      <h1>Follow a trip</h1>
+      <p class="lede">Someone shared their Siyahamba trip with you. You can see their driver, taxi and where they are until they arrive.</p>
+    </div>
+    <div class="panel" id="track-body"></div>
+  </section>
+
   <!-- OWNER -->
   <section id="view-admin" hidden>
     <div class="view-head">
@@ -711,6 +751,10 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       </div>
     </div>
     <div id="admin-body" hidden>
+      <div class="panel sos-panel" id="admin-sos" hidden>
+        <div class="panel-head"><h2>Emergency alerts</h2><span class="count" id="admin-sos-count">0</span></div>
+        <div class="list" id="admin-sos-list"></div>
+      </div>
       <div class="stats" id="admin-stats"></div>
       <div class="panel" style="margin-bottom:20px">
         <div class="panel-head"><h2>Drivers to approve</h2><span class="count" id="admin-vet-count">0</span></div>
@@ -772,6 +816,10 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     </div>
   </div>
 </main>
+
+<dialog class="auth" id="sos-dialog" aria-labelledby="sos-title">
+  <div class="auth-in" id="sos-body"></div>
+</dialog>
 
 <dialog class="auth" id="auth-dialog" aria-labelledby="auth-title">
   <div class="auth-in">
@@ -1221,13 +1269,15 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
 
   /* ---------- Routing ---------- */
   function showView() {
-    const r = location.hash === "#driver" ? "driver" : location.hash === "#admin" ? "admin" : "passenger";
+    const r = location.hash === "#driver" ? "driver" : location.hash === "#admin" ? "admin" : /^#track-/.test(location.hash) ? "track" : "passenger";
+    $("view-track").hidden = r !== "track";
     $("view-passenger").hidden = r !== "passenger";
     $("view-driver").hidden = r !== "driver";
     $("view-admin").hidden = r !== "admin";
     $("nav-passenger").removeAttribute("aria-current");
     $("nav-driver").removeAttribute("aria-current");
-    if (r !== "admin") $("nav-" + r).setAttribute("aria-current", "page");
+    if (r === "passenger" || r === "driver") $("nav-" + r).setAttribute("aria-current", "page");
+    if (r === "track" && store.mode === "db") openTrackView(location.hash.slice(7));
   }
   window.addEventListener("hashchange", showView);
 
@@ -1627,6 +1677,264 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     else if (id) store.loadPublic(id).then((pub) => { pubCache[id] = pub || {}; fill(pubCache[id]); });
     return box;
   }
+  /* ---------- Call and WhatsApp ---------- */
+  function waNumber(phone) {
+    let d = String(phone || "").replace(/\D/g, "");
+    if (d.startsWith("00")) d = d.slice(2);
+    if (d.startsWith("0")) d = "27" + d.slice(1);
+    return d.length >= 10 ? d : "";
+  }
+  function contactLinks(phone, text) {
+    const n = waNumber(phone), tel = String(phone || "").replace(/[^\d+]/g, "");
+    if (!tel) return null;
+    return h("span", { class: "contact" },
+      h("a", { class: "btn btn-ghost btn-sm", href: "tel:" + tel }, "Call"),
+      n ? h("a", { class: "btn btn-wa btn-sm", href: "https://wa.me/" + n + "?text=" + encodeURIComponent(text), target: "_blank", rel: "noopener" }, "WhatsApp") : null);
+  }
+
+  /* ---------- Trip progress ---------- */
+  const STEPS = [["open", "Booked"], ["accepted", "Driver assigned"], ["enroute", "On the way"], ["ontrip", "Picked up"], ["completed", "Arrived"]];
+  function timeline(r) {
+    if (r.status === "cancelled") return null;
+    const at = STEPS.findIndex((x) => x[0] === r.status);
+    return h("ol", { class: "timeline", "aria-label": "Trip progress" }, ...STEPS.map(([k, label], i) =>
+      h("li", { class: i < at || (r.status === "completed" && i === at) ? "done" : i === at ? "now" : "", "aria-current": i === at ? "step" : null, text: label })));
+  }
+  const isActive = (r) => ["accepted", "enroute", "ontrip"].includes(r.status);
+
+  /* ---------- Live map ---------- */
+  const maps = {}, trackData = {}, trackSubs = {};
+  const TAXI_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#1B2631" d="M3 6.5A2.5 2.5 0 0 1 5.5 4h10.2a2.5 2.5 0 0 1 2 1l2.8 3.7c.3.4.5.9.5 1.5V16a1 1 0 0 1-1 1h-1.2a2.5 2.5 0 0 1-4.6 0H9.8a2.5 2.5 0 0 1-4.6 0H4a1 1 0 0 1-1-1zM5 7v3h4V7zm5.5 0v3h4V7zm5.5 0v3h3l-2.3-3z"/></svg>';
+  function watchTracking(tripId) {
+    if (trackSubs[tripId] || store.mode !== "db") return;
+    trackSubs[tripId] = store.db.doc("tracking/" + tripId).onSnapshot((s) => {
+      trackData[tripId] = s.exists ? s.data() : null; updateMap(tripId);
+    }, (e) => { console.warn(e); delete trackSubs[tripId]; });
+  }
+  function tripMap(r) {
+    if (!window.L) return null;
+    let m = maps[r.id];
+    if (!m) {
+      const el = h("div", { class: "trip-map", role: "region", "aria-label": "Map of the trip" });
+      const note = h("div", { class: "map-note", text: "Waiting for the taxi's location…" });
+      const map = L.map(el, { zoomControl: true, attributionControl: true, scrollWheelZoom: false }).setView([-26.2, 28.05], 11);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+      const o = placeOf(r, "pickup"), d = placeOf(r, "dropoff"), pts = [];
+      const spot = Array.isArray(r.addressLL) ? r.addressLL : o.ll;
+      if (spot) { L.circleMarker(spot, { radius: 8, color: "#1A7F52", fillColor: "#42C08A", fillOpacity: 1, weight: 3 }).bindTooltip("Pick-up").addTo(map); pts.push(spot); }
+      if (d.ll) { L.circleMarker(d.ll, { radius: 8, color: "#1B2631", fillColor: "#ffffff", fillOpacity: 1, weight: 3 }).bindTooltip("Destination").addTo(map); pts.push(d.ll); }
+      el.append(note);
+      m = maps[r.id] = { el, map, note, pts, taxi: null, fitted: false };
+      watchTracking(r.id);
+    }
+    watchTracking(r.id);
+    requestAnimationFrame(() => { m.map.invalidateSize(); updateMap(r.id); });
+    return m.el;
+  }
+  function updateMap(tripId) {
+    const m = maps[tripId]; if (!m) return;
+    const t = trackData[tripId];
+    if (t && typeof t.lat === "number") {
+      const ll = [t.lat, t.lng];
+      if (!m.taxi) m.taxi = L.marker(ll, { icon: L.divIcon({ className: "", html: '<div class="taxi-pin">' + TAXI_SVG + "</div>", iconSize: [30, 30], iconAnchor: [15, 15] }), title: "The taxi", zIndexOffset: 1000 }).addTo(m.map);
+      else m.taxi.setLatLng(ll);
+      const secs = Math.max(0, Math.round((Date.now() - (t.at || Date.now())) / 1000));
+      m.note.textContent = "Taxi location updated " + (secs < 60 ? secs + " s ago" : Math.round(secs / 60) + " min ago") + (t.speed ? " · " + t.speed + " km/h" : "");
+      if (!m.fitted) { m.map.fitBounds(L.latLngBounds([...m.pts, ll]).pad(0.25), { maxZoom: 15 }); m.fitted = true; }
+    } else {
+      m.note.textContent = store.mode === "db" ? "The taxi's location shows once the driver is on the way." : "Live location needs the online version.";
+      if (!m.fitted && m.pts.length) { m.map.fitBounds(L.latLngBounds(m.pts).pad(0.25), { maxZoom: 14 }); m.fitted = true; }
+    }
+  }
+  setInterval(() => Object.keys(maps).forEach(updateMap), 10000);
+  window.addEventListener("load", () => render());
+
+  /* ---------- Driver shares location while on the way and on the trip ---------- */
+  const geo = { watch: null, trip: null, sent: 0, sentLL: null, err: "", wake: null, last: 0 };
+  function updateLocationSharing() {
+    if (store.mode !== "db" || !isPermanent() || !("geolocation" in navigator)) return;
+    const job = allRequests.find((r) => r.driverId === store.me && ["enroute", "ontrip"].includes(r.status));
+    if (job && geo.trip !== job.id) startSharing(job.id);
+    else if (!job && geo.trip) stopSharing();
+  }
+  function startSharing(id) {
+    stopSharing(); geo.trip = id; geo.err = "";
+    geo.watch = navigator.geolocation.watchPosition(sendLoc, (e) => { geo.err = e.code === 1 ? "denied" : "unavailable"; renderGeoNotes(); },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+    try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then((w) => { geo.wake = w; }).catch(() => {}); } catch (e) {}
+    renderGeoNotes();
+  }
+  function stopSharing() {
+    if (geo.watch != null) navigator.geolocation.clearWatch(geo.watch);
+    if (geo.wake) { geo.wake.release().catch(() => {}); geo.wake = null; }
+    geo.watch = null; geo.trip = null; geo.sentLL = null;
+  }
+  async function sendLoc(p) {
+    const c = p.coords, now = Date.now(), ll = [c.latitude, c.longitude];
+    geo.err = ""; geo.last = now;
+    const moved = geo.sentLL ? kmBetween(geo.sentLL, ll) * 1000 : Infinity;
+    if (now - geo.sent < 15000 && moved < 100) { renderGeoNotes(); return; }
+    geo.sent = now; geo.sentLL = ll;
+    try {
+      await store.db.doc("tracking/" + geo.trip).set({ lat: ll[0], lng: ll[1], acc: Math.round(c.accuracy || 0),
+        heading: c.heading == null || isNaN(c.heading) ? null : Math.round(c.heading),
+        speed: c.speed == null || isNaN(c.speed) ? null : Math.round(c.speed * 3.6), at: now, driverId: store.me });
+    } catch (e) { console.warn(e); }
+    renderGeoNotes();
+  }
+  function geoNote(r) { return h("div", { class: "geo-note", "data-trip": r.id }); }
+  function renderGeoNotes() {
+    document.querySelectorAll(".geo-note").forEach((el) => {
+      const id = el.getAttribute("data-trip");
+      if (geo.err && geo.trip === id) {
+        el.className = "geo-note off";
+        el.replaceChildren(h("span", { text: geo.err === "denied" ? "Location is blocked, so the group can't follow the taxi. Allow location for this site in your browser settings." : "Can't find your location right now." }),
+          h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => startSharing(id) }, "Try again"));
+      } else if (geo.trip === id) {
+        el.className = "geo-note";
+        el.textContent = geo.last ? "Sharing your live location with the group. Keep Siyahamba open during the trip." : "Starting to share your location…";
+      } else {
+        el.className = "geo-note off";
+        el.textContent = store.mode === "db" ? "Tap “I'm on my way” to start sharing your location with the group." : "Live location needs the online version.";
+      }
+    });
+  }
+
+  /* ---------- Share my trip ---------- */
+  function randToken(n) {
+    const a = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789", b = new Uint8Array(n || 24);
+    crypto.getRandomValues(b); return Array.from(b, (x) => a[x % a.length]).join("");
+  }
+  async function shareLinkFor(r) {
+    const saved = safeLS.get("siyahamba.shares") || {};
+    if (saved[r.id]) return saved[r.id];
+    const tok = randToken(24);
+    await store.db.doc("shares/" + tok).set({ tripId: r.id, by: store.me, createdAt: Date.now() });
+    saved[r.id] = tok; safeLS.set("siyahamba.shares", saved);
+    return tok;
+  }
+  const trackUrl = (tok) => location.origin + location.pathname + "#track-" + tok;
+  async function shareTrip(r, holder, btn) {
+    if (store.mode !== "db") { holder.replaceChildren(h("div", { class: "share-box", text: "Sharing a trip needs the online version of Siyahamba." })); return; }
+    btn.disabled = true;
+    try {
+      const url = trackUrl(await shareLinkFor(r));
+      const text = "Follow my Siyahamba trip live: " + r.pickup + " to " + r.dropoff + ". Driver " + (r.driverName || "") + ", taxi " + (r.driverReg || "") + ".";
+      if (navigator.share) { try { await navigator.share({ title: "My Siyahamba trip", text, url }); btn.disabled = false; return; } catch (e) { if (e.name === "AbortError") { btn.disabled = false; return; } } }
+      holder.replaceChildren(h("div", { class: "share-box" },
+        h("b", { text: "Send this link to family or friends" }),
+        h("span", { class: "link", text: url }),
+        h("div", { class: "trip-actions" }, copyBtn(url),
+          h("a", { class: "btn btn-wa btn-sm", href: "https://wa.me/?text=" + encodeURIComponent(text + " " + url), target: "_blank", rel: "noopener", style: "text-decoration:none" }, "Send on WhatsApp")),
+        h("span", { class: "hint", text: "They can follow the taxi until you arrive. The link stops working when the trip ends." })));
+    } catch (e) { console.warn(e); holder.replaceChildren(h("div", { class: "share-box", text: "Couldn't create the link. Check your connection and try again." })); }
+    btn.disabled = false;
+  }
+
+  /* ---------- Follow a shared trip ---------- */
+  const track = { token: "", tripId: "", error: "" };
+  async function openTrackView(token) {
+    if (track.token === token) { renderTrack(); return; }
+    track.token = token; track.tripId = ""; track.error = "";
+    renderTrack();
+    try {
+      const s = await store.db.doc("shares/" + token).get();
+      if (!s.exists) throw new Error("missing");
+      const tripId = s.data().tripId;
+      // Save this viewer's access first, so the map only asks for the location once it's allowed.
+      try { await store.db.doc("shareGrants/" + store.me + "_" + tripId).set({ tripId, token, at: Date.now() }); } catch (e) { /* already allowed */ }
+      track.tripId = tripId;
+    } catch (e) { track.error = "bad"; }
+    renderTrack();
+  }
+  function renderTrack() {
+    if ($("view-track").hidden) return;
+    const body = $("track-body");
+    if (store.mode !== "db") { body.replaceChildren(empty("Loading…", "Connecting to Siyahamba.")); return; }
+    if (track.error) { body.replaceChildren(empty("This link doesn't work", "Ask the person who sent it for a new link.")); return; }
+    const r = allRequests.find((x) => x.id === track.tripId);
+    if (!r) { body.replaceChildren(h("p", { class: "meta", text: "Loading the trip…" })); return; }
+    const v = VEHICLES[r.driverVehicle] || null;
+    const kids = [h("div", { class: "trip-top" }, routeLine(r), statusPill(r.status)), timeline(r)];
+    if (r.driverId) kids.push(h("div", { class: "driver-box" }, driverFaces(r.driverId), h("span", null, "Driver ", h("b", { text: r.driverName || "" })), ratingFor(r.driverId),
+      v ? h("span", { text: v.name }) : null, r.driverReg ? h("span", { class: "plate", text: r.driverReg }) : null));
+    if (isActive(r)) { const m = tripMap(r); if (m) kids.push(m); }
+    else kids.push(h("div", { class: "pay-box ok" }, h("b", { class: "t", text: r.status === "completed" ? "They've arrived" : r.status === "cancelled" ? "This trip was cancelled" : "Waiting for a driver" })));
+    kids.push(h("p", { class: "hint", style: "margin:0", text: "If you think they're in danger, call the police on 10111, or 112 from a cellphone." }));
+    body.replaceChildren(h("div", { style: "display:flex;flex-direction:column;gap:12px" }, ...kids.filter(Boolean)));
+  }
+
+  /* ---------- SOS ---------- */
+  let myProfile = {};
+  function openSOS(r, role) {
+    const dlg = $("sos-dialog"), body = $("sos-body");
+    const status = h("p", { class: "form-msg", style: "margin:0", text: store.mode === "db" ? "Alerting Siyahamba…" : "" });
+    const contactBox = h("div", { style: "display:flex;flex-direction:column;gap:8px" });
+    let pos = null, shareUrl = "";
+    const call = (num, label, alt) => h("a", { class: "sos-call" + (alt ? " alt" : ""), href: "tel:" + num }, h("span", { text: label }), h("b", { text: num }));
+    const drawContact = () => {
+      const name = myProfile.emergencyName, phone = myProfile.emergencyPhone;
+      if (name && phone && waNumber(phone)) {
+        const lines = ["SOS from Siyahamba: I need help.", "Trip: " + r.pickup + " to " + r.dropoff + ".",
+          role === "passenger" ? "Driver " + (r.driverName || "") + ", taxi " + (r.driverReg || "") + ", " + (r.driverPhone || "") + "." : "Group leader " + (r.contactName || "") + ", " + (r.contactPhone || "") + ".",
+          pos ? "My location: https://maps.google.com/?q=" + pos[0].toFixed(5) + "," + pos[1].toFixed(5) : "", shareUrl ? "Follow the trip live: " + shareUrl : ""].filter(Boolean);
+        contactBox.replaceChildren(
+          h("a", { class: "btn btn-wa", style: "text-decoration:none;text-align:center", href: "https://wa.me/" + waNumber(phone) + "?text=" + encodeURIComponent(lines.join("\n")), target: "_blank", rel: "noopener" }, "Send my trip and location to " + name + " on WhatsApp"),
+          h("a", { class: "btn btn-ghost", style: "text-decoration:none;text-align:center", href: "tel:" + String(phone).replace(/[^\d+]/g, "") }, "Call " + name),
+          h("button", { type: "button", class: "linkbtn", style: "align-self:flex-start", onclick: () => { myProfile.emergencyName = ""; drawContact(); } }, "Change emergency contact"));
+      } else {
+        const n = h("input", { placeholder: "Name, e.g. My sister Zodwa", "aria-label": "Emergency contact name", value: name || "" });
+        const ph = h("input", { type: "tel", inputmode: "tel", placeholder: "Cellphone number", "aria-label": "Emergency contact cellphone", value: phone || "" });
+        const msg = h("span", { class: "form-msg" });
+        contactBox.replaceChildren(h("b", { text: "Add an emergency contact" }), n, ph, h("div", { class: "trip-actions" },
+          h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async () => {
+            if (!n.value.trim() || !waNumber(ph.value)) { msg.className = "form-msg err"; msg.textContent = "Add a name and a cellphone number."; return; }
+            myProfile = { ...myProfile, emergencyName: n.value.trim().slice(0, 60), emergencyPhone: ph.value.trim().slice(0, 30) };
+            if (store.mode === "db" && isPermanent()) store.db.doc("profiles/" + store.me).set({ emergencyName: myProfile.emergencyName, emergencyPhone: myProfile.emergencyPhone, updatedAt: Date.now() }, { merge: true }).catch((e) => console.warn(e));
+            else safeLS.set("siyahamba.emergency", myProfile);
+            drawContact();
+          } }, "Save"), msg));
+      }
+    };
+    body.replaceChildren(
+      h("div", { class: "auth-head" }, h("h2", { id: "sos-title", style: "color:#C62828", text: "Emergency" }), h("button", { type: "button", class: "linkbtn", onclick: () => dlg.close() }, "Close")),
+      h("p", { style: "margin:0", text: "If you're in danger, call for help now." }),
+      call("10111", "Police"), call("112", "Emergency from any cellphone"), call("10177", "Ambulance", true),
+      status, contactBox);
+    drawContact();
+    if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+    const alert = async () => {
+      if (store.mode !== "db") return;
+      try {
+        if (role === "passenger") { try { shareUrl = trackUrl(await shareLinkFor(r)); } catch (e) { /* not shared */ } }
+        await store.db.collection("sos").add({ tripId: r.id, by: store.me, role, at: Date.now(), lat: pos ? pos[0] : null, lng: pos ? pos[1] : null, note: "" });
+        status.className = "form-msg ok"; status.textContent = "Siyahamba has been alerted with your trip details" + (pos ? " and location." : ".");
+      } catch (e) { console.warn(e); status.className = "form-msg err"; status.textContent = "Couldn't alert Siyahamba. Call the numbers above."; }
+      drawContact();
+    };
+    if ("geolocation" in navigator) navigator.geolocation.getCurrentPosition((p) => { pos = [p.coords.latitude, p.coords.longitude]; alert(); }, () => alert(), { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+    else alert();
+  }
+  function sosButton(r, role) { return h("button", { type: "button", class: "btn btn-sos btn-sm", onclick: () => openSOS(r, role) }, "SOS"); }
+
+  /* ---------- Owner: emergency alerts ---------- */
+  let sosAlerts = [];
+  function renderSOS() {
+    const open = sosAlerts.filter((a) => !a.handled).sort((a, b) => b.at - a.at);
+    $("admin-sos").hidden = !open.length; $("admin-sos-count").textContent = open.length;
+    $("admin-sos-list").replaceChildren(...open.map((a) => {
+      const r = allRequests.find((x) => x.id === a.tripId) || {};
+      const who = a.role === "driver" ? "Driver " + (r.driverName || "") : "Passenger " + (r.contactName || "");
+      const phone = a.role === "driver" ? r.driverPhone : r.contactPhone;
+      return h("article", { class: "trip", "data-status": "cancelled" },
+        h("div", { class: "trip-top" }, h("div", null, h("div", { class: "route", text: "SOS from " + who }), h("div", { class: "meta" }, h("span", { text: ago(a.at) }), r.pickup ? h("span", { text: r.pickup + " → " + r.dropoff }) : null, r.driverReg ? h("span", { class: "plate", text: r.driverReg }) : null))),
+        h("div", { class: "trip-actions" },
+          phone ? contactLinks(phone, "Hi, this is Siyahamba. We got your SOS alert. Are you safe?") : null,
+          a.lat != null ? h("a", { class: "btn btn-ghost btn-sm", href: "https://maps.google.com/?q=" + a.lat + "," + a.lng, target: "_blank", rel: "noopener", style: "text-decoration:none" }, "See location") : h("span", { class: "meta", text: "No location sent" }),
+          h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => { e.currentTarget.disabled = true; try { await store.db.doc("sos/" + a.id).update({ handled: true, handledAt: Date.now() }); } catch (err) { console.warn(err); } } }, "Mark as handled")));
+    }));
+  }
+
   /* ---------- Ratings and badges ---------- */
   const MIN_FOR_BADGE = 3;
   function badgeFor(st) {
@@ -1760,6 +2068,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
   function passengerCard(r) {
     const card = h("article", { class: "trip", "data-status": r.status },
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
+      timeline(r),
       tripMeta(r),
       routeLinks(r, false)
     );
@@ -1769,10 +2078,18 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
         driverFaces(r.driverId),
         h("span", null, "Driver ", h("b", { text: r.driverName })),
         ratingFor(r.driverId),
-        r.driverPhone ? h("span", null, h("span", { class: "phone", text: r.driverPhone }), " ", copyBtn(r.driverPhone)) : null,
+        r.driverPhone ? h("span", { class: "phone", text: r.driverPhone }) : null,
         v ? h("span", { text: v.name }) : null,
-        r.driverReg ? h("span", { class: "plate", text: r.driverReg }) : null
+        r.driverReg ? h("span", { class: "plate", text: r.driverReg }) : null,
+        r.status !== "completed" ? contactLinks(r.driverPhone, "Hi " + (r.driverName || "").split(" ")[0] + ", it's " + (r.contactName || "") + " from Siyahamba (trip " + tripRef(r.id) + ", " + r.pickup + " to " + r.dropoff + ").") : null
       ));
+    }
+    if (isActive(r)) {
+      const m = tripMap(r); if (m) card.append(m);
+      const holder = h("div");
+      const shareBtn = h("button", { type: "button", class: "btn btn-ghost btn-sm" }, "Share my trip");
+      shareBtn.addEventListener("click", () => shareTrip(r, holder, shareBtn));
+      card.append(h("div", { class: "trip-actions" }, shareBtn, sosButton(r, "passenger")), holder);
     }
     const pb = payBox(r);
     if (pb) card.append(pb);
@@ -1852,18 +2169,22 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
   function jobCard(r) {
     const card = h("article", { class: "trip", "data-status": r.status },
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
+      timeline(r),
       tripMeta(r),
       r.address ? h("div", { class: "notes", text: "Pick-up spot: " + r.address }) : null,
       r.notes ? h("div", { class: "notes", text: r.notes }) : null,
       r.status !== "cancelled" && r.status !== "completed" ? routeLinks(r, true) : null
     );
+    if (isActive(r)) card.append(geoNote(r));
     if (r.status !== "cancelled") {
       card.append(h("div", { class: "driver-box" },
         h("span", null, "Group leader ", h("b", { text: r.contactName })),
         ratingFor(r.requesterId),
-        h("span", null, h("span", { class: "phone", text: r.contactPhone }), " ", copyBtn(r.contactPhone)),
-        h("span", { text: r.payment })
+        h("span", { class: "phone", text: r.contactPhone }),
+        h("span", { text: r.payment }),
+        r.status !== "completed" ? contactLinks(r.contactPhone, "Hi " + (r.contactName || "").split(" ")[0] + ", it's " + (r.driverName || "your driver") + ", your Siyahamba driver (" + (r.driverReg || "") + ") for " + r.pickup + " to " + r.dropoff + ".") : null
       ));
+      if (isActive(r)) card.append(h("div", { class: "trip-actions" }, sosButton(r, "driver")));
     }
     if (r.payMode === "secure" && r.status !== "cancelled") {
       const ps = r.payStatus || "unpaid";
@@ -1917,6 +2238,15 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     $("my-jobs").replaceChildren(...(jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
     renderCredit();
     renderAdmin();
+    renderGeoNotes();
+    updateLocationSharing();
+    // Stop following a taxi once its trip is over.
+    Object.keys(trackSubs).forEach((id) => {
+      const r = allRequests.find((x) => x.id === id);
+      if (r && !isActive(r)) { trackSubs[id](); delete trackSubs[id]; delete trackData[id]; if (maps[id]) { maps[id].map.remove(); delete maps[id]; } }
+    });
+    renderTrack();
+    if (admin.on) renderSOS();
     const mr = $("my-rating"), st = statsCache[store.me];
     mr.hidden = !(st && st.count);
     if (st && st.count) mr.replaceChildren(h("span", { class: "cnt", text: "Your rating as a passenger:" }), ...ratingParts(st));
@@ -2431,6 +2761,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       $("admin-uid").textContent = user.uid; $("admin-uid-box").hidden = false; return;
     }
     admin.on = true;
+    store.db.collection("sos").orderBy("at", "desc").limit(30).onSnapshot((snap) => { sosAlerts = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderSOS(); }, (e) => console.warn(e));
     $("admin-gate").hidden = true; $("admin-body").hidden = false;
     store.db.collection("drivers").onSnapshot((snap) => { admin.drivers = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderAdmin(); }, (e) => console.warn(e));
     store.db.collection("topups").orderBy("at", "desc").limit(50).onSnapshot((snap) => { admin.topups = snap.docs.map((d) => d.data()); renderAdmin(); }, (e) => console.warn(e));
@@ -2495,7 +2826,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     if (!restoreDraft() && isPermanent()) {
       try {
         const pr = await db.doc("profiles/" + store.me).get();
-        if (pr.exists) { if (!$("f-name").value) $("f-name").value = pr.data().name || ""; if (!$("f-phone").value) $("f-phone").value = pr.data().phone || ""; }
+        if (pr.exists) { myProfile = pr.data(); if (!$("f-name").value) $("f-name").value = pr.data().name || ""; if (!$("f-phone").value) $("f-phone").value = pr.data().phone || ""; }
         else if (store.user.displayName && !$("f-name").value) $("f-name").value = store.user.displayName;
       } catch (e) { console.warn(e); }
     }
@@ -2515,6 +2846,9 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       myTopups = snap.docs.map((d) => d.data()); renderCredit();
     }, (e) => console.warn(e));
     await adminGate("db");
+    if (!isPermanent()) myProfile = safeLS.get("siyahamba.emergency") || {};
+    else if (!myProfile.name && !myProfile.emergencyName) { try { const pr = await db.doc("profiles/" + store.me).get(); if (pr.exists) myProfile = pr.data(); } catch (e) { console.warn(e); } }
+    showView();
 
     let loaded = false;
     const timer = setTimeout(() => { if (!loaded) banner("Still connecting. Trips may be out of date until the connection comes back.", true); }, 10000);
