@@ -285,6 +285,15 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
 .timeline li::before { content: ""; position: absolute; top: 3px; left: 50%; transform: translateX(-50%); width: 13px; height: 13px; border-radius: 50%; background: var(--line); z-index: 1; }
 .timeline li::after { content: ""; position: absolute; top: 8px; left: -50%; width: 100%; height: 3px; background: var(--line); }
 .timeline li:first-child::after { display: none; }
+@media (max-width: 600px) {
+  .timeline { padding-bottom: 2px; }
+  .timeline li:not(.now) { font-size: 0; }
+  .timeline li.now { white-space: nowrap; overflow: visible; z-index: 2; font-size: 0.78rem; }
+  .timeline li.now:first-child { text-align: left; }
+  .timeline li.now:last-child { text-align: right; }
+  .timeline li.now:first-child::before { left: 6px; transform: none; }
+  .timeline li.now:last-child::before { left: auto; right: 6px; transform: none; }
+}
 .timeline li.done, .timeline li.now { color: var(--ink); font-weight: 600; }
 .timeline li.done::before, .timeline li.done::after, .timeline li.now::after { background: var(--go); }
 .timeline li.now::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
@@ -309,6 +318,69 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
 .sos-call.alt { background: var(--surface-2); color: var(--ink); border: 1.5px solid var(--line); }
 .sos-panel { border: 2px solid #C62828; margin-bottom: 20px; }
 .sos-panel h2 { color: #C62828; }
+.skel { border-radius: 12px; border: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.skel i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-2) 0%, var(--line) 50%, var(--surface-2) 100%); background-size: 200% 100%; }
+.skel i.w1 { width: 60%; height: 16px; } .skel i.w2 { width: 85%; } .skel i.w3 { width: 40%; }
+@media (prefers-reduced-motion: no-preference) { .skel i { animation: shimmer 1.3s linear infinite; } @keyframes shimmer { to { background-position: -200% 0; } } }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 900; background: var(--road); color: #F3F5F7; border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); display: flex; gap: 12px; align-items: center; max-width: calc(100vw - 32px); font-size: 0.92rem; }
+.toast b { color: var(--accent); }
+.switch { display: flex; align-items: center; gap: 12px; cursor: pointer; font-weight: 700; }
+.switch input { appearance: none; -webkit-appearance: none; width: 52px; height: 30px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; flex: none; transition: background .2s; border: none; padding: 0; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform .2s; }
+.switch input:checked { background: var(--go); }
+.switch input:checked::after { transform: translateX(22px); }
+.switch input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dist { font-size: 0.82rem; font-weight: 700; color: var(--info); }
+.earn-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.earn-tiles .stat b { font-size: 1.2rem; }
+.chart-wrap { position: relative; }
+.chart-wrap { max-width: 620px; }
+.chart-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart-wrap .bar { fill: var(--go); pointer-events: none; }
+.chart-wrap .bar-hit { fill: transparent; cursor: default; }
+.chart-wrap .bar.on { fill: var(--ink); }
+.chart-wrap .grid { stroke: var(--line); stroke-width: 1; }
+.chart-wrap .axis { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.chart-tip { position: absolute; pointer-events: none; background: var(--road); color: #F3F5F7; border-radius: 8px; padding: 6px 9px; font-size: 0.8rem; white-space: nowrap; transform: translate(-50%, -100%); margin-top: -8px; z-index: 5; }
+.chart-tip b { font-family: var(--f-mono); }
+details.table-view summary { cursor: pointer; font-size: 0.85rem; color: var(--info); font-weight: 600; margin-top: 8px; }
+details.table-view table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 6px; }
+details.table-view td, details.table-view th { padding: 5px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+details.table-view td.num { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.offer-box { border: 1.5px dashed var(--info); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; }
+.offer-box.chosen { border-style: solid; border-color: var(--go); background: var(--go-soft); }
+.offer-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--line); }
+.offer-row:first-of-type { border-top: none; }
+.offer-row .amt { font-family: var(--f-mono); font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.offer-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.offer-form input { width: 130px; }
+.offer-form input.note { flex: 1 1 160px; width: auto; }
+.hbars { display: flex; flex-direction: column; gap: 8px; }
+.hbar { display: grid; grid-template-columns: minmax(90px, 160px) 1fr auto; gap: 10px; align-items: center; font-size: 0.86rem; }
+.hbar .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar .track { height: 14px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.hbar .fill { height: 100%; background: var(--go); border-radius: 0 4px 4px 0; }
+.hbar .val { font-family: var(--f-mono); font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; }
+.invite { border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; margin-top: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; }
+.lang { font: inherit; font-size: 0.85rem; font-weight: 600; color: #F3F5F7; background: transparent; border: 1.5px solid #3A4A59; border-radius: 999px; padding: 6px 10px; width: auto; cursor: pointer; }
+.lang option { color: #14202B; }
+dialog.welcome { border: none; border-radius: 20px; padding: 0; width: min(440px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px rgba(0,0,0,0.35); overflow: hidden; }
+dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
+.wel-art { background: var(--road); height: 150px; display: grid; place-items: center; position: relative; }
+.wel-art::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: repeating-linear-gradient(90deg, var(--accent) 0 26px, transparent 26px 44px); }
+.wel-art img { width: 96px; height: 96px; border-radius: 22px; }
+.wel-art svg { width: 84px; height: 84px; }
+.wel-body { padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.wel-body h2 { font-size: 1.35rem; }
+.wel-body p { margin: 0; color: var(--muted); }
+.wel-dots { display: flex; gap: 6px; justify-content: center; }
+.wel-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.wel-dots i.on { background: var(--accent); width: 22px; border-radius: 4px; }
+.wel-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.wel-roles { display: grid; gap: 10px; }
+.wel-roles button { font: inherit; text-align: left; border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface-2); color: var(--ink); cursor: pointer; font-weight: 700; font-size: 1rem; }
+.wel-roles button:hover { border-color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .wel-slide { animation: wel-in .3s ease-out; } @keyframes wel-in { from { opacity: 0.4; transform: translateX(12px); } } }
 .install { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
 .install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
 .install-text { flex: 1 1 220px; min-width: 0; font-size: 0.9rem; }
@@ -336,6 +408,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
 }
 </style>
 <script src="config.js"></script>
+<script src="translations.js"></script>
 </head>
 <body>
 
@@ -346,6 +419,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       <div class="brand-tag">Group taxi hire · South Africa</div>
     </div>
     <div class="top-right">
+    <select class="lang" id="lang-select" aria-label="Language"></select>
     <button type="button" class="acct" id="account-btn" hidden>Sign in</button>
     <nav class="roles" aria-label="Choose your role">
       <a href="#passenger" id="nav-passenger">I need a taxi</a>
@@ -538,6 +612,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
               <button type="button" data-filter="all" aria-pressed="true">All</button>
               <button type="button" data-filter="short" aria-pressed="false">Short</button>
               <button type="button" data-filter="long" aria-pressed="false">Long</button>
+              <button type="button" data-filter="near" aria-pressed="false">Near me</button>
             </div>
           </div>
           <div class="list" id="board"></div>
@@ -545,6 +620,28 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       </div>
 
       <div class="stack">
+        <div class="panel" id="avail-panel">
+          <div class="panel-head"><h2>Availability</h2></div>
+          <label class="switch" for="d-online"><input type="checkbox" id="d-online" role="switch"> <span id="online-text">I'm available for jobs</span></label>
+          <p class="hint" id="online-note" style="margin:10px 0 0"></p>
+          <label class="check" for="d-sound" style="margin-top:10px;font-weight:600"><input type="checkbox" id="d-sound"> Sound and vibration for new jobs</label>
+        </div>
+
+        <div class="panel" id="earn-panel">
+          <div class="panel-head">
+            <h2>My earnings</h2>
+            <div class="filters" role="group" aria-label="Earnings period">
+              <button type="button" data-period="week" aria-pressed="true">This week</button>
+              <button type="button" data-period="month" aria-pressed="false">This month</button>
+              <button type="button" data-period="all" aria-pressed="false">All time</button>
+            </div>
+          </div>
+          <div class="earn-tiles" id="earn-tiles"></div>
+          <h3 style="font-size:0.9rem;margin:4px 0 6px">Earnings per week, last 8 weeks</h3>
+          <div class="chart-wrap" id="earn-chart"></div>
+          <details class="table-view"><summary>Show as a table</summary><div id="earn-table"></div></details>
+        </div>
+
         <div class="panel" id="credit-panel">
           <div class="panel-head">
             <h2>My credit</h2>
@@ -703,6 +800,11 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
               <input id="d-bankBranch" inputmode="numeric" autocomplete="off">
             </div>
 
+            <div class="field full" id="ref-wrap">
+              <label for="d-ref">Referral code (optional)</label>
+              <input id="d-ref" placeholder="e.g. SH-AB12CD" autocapitalize="characters" autocomplete="off">
+              <span class="hint">If another driver invited you, enter their code. They get a reward once you complete your first trip.</span>
+            </div>
             <div class="field full">
               <label class="check" for="d-consent" style="align-items:flex-start"><input type="checkbox" id="d-consent" style="margin-top:3px"> <span style="font-weight:500">I confirm these details and documents are true and my own. I agree that Siyahamba may check them, and keep them safely as required by POPIA.</span></label>
             </div>
@@ -756,6 +858,26 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
         <div class="list" id="admin-sos-list"></div>
       </div>
       <div class="stats" id="admin-stats"></div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><h2>Business</h2></div>
+        <h3 style="font-size:0.9rem;margin:0 0 6px">Siyahamba fees per week, last 12 weeks</h3>
+        <div class="chart-wrap" id="biz-fees"></div>
+        <details class="table-view"><summary>Show as a table</summary><div id="biz-fees-table"></div></details>
+        <div class="grid" style="margin-top:20px">
+          <div>
+            <h3 style="font-size:0.9rem;margin:0 0 10px">Trips by pick-up area</h3>
+            <div class="hbars" id="biz-areas"></div>
+          </div>
+          <div style="min-width:0">
+            <h3 style="font-size:0.9rem;margin:0 0 10px">Top drivers</h3>
+            <div class="table-wrap"><table style="min-width:0"><thead><tr><th>Driver</th><th style="text-align:right">Trips</th><th style="text-align:right">Fees</th><th>Rating</th></tr></thead><tbody id="biz-drivers"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:20px" id="admin-ref-panel">
+        <div class="panel-head"><h2>Referral rewards</h2><span class="count" id="admin-ref-count">0</span></div>
+        <div class="list" id="admin-referrals"></div>
+      </div>
       <div class="panel" style="margin-bottom:20px">
         <div class="panel-head"><h2>Drivers to approve</h2><span class="count" id="admin-vet-count">0</span></div>
         <div class="list" id="admin-vetting"></div>
@@ -816,6 +938,49 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     </div>
   </div>
 </main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<dialog class="welcome" id="welcome" aria-labelledby="wel-title">
+  <div class="wel-slide" data-step="0">
+    <div class="wel-art"><img src="icons/icon-192.png" alt=""></div>
+    <div class="wel-body">
+      <h2 id="wel-title">Hire a whole taxi for your group</h2>
+      <p>Funerals, weddings, church trips, stokvels and work shuttles. Short trips in town or long trips home.</p>
+      <div class="field"><label for="wel-lang">Language</label><select id="wel-lang"></select></div>
+    </div>
+  </div>
+  <div class="wel-slide" data-step="1" hidden>
+    <div class="wel-art"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#F2B705" d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4z"/></svg></div>
+    <div class="wel-body">
+      <h2>Checked drivers, live tracking</h2>
+      <p>Every driver's ID, licence and PrDP is checked. Follow your taxi on the map and share the trip with family.</p>
+    </div>
+  </div>
+  <div class="wel-slide" data-step="2" hidden>
+    <div class="wel-art"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#F2B705" d="m12 17.3 6.2 3.7-1.6-7 5.4-4.7-7.2-.6L12 2 9.2 8.7 2 9.3l5.4 4.7-1.6 7z"/></svg></div>
+    <div class="wel-body">
+      <h2>Pay safely, rate your trip</h2>
+      <p>Pay in the app and we hold the money until you arrive. Then rate your driver.</p>
+    </div>
+  </div>
+  <div class="wel-slide" data-step="3" hidden>
+    <div class="wel-art"><img src="icons/icon-192.png" alt=""></div>
+    <div class="wel-body">
+      <h2>How will you use Siyahamba?</h2>
+      <div class="wel-roles">
+        <button type="button" data-role="passenger">I need a taxi</button>
+        <button type="button" data-role="driver">I'm a driver</button>
+      </div>
+    </div>
+  </div>
+  <div class="wel-body" style="padding-top:0">
+    <div class="wel-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+    <div class="wel-nav">
+      <button type="button" class="linkbtn" id="wel-skip">Skip</button>
+      <button type="button" class="btn btn-primary" id="wel-next">Next</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog class="auth" id="sos-dialog" aria-labelledby="sos-title">
   <div class="auth-in" id="sos-body"></div>
@@ -1030,6 +1195,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
   }
   const TOPUP_INFO = String(window.SIYAHAMBA_TOPUP_INFO || "").trim() ||
     "Pay Siyahamba by EFT and use your reference below. Your credit is added once the payment clears.";
+  const REFERRAL_REWARD = Number(window.SIYAHAMBA_REFERRAL_REWARD) > 0 ? Number(window.SIYAHAMBA_REFERRAL_REWARD) : 50;
+  const BUSINESS = Object.assign({ name: "Siyahamba", reg: "", address: "", email: "", phone: "" }, window.SIYAHAMBA_BUSINESS || {});
   const PAYMENT_INFO = PAYMENT_INFO_RAW || String(window.SIYAHAMBA_TOPUP_INFO || "").trim() || "Ask Siyahamba for the bank details.";
 
   const STATUS = {
@@ -1709,7 +1876,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     if (trackSubs[tripId] || store.mode !== "db") return;
     trackSubs[tripId] = store.db.doc("tracking/" + tripId).onSnapshot((s) => {
       trackData[tripId] = s.exists ? s.data() : null; updateMap(tripId);
-    }, (e) => { console.warn(e); delete trackSubs[tripId]; });
+    }, (e) => { console.warn(e); delete trackSubs[tripId]; setTimeout(render, 5000); });
   }
   function tripMap(r) {
     if (!window.L) return null;
@@ -1935,6 +2102,421 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     }));
   }
 
+  /* ---------- Languages ---------- */
+  const I18N = window.SIYAHAMBA_I18N || { langs: { en: "English" }, strings: {} };
+  let lang = I18N.langs[safeLS.get("siyahamba.lang")] ? safeLS.get("siyahamba.lang") : "en";
+  const ATTRS = ["placeholder", "aria-label", "title"];
+  function trText(en) { const e = I18N.strings[en]; return lang === "en" || !e ? en : e[lang] || en; }
+  function translateTree(root) {
+    if (!root) return;
+    const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => n.parentNode && /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      const orig = n.__en != null ? n.__en : n.data, key = orig.trim();
+      if (!key || !I18N.strings[key]) continue;
+      n.__en = orig;
+      const out = orig.replace(key, trText(key));
+      if (n.data !== out) n.data = out;
+    }
+    const els = root.nodeType === 1 ? [root, ...root.querySelectorAll("[placeholder],[aria-label],[title]")] : [];
+    els.forEach((el) => ATTRS.forEach((a) => {
+      if (!el.hasAttribute || !el.hasAttribute(a)) return;
+      const k = "en" + a.replace(/-./g, (m) => m[1].toUpperCase());
+      const orig = el.dataset[k] != null ? el.dataset[k] : el.getAttribute(a);
+      if (!I18N.strings[orig]) return;
+      el.dataset[k] = orig;
+      el.setAttribute(a, trText(orig));
+    }));
+  }
+  function setLang(l) {
+    lang = I18N.langs[l] ? l : "en";
+    safeLS.set("siyahamba.lang", lang);
+    document.documentElement.lang = lang === "en" ? "en" : lang;
+    $("lang-select").value = lang; $("wel-lang").value = lang;
+    translateTree(document.body);
+  }
+  [$("lang-select"), $("wel-lang")].forEach((sel) => {
+    sel.replaceChildren(...Object.entries(I18N.langs).map(([k, v]) => h("option", { value: k, text: v })));
+    sel.addEventListener("change", (e) => setLang(e.target.value));
+  });
+  new MutationObserver((muts) => {
+    if (lang === "en") return;
+    for (const m of muts) m.addedNodes.forEach((n) => { if (n.nodeType === 1) translateTree(n); else if (n.nodeType === 3 && n.parentNode) translateTree(n.parentNode); });
+  }).observe(document.body, { childList: true, subtree: true });
+
+  /* ---------- Welcome screen (first visit only) ---------- */
+  let welStep = 0;
+  function showWelcomeStep(i) {
+    welStep = i;
+    document.querySelectorAll("#welcome .wel-slide").forEach((el) => { el.hidden = Number(el.dataset.step) !== i; });
+    document.querySelectorAll("#welcome .wel-dots i").forEach((d, j) => d.classList.toggle("on", j === i));
+    $("wel-next").hidden = i === 3;
+    $("wel-next").textContent = trText(i === 2 ? "Get started" : "Next");
+  }
+  function closeWelcome(role) {
+    safeLS.set("siyahamba.welcomed", true);
+    const d = $("welcome"); if (d.close) d.close(); else d.removeAttribute("open");
+    if (role) location.hash = "#" + role;
+  }
+  function maybeWelcome() {
+    if (safeLS.get("siyahamba.welcomed") || /^#(track-|admin)/.test(location.hash)) return;
+    const d = $("welcome"); showWelcomeStep(0);
+    if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");
+  }
+  $("wel-next").addEventListener("click", () => showWelcomeStep(Math.min(3, welStep + 1)));
+  $("wel-skip").addEventListener("click", () => closeWelcome());
+  $("welcome").addEventListener("cancel", () => safeLS.set("siyahamba.welcomed", true));
+  document.querySelectorAll("#welcome [data-role]").forEach((b) => b.addEventListener("click", () => closeWelcome(b.dataset.role)));
+
+  /* ---------- Loading placeholders ---------- */
+  function skeletons(n) { return Array.from({ length: n || 2 }, () => h("div", { class: "skel", "aria-hidden": "true" }, h("i", { class: "w1" }), h("i", { class: "w2" }), h("i", { class: "w3" }))); }
+
+  /* ---------- Toast ---------- */
+  let toastTimer = null;
+  function toast(...kids) {
+    const t = $("toast"); t.replaceChildren(...kids); t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 6000);
+  }
+
+  /* ---------- Driver availability, distance and job alerts ---------- */
+  const avail = { online: false, pos: null, posAt: 0, timer: null };
+  let soundOn = safeLS.get("siyahamba.sound") !== false;
+  let audioCtx = null, seenJobs = null;
+  document.addEventListener("pointerdown", () => {
+    if (audioCtx) return;
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }, { passive: true });
+  function chime() {
+    if (!soundOn) return;
+    try {
+      if (!audioCtx) return;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const t0 = audioCtx.currentTime;
+      [[880, 0], [1175, 0.18]].forEach(([f, d]) => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+        g.gain.setValueAtTime(0.0001, t0 + d); g.gain.exponentialRampToValueAtTime(0.3, t0 + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.28);
+        o.start(t0 + d); o.stop(t0 + d + 0.3);
+      });
+    } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate([200, 120, 200]); } catch (e) {}
+  }
+  function pickupLL(r) { return Array.isArray(r.addressLL) ? r.addressLL : Array.isArray(r.pickupLL) ? r.pickupLL : null; }
+  function kmFromMe(r) { const ll = pickupLL(r); return avail.pos && ll ? Math.round(kmBetween(avail.pos, ll) * 1.25) : null; }
+  function refreshPosition() {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition((p) => { avail.pos = [p.coords.latitude, p.coords.longitude]; avail.posAt = Date.now(); render(); },
+      () => { avail.pos = null; showAvailability(); }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 120000 });
+  }
+  function setOnline(on, save) {
+    avail.online = !!on;
+    clearInterval(avail.timer);
+    if (avail.online) { refreshPosition(); avail.timer = setInterval(refreshPosition, 180000); }
+    seenJobs = null;
+    if (save) {
+      safeLS.set("siyahamba.online", avail.online);
+      if (store.mode === "db" && account) store.db.doc("drivers/" + store.me).update({ online: avail.online, onlineAt: Date.now(), updatedAt: Date.now() }).catch((e) => console.warn(e));
+    }
+    showAvailability(); render();
+  }
+  function showAvailability() {
+    const approved = vettingOf() === "approved";
+    $("d-online").checked = avail.online; $("d-online").disabled = !approved;
+    $("d-sound").checked = soundOn;
+    $("online-text").textContent = avail.online ? "You're online" : "You're offline";
+    $("online-note").textContent = !approved ? "You can go online once Siyahamba approves your profile."
+      : avail.online ? (avail.pos ? "You'll hear an alert for new jobs. Jobs are sorted by distance from you." : "You'll hear an alert for new jobs. Allow location to see jobs near you.")
+      : "Go online to get job alerts. You can still look at the job board.";
+  }
+  $("d-online").addEventListener("change", (e) => setOnline(e.target.checked, true));
+  $("d-sound").addEventListener("change", (e) => {
+    soundOn = e.target.checked; safeLS.set("siyahamba.sound", soundOn);
+    if (soundOn) { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (err) {} chime(); }
+  });
+  function checkNewJobs(open) {
+    const ids = new Set(open.map((r) => r.id));
+    if (seenJobs && avail.online && vettingOf() === "approved") {
+      const fresh = open.filter((r) => !seenJobs.has(r.id) && r.requesterId !== store.me);
+      if (fresh.length) {
+        const r = fresh[0], km = kmFromMe(r);
+        chime();
+        toast(h("span", null, h("b", { text: "New job: " }), r.pickup + " → " + r.dropoff + " · " + money(r.fare) + (km != null ? " · about " + km + " km away" : "")),
+          h("a", { href: "#driver", class: "btn btn-primary btn-sm", style: "text-decoration:none", onclick: () => { $("toast").hidden = true; } }, "View"));
+        document.title = "(" + fresh.length + ") New job · Siyahamba";
+        setTimeout(() => { document.title = "Siyahamba Group Taxi"; }, 15000);
+      }
+    }
+    seenJobs = ids;
+  }
+
+  /* ---------- Bar chart (one series, one colour, hover for values) ---------- */
+  function barChart(container, items, ariaLabel) {
+    const W = 320, H = 150, padL = 44, padB = 22, padT = 8, iw = W - padL - 4, ih = H - padB - padT;
+    const max = Math.max(1, ...items.map((d) => d.value));
+    const step = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000].find((x) => max / x <= 4) || 200000;
+    const top = Math.ceil(max / step) * step, ns = "http://www.w3.org/2000/svg";
+    const el = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+    const svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": ariaLabel });
+    for (let v = 0; v <= top; v += step) {
+      const y = padT + ih - (v / top) * ih;
+      svg.append(el("line", { class: "grid", x1: padL, x2: W - 4, y1: y, y2: y }), el("text", { class: "axis", x: padL - 6, y: y + 4, "text-anchor": "end" }, v >= 1000 ? "R" + v / 1000 + "k" : "R" + v));
+    }
+    const slot = iw / items.length, bw = Math.max(6, slot - (items.length > 8 ? 6 : 10)), tip = h("div", { class: "chart-tip", hidden: true });
+    const every = Math.ceil(items.length / 4);
+    items.forEach((d, i) => {
+      const x = padL + i * slot + (slot - bw) / 2, bh = (d.value / top) * ih, y = padT + ih - bh, r = Math.min(4, bw / 2, bh);
+      const bar = bh > 0 ? el("path", { class: "bar", d: "M" + x + "," + (padT + ih) + " v" + -(bh - r) + " q0," + -r + " " + r + "," + -r + " h" + (bw - 2 * r) + " q" + r + ",0 " + r + "," + r + " v" + (bh - r) + " z" })
+        : el("rect", { class: "bar", x, y: padT + ih - 1, width: bw, height: 1, opacity: 0.4 });
+      const hit = el("rect", { class: "bar-hit", x: padL + i * slot, y: padT, width: slot, height: ih, tabindex: "0", "aria-label": d.aria });
+      const show = () => {
+        bar.classList.add("on"); tip.hidden = false; tip.replaceChildren(...d.tip);
+        const sx = svg.getBoundingClientRect().width / W;
+        tip.style.left = ((x + bw / 2) * sx) + "px"; tip.style.top = (Math.max(padT, y) * sx) + "px";
+      };
+      const hide = () => { bar.classList.remove("on"); tip.hidden = true; };
+      hit.addEventListener("pointerenter", show); hit.addEventListener("pointerleave", hide); hit.addEventListener("focus", show); hit.addEventListener("blur", hide);
+      svg.append(bar, hit);
+      if ((items.length - 1 - i) % every === 0) svg.append(el("text", { class: "axis", x: x + bw / 2, y: H - 6, "text-anchor": "middle" }, d.label));
+    });
+    container.replaceChildren(svg, tip);
+  }
+
+  /* ---------- Driver earnings ---------- */
+  let earnPeriod = "week";
+  const weekStart = (t) => { const d = new Date(t); const day = (d.getDay() + 6) % 7; d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - day); return d.getTime(); };
+  function renderEarnings() {
+    const now = Date.now();
+    const from = earnPeriod === "week" ? weekStart(now) : earnPeriod === "month" ? new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime() : 0;
+    const done = allRequests.filter((r) => r.driverId === store.me && r.status === "completed");
+    const inP = done.filter((r) => (r.acceptedAt || r.createdAt || 0) >= from);
+    const fees = inP.reduce((t, r) => t + (Number(r.commission) || 0), 0);
+    const gross = inP.reduce((t, r) => t + (Number(r.fare) || 0), 0);
+    const app = inP.filter((r) => r.payMode === "secure");
+    const paidOut = app.filter((r) => r.payStatus === "released").reduce((t, r) => t + r.fare, 0);
+    const waiting = app.filter((r) => ["held", "claimed", "disputed"].includes(r.payStatus)).reduce((t, r) => t + r.fare, 0);
+    const tile = (label, value, note) => h("div", { class: "stat" }, h("span", { text: label }), h("b", { text: value }), note ? h("span", { text: note }) : null);
+    $("earn-tiles").replaceChildren(
+      tile("You earned", money(gross - fees), "after Siyahamba's fee"),
+      tile("Trips completed", String(inP.length), money(gross) + " in fares"),
+      tile("Siyahamba fees", money(fees), COMMISSION_PCT + "% from credit"),
+      tile("In-app payments", money(paidOut), waiting ? money(waiting) + " still to be paid out" : "all paid out"));
+    // Last 8 weeks, one bar per week
+    const w0 = weekStart(now), weeks = [];
+    for (let i = 7; i >= 0; i--) {
+      const start = w0 - i * 7 * 86400000, end = start + 7 * 86400000;
+      const rs = done.filter((r) => { const t = r.acceptedAt || r.createdAt || 0; return t >= start && t < end; });
+      weeks.push({ start, trips: rs.length, earned: rs.reduce((t, r) => t + (Number(r.fare) || 0) - (Number(r.commission) || 0), 0) });
+    }
+    barChart($("earn-chart"), weeks.map((w) => {
+      const label = new Date(w.start).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
+      return { label, value: w.earned, tip: ["Week of " + label + ": ", h("b", { text: money(w.earned) }), " · " + w.trips + " trip" + (w.trips === 1 ? "" : "s")], aria: "Week of " + label + ": " + money(w.earned) + ", " + w.trips + " trips" };
+    }), "Earnings per week for the last 8 weeks");
+    $("earn-table").replaceChildren(h("table", null, h("thead", null, h("tr", null, h("th", { text: "Week of" }), h("th", { text: "Trips" }), h("th", { text: "Earned", style: "text-align:right" }))),
+      h("tbody", null, ...weeks.slice().reverse().map((w) => h("tr", null, h("td", { text: new Date(w.start).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" }) }), h("td", { text: String(w.trips) }), h("td", { class: "num", text: money(w.earned) }))))));
+    $("earn-panel").hidden = !driver;
+  }
+  document.querySelectorAll("[data-period]").forEach((b) => b.addEventListener("click", () => {
+    earnPeriod = b.dataset.period;
+    document.querySelectorAll("[data-period]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    renderEarnings();
+  }));
+
+  /* ---------- Price offers ---------- */
+  const offerSubs = {}, offersData = {}, myOfferCache = {};
+  function localOffers() { return safeLS.get("siyahamba.offers") || {}; }
+  function watchOffers(rid) {
+    if (offerSubs[rid]) return;
+    if (store.mode !== "db") { offersData[rid] = localOffers()[rid] || []; offerSubs[rid] = () => {}; return; }
+    offerSubs[rid] = store.db.collection("requests/" + rid + "/offers").onSnapshot((snap) => {
+      offersData[rid] = snap.docs.map((d) => d.data()).sort((a, b) => a.amount - b.amount); render();
+    }, (e) => { console.warn(e); delete offerSubs[rid]; setTimeout(render, 3000); });  // e.g. the trip isn't saved yet: try again shortly
+  }
+  function loadMyOffer(rid) {
+    if (rid in myOfferCache) return;
+    myOfferCache[rid] = null;
+    if (store.mode !== "db") { myOfferCache[rid] = (localOffers()[rid] || []).find((o) => o.driverId === store.me) || null; return; }
+    store.db.doc("requests/" + rid + "/offers/" + store.me).get().then((s) => { myOfferCache[rid] = s.exists ? s.data() : null; render(); }).catch(() => {});
+  }
+  async function sendOffer(r, amount, note) {
+    const o = { driverId: store.me, driverName: driver.name, driverReg: driver.reg, driverVehicle: driver.vehicle, amount, note: note.slice(0, 200), at: Date.now() };
+    if (store.mode === "db") await store.db.doc("requests/" + r.id + "/offers/" + store.me).set(o);
+    else { const all = localOffers(); all[r.id] = [...(all[r.id] || []).filter((x) => x.driverId !== store.me), o]; safeLS.set("siyahamba.offers", all); offersData[r.id] = all[r.id]; }
+    myOfferCache[r.id] = o; render();
+  }
+  async function withdrawOffer(r) {
+    if (store.mode === "db") await store.db.doc("requests/" + r.id + "/offers/" + store.me).delete();
+    else { const all = localOffers(); all[r.id] = (all[r.id] || []).filter((x) => x.driverId !== store.me); safeLS.set("siyahamba.offers", all); offersData[r.id] = all[r.id]; }
+    myOfferCache[r.id] = null; render();
+  }
+  function driverOfferBox(r, approved) {
+    if (!approved || (r.payMode === "secure" && (r.payStatus || "unpaid") !== "unpaid")) return null;
+    if (r.offerTo === store.me) return h("div", { class: "offer-box chosen" }, h("b", { text: "The group chose your offer of " + money(r.fare) + "." }), h("span", { text: "Tap Accept job to confirm. The fee is 10% of your price." }));
+    loadMyOffer(r.id);
+    const mine = myOfferCache[r.id];
+    if (mine) return h("div", { class: "offer-box" }, h("span", null, "Your offer: ", h("b", { class: "amt", text: money(mine.amount) }), " · waiting for the group"),
+      h("div", null, h("button", { type: "button", class: "linkbtn", onclick: () => withdrawOffer(r).catch((e) => console.warn(e)) }, "Withdraw offer")));
+    const wrap = h("div");
+    const openForm = () => {
+      const base = r.originalFare || r.fare;
+      const amt = h("input", { type: "number", inputmode: "numeric", min: String(Math.ceil(base * 0.5)), max: String(Math.floor(base * 3)), placeholder: "Your price (R)", "aria-label": "Your price in rand" });
+      const note = h("input", { class: "note", maxlength: "200", placeholder: "Optional: why, e.g. toll roads", "aria-label": "Note for the group" });
+      const msg = h("span", { class: "form-msg" });
+      const send = h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async () => {
+        const v = Math.round(Number(amt.value));
+        if (!(v >= base * 0.5 && v <= base * 3)) { msg.className = "form-msg err"; msg.textContent = "Offer between " + money(Math.ceil(base * 0.5)) + " and " + money(Math.floor(base * 3)) + "."; return; }
+        send.disabled = true;
+        try { await sendOffer(r, v, note.value.trim()); } catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "Your offer didn't send. Try again."; send.disabled = false; }
+      } }, "Send offer");
+      wrap.replaceChildren(h("div", { class: "offer-box" }, h("b", { text: "Offer your price for this trip" }), h("div", { class: "offer-form" }, amt, note, send), msg));
+      amt.focus();
+    };
+    wrap.append(h("button", { type: "button", class: "linkbtn", onclick: openForm }, "Offer a different price"));
+    return wrap;
+  }
+  function passengerOffersBox(r) {
+    if (r.status !== "open") return null;
+    watchOffers(r.id);
+    const list = offersData[r.id] || [];
+    if (r.offerTo) {
+      const o = list.find((x) => x.driverId === r.offerTo);
+      return h("div", { class: "offer-box chosen" },
+        h("b", { text: "You chose " + ((o && o.driverName) || "a driver") + "'s offer of " + money(r.fare) + "." }),
+        h("span", { text: "Waiting for them to confirm. The original price was " + money(r.originalFare) + "." }),
+        h("div", null, h("button", { type: "button", class: "linkbtn", onclick: (e) => { e.currentTarget.disabled = true; store.update(r.id, { fare: r.originalFare, offerTo: "", offerAt: Date.now() }).catch((err) => console.warn(err)); } }, "Choose a different offer")));
+    }
+    if (!list.length) return null;
+    return h("div", { class: "offer-box" }, h("b", { text: "Price offers from drivers (" + list.length + ")" }),
+      ...list.map((o) => h("div", { class: "offer-row" }, driverFaces(o.driverId),
+        h("span", { style: "flex:1 1 140px;min-width:0" }, h("b", { text: o.driverName }), " ", ratingFor(o.driverId),
+          h("div", { class: "meta" }, h("span", { text: (VEHICLES[o.driverVehicle] || VEHICLES.quantum).short }), h("span", { class: "plate", text: o.driverReg || "" }), o.note ? h("span", { text: "“" + o.note + "”" }) : null)),
+        h("span", { class: "amt", text: money(o.amount) }),
+        h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
+          if (r.payMode === "secure" && (r.payStatus || "unpaid") !== "unpaid") return;
+          e.currentTarget.disabled = true;
+          try { await store.update(r.id, { fare: o.amount, offerTo: o.driverId, offerAt: Date.now(), originalFare: r.originalFare || r.fare }); }
+          catch (err) { console.warn(err); e.currentTarget.disabled = false; }
+        } }, "Accept " + money(o.amount)))));
+  }
+
+  /* ---------- Owner: business charts ---------- */
+  function renderBusiness() {
+    const now = Date.now(), w0 = weekStart(now), weeks = [];
+    const earned = allRequests.filter((r) => r.commission && !(r.status === "cancelled" && r.commissionDecision !== "kept"));
+    for (let i = 11; i >= 0; i--) {
+      const start = w0 - i * 7 * 86400000, end = start + 7 * 86400000;
+      const rs = earned.filter((r) => { const t = r.acceptedAt || r.createdAt || 0; return t >= start && t < end; });
+      weeks.push({ start, trips: rs.length, fees: rs.reduce((t, r) => t + (Number(r.commission) || 0), 0) });
+    }
+    barChart($("biz-fees"), weeks.map((w) => {
+      const label = new Date(w.start).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
+      return { label, value: w.fees, tip: ["Week of " + label + ": ", h("b", { text: money(w.fees) }), " · " + w.trips + " job" + (w.trips === 1 ? "" : "s")], aria: "Week of " + label + ": " + money(w.fees) + " in fees" };
+    }), "Siyahamba fees per week for the last 12 weeks");
+    $("biz-fees-table").replaceChildren(h("table", null, h("thead", null, h("tr", null, h("th", { text: "Week of" }), h("th", { text: "Jobs" }), h("th", { text: "Fees", style: "text-align:right" }))),
+      h("tbody", null, ...weeks.slice().reverse().map((w) => h("tr", null, h("td", { text: new Date(w.start).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" }) }), h("td", { text: String(w.trips) }), h("td", { class: "num", text: money(w.fees) }))))));
+    const counts = {};
+    allRequests.filter((r) => r.status !== "cancelled").forEach((r) => { counts[r.pickup] = (counts[r.pickup] || 0) + 1; });
+    const areas = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8), amax = Math.max(1, ...areas.map((a) => a[1]));
+    $("biz-areas").replaceChildren(...(areas.length ? areas.map(([name, n]) => h("div", { class: "hbar", title: name + ": " + n + " trip" + (n === 1 ? "" : "s") },
+      h("span", { class: "name", text: name }), h("span", { class: "track" }, h("span", { class: "fill", style: "display:block;width:" + Math.max(3, (n / amax) * 100) + "%" })), h("span", { class: "val", text: String(n) })))
+      : [h("p", { class: "meta", style: "margin:0", text: "No trips yet." })]));
+    const by = {};
+    allRequests.filter((r) => r.driverId && r.status === "completed").forEach((r) => { const d = by[r.driverId] || (by[r.driverId] = { id: r.driverId, name: r.driverName, trips: 0, fees: 0 }); d.trips++; d.fees += Number(r.commission) || 0; });
+    const top = Object.values(by).sort((a, b) => b.trips - a.trips || b.fees - a.fees).slice(0, 8);
+    $("biz-drivers").replaceChildren(...(top.length ? top.map((d) => h("tr", null, h("td", { text: d.name || "Driver" }), h("td", { class: "num", text: String(d.trips) }), h("td", { class: "num", text: money(d.fees) }), h("td", null, ratingFor(d.id))))
+      : [h("tr", null, h("td", { colspan: "4", class: "meta", text: "No completed trips yet." }))]));
+  }
+
+  /* ---------- Referrals ---------- */
+  function renderReferrals() {
+    const done = {};
+    allRequests.filter((r) => r.status === "completed" && r.driverId).forEach((r) => { done[r.driverId] = (done[r.driverId] || 0) + 1; });
+    const due = admin.drivers.filter((d) => d.referredBy && !d.referralPaid && d.vetting === "approved" && done[d.id]);
+    const waiting = admin.drivers.filter((d) => d.referredBy && !d.referralPaid && !(d.vetting === "approved" && done[d.id]));
+    $("admin-ref-count").textContent = due.length;
+    $("admin-referrals").replaceChildren(...due.map((d) => {
+      const ref = admin.drivers.find((x) => (x.code || codeFor(x.id)) === d.referredBy && x.id !== d.id);
+      return h("article", { class: "trip", "data-status": "accepted" },
+        h("div", { class: "trip-top" }, h("div", null, h("div", { class: "route", text: ref ? (ref.name || "Driver") + " invited " + (d.name || "a driver") : "Code " + d.referredBy + " not found" }),
+          h("div", { class: "meta" }, h("span", { text: (d.name || "The new driver") + " completed " + done[d.id] + " trip" + (done[d.id] === 1 ? "" : "s") }), h("span", { class: "ref", text: d.referredBy }))),
+          h("span", { class: "fare", text: money(REFERRAL_REWARD) })),
+        h("div", { class: "trip-actions" },
+          ref ? h("button", { type: "button", class: "btn btn-go btn-sm", onclick: async (e) => {
+            e.currentTarget.disabled = true;
+            try {
+              const db = store.db, batch = db.batch(), now = Date.now();
+              batch.update(db.doc("drivers/" + ref.id), { credit: firebase.firestore.FieldValue.increment(REFERRAL_REWARD), updatedAt: now });
+              batch.set(db.collection("topups").doc(), { driverId: ref.id, amount: REFERRAL_REWARD, ref: "Referral reward: " + (d.name || "new driver"), at: now, by: store.me });
+              batch.update(db.doc("drivers/" + d.id), { referralPaid: true, updatedAt: now });
+              await batch.commit();
+            } catch (err) { console.warn(err); e.currentTarget.disabled = false; }
+          } }, "Give " + money(REFERRAL_REWARD) + " credit to " + (ref.name || "the driver")) : null,
+          h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: async (e) => { e.currentTarget.disabled = true; try { await store.db.doc("drivers/" + d.id).update({ referralPaid: "declined", updatedAt: Date.now() }); } catch (err) { e.currentTarget.disabled = false; } } }, "No reward")));
+    }), ...(due.length ? [] : [empty("No rewards due", waiting.length ? waiting.length + " invited driver" + (waiting.length === 1 ? " hasn't" : "s haven't") + " completed a trip yet." : "When an invited driver completes their first trip, it shows here.")]));
+  }
+  function inviteBox() {
+    const code = (account && account.code) || codeFor(store.me);
+    const text = "Join Siyahamba and get group taxi jobs: " + location.origin + location.pathname + "#driver\nUse my code " + code + " when you register.";
+    return h("div", { class: "invite" }, h("b", { text: "Invite drivers, earn " + money(REFERRAL_REWARD) + " credit" }),
+      h("span", null, "Your code: ", h("span", { class: "ref", text: code }), ". You get " + money(REFERRAL_REWARD) + " credit when a driver you invite completes their first trip."),
+      h("div", { class: "trip-actions" }, copyBtn(code), h("a", { class: "btn btn-wa btn-sm", style: "text-decoration:none", href: "https://wa.me/?text=" + encodeURIComponent(text), target: "_blank", rel: "noopener" }, "Invite on WhatsApp")));
+  }
+
+  /* ---------- Receipts ---------- */
+  const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function openReceipt(r, forDriver) {
+    const ref = tripRef(r.id), when = r.when && r.when !== "now" ? new Date(r.when) : new Date(r.acceptedAt || r.createdAt);
+    const veh = VEHICLES[r.driverVehicle || r.vehicle] || VEHICLES.quantum;
+    const fee = Number(r.commission) || 0;
+    const paidHow = r.payMode === "secure" ? ({ released: "Paid in the app. Paid out to the driver.", held: "Paid in the app. Held by Siyahamba.", refunded: "Paid in the app. Refunded." }[r.payStatus] || "Pay in the app")
+      : (r.payment || "Paid to the driver");
+    const row = (k, v) => "<tr><th>" + esc(k) + "</th><td>" + esc(v) + "</td></tr>";
+    const biz = [BUSINESS.name, BUSINESS.reg ? "Reg. " + BUSINESS.reg : "", BUSINESS.address, BUSINESS.email, BUSINESS.phone].filter(Boolean).map(esc).join("<br>");
+    const html = "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>" + (forDriver ? "Trip statement " : "Receipt ") + esc(ref) + "</title>"
+      + "<style>body{font:15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;color:#14202B;background:#fff;margin:0;padding:24px}main{max-width:620px;margin:0 auto}"
+      + "header{display:flex;justify-content:space-between;gap:16px;border-bottom:4px dashed #F2B705;padding-bottom:14px;margin-bottom:18px}h1{font-size:1.5rem;margin:0}h1 span{color:#B88700}"
+      + ".muted{color:#5A6876;font-size:.85rem}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{text-align:left;padding:7px 4px;border-bottom:1px solid #D3DBE2;vertical-align:top}th{color:#5A6876;font-weight:600;width:42%}"
+      + ".total td,.total th{font-size:1.2rem;font-weight:800;color:#14202B;border-bottom:2px solid #14202B}.btn{font:inherit;font-weight:700;background:#F2B705;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;margin-top:12px}@media print{.btn{display:none}body{padding:0}}</style></head><body><main>"
+      + "<header><div><h1>Siya<span>hamba</span></h1><div class='muted'>Group taxi hire</div></div><div class='muted' style='text-align:right'>" + biz + "</div></header>"
+      + "<h2 style='margin:0 0 4px'>" + (forDriver ? "Trip statement" : "Receipt") + " " + esc(ref) + "</h2><div class='muted'>Issued " + esc(new Date().toLocaleDateString("en-ZA", { day: "numeric", month: "long", year: "numeric" })) + "</div><table>"
+      + row("Trip date", when.toLocaleString("en-ZA", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }))
+      + row("From", (r.address ? r.address + ", " : "") + r.pickup) + row("To", r.dropoff)
+      + row("Distance", r.km + " km" + (r.roundTrip ? " each way, return trip" : "")) + row("Group", r.pax + " people · " + (r.purpose || ""))
+      + row("Group leader", r.contactName) + row("Driver", (r.driverName || "") + " · " + veh.name + " · " + (r.driverReg || ""))
+      + row("Payment", paidHow)
+      + (forDriver ? row("Trip price", money(r.fare)) + row("Siyahamba fee (" + COMMISSION_PCT + "%)", "− " + money(fee)) + "<tr class='total'><th>You earned</th><td>" + esc(money(r.fare - fee)) + "</td></tr>"
+        : "<tr class='total'><th>Total</th><td>" + esc(money(r.fare)) + "</td></tr>")
+      + "</table><p class='muted'>Thank you for travelling with Siyahamba. Keep this " + (forDriver ? "statement" : "receipt") + " for your records.</p>"
+      + "<button class='btn' onclick='window.print()'>Print or save as PDF</button></main></body></html>";
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+    const w = window.open(url, "_blank");
+    if (!w) toast(h("span", { text: "Allow pop-ups for this site to see the receipt." }));
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  /* ---------- Repeat booking ---------- */
+  function bookAgain(r, reverse) {
+    const a = placeOf(r, "pickup"), b = placeOf(r, "dropoff");
+    const from = reverse ? b : a, to = reverse ? a : b;
+    location.hash = "#passenger";
+    setType(r.type === "long" ? "long" : "short");
+    $("f-pickup").value = from.text; $("f-dropoff").value = to.text;
+    sel.pickup = { text: from.text, placeId: from.placeId, ll: from.ll };
+    sel.dropoff = { text: to.text, placeId: to.placeId, ll: to.ll };
+    const spot = reverse ? "" : r.address || "";
+    $("f-address").value = spot;
+    sel.address = spot ? { text: spot, placeId: r.addressPlaceId || null, ll: Array.isArray(r.addressLL) ? r.addressLL : null } : { text: "", placeId: null, ll: null };
+    $("f-pax").value = r.pax; $("f-vehicle").value = VEHICLES[r.vehicle] ? r.vehicle : "auto";
+    $("f-purpose").value = r.purpose || $("f-purpose").value; $("f-luggage").value = r.luggage || "none";
+    if (r.payMode && $("f-pay").querySelector('option[value="' + r.payMode + '"]')) $("f-pay").value = r.payMode;
+    $("f-return").checked = !!r.roundTrip; $("f-nights").value = r.nights || 2;
+    $("nights-wrap").hidden = r.type !== "long" || !r.roundTrip;
+    $("f-when").value = "later"; $("f-datetime").value = ""; syncWhen();
+    kmManual = false; updateRoute();
+    const msg = $("form-msg"); msg.className = "form-msg ok";
+    msg.textContent = reverse ? "Return trip filled in. Check the date and time, then tap Request taxi." : "Details copied from your earlier trip. Check the date and time, then tap Request taxi.";
+    $("req-form").scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => $("f-datetime").focus(), 400);
+  }
+
   /* ---------- Ratings and badges ---------- */
   const MIN_FOR_BADGE = 3;
   function badgeFor(st) {
@@ -2091,9 +2673,15 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       shareBtn.addEventListener("click", () => shareTrip(r, holder, shareBtn));
       card.append(h("div", { class: "trip-actions" }, shareBtn, sosButton(r, "passenger")), holder);
     }
+    const offers = passengerOffersBox(r);
+    if (offers) card.append(offers);
     const pb = payBox(r);
     if (pb) card.append(pb);
     if (r.status === "completed" && r.driverId) card.append(rateBox(r, "driver"));
+    if (r.status === "completed" || r.status === "cancelled") card.append(h("div", { class: "trip-actions" },
+      r.status === "completed" ? h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => openReceipt(r, false) }, "Receipt") : null,
+      h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => bookAgain(r, false) }, "Book again"),
+      h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => bookAgain(r, true) }, "Book return trip")));
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
     if (["open", "accepted"].includes(r.status)) {
       const paid = r.payMode === "secure" && ["claimed", "held"].includes(r.payStatus);
@@ -2139,6 +2727,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     const approved = vettingOf() === "approved";
     if (driver && short > 0) msg.textContent = "Top up at least " + money(short) + " to accept this job.";
     if (!approved) msg.textContent = account && account.vetting === "pending" ? "You can accept jobs once Siyahamba approves your profile." : "Complete your driver profile to accept jobs.";
+    const ob = driverOfferBox(r, approved);
+    if (ob) card.insertBefore(ob, card.lastChild);
     const btn = h("button", { type: "button", class: "btn btn-go btn-sm", disabled: !driver || !approved || !store.canWrite || (r.type === "long" && !driver.pdp) || short > 0 }, "Accept job");
     btn.addEventListener("click", async () => {
       btn.disabled = true; btn.textContent = "Accepting…";
@@ -2156,6 +2746,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     if (!driver) msg.textContent = "Complete your driver profile to accept jobs.";
     if (r.payMode === "secure") card.insertBefore(h("div", { class: "split" }, "The group pays in the app. Siyahamba pays you after the trip."), card.lastChild);
     card.insertBefore(h("div", { class: "split", style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }, "Group leader", ratingFor(r.requesterId)), card.lastChild);
+    const km = kmFromMe(r);
+    if (km != null) card.insertBefore(h("div", { class: "dist", text: "Pick-up about " + km + " km from you" }), card.children[1]);
     foot.append(h("span", { class: "actions", style: "margin:0" }, msg, btn));
     card.append(foot);
     return card;
@@ -2197,6 +2789,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     }
     if (r.commission && r.status !== "cancelled") card.append(h("div", { class: "split" }, "You receive ", h("b", { text: money(r.fare - r.commission) }), " · Siyahamba fee ", h("b", { text: money(r.commission) }), " paid from credit"));
     if (r.status === "completed") card.append(rateBox(r, "passenger"));
+    if (r.status === "completed") card.append(h("div", { class: "trip-actions" }, h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => openReceipt(r, true) }, "Trip statement")));
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
     const acts = h("span", { class: "actions", style: "margin:0" });
     const nx = NEXT[r.status];
@@ -2225,21 +2818,31 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
 
     const mine = allRequests.filter((r) => r.requesterId === me).sort(byNew);
     $("my-count").textContent = mine.length;
-    $("my-trips").replaceChildren(...(mine.length ? mine.map(passengerCard) : [empty("No trips yet", "Fill in the form and tap Request taxi. Your trip and driver details show up here.")]));
+    const loading = !!store.expectDb && !store.loaded;
+    $("my-trips").replaceChildren(...(loading ? skeletons(2) : mine.length ? mine.map(passengerCard) : [empty("No trips yet", "Fill in the form and tap Request taxi. Your trip and driver details show up here.")]));
 
-    const open = allRequests.filter((r) => r.status === "open" && (boardFilter === "all" || r.type === boardFilter))
-      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-    $("board").replaceChildren(...(open.length ? open.map(boardCard) : [empty("No open requests right now", "New group requests appear here the moment a passenger sends one.")]));
+    const allOpen = allRequests.filter((r) => r.status === "open" && (!r.offerTo || r.offerTo === me));
+    if (!loading) checkNewJobs(allOpen);
+    const open = allOpen.filter((r) => boardFilter === "all" || (boardFilter === "near" ? (kmFromMe(r) ?? Infinity) <= 40 : r.type === boardFilter))
+      .sort((a, b) => avail.pos ? ((kmFromMe(a) ?? 1e9) - (kmFromMe(b) ?? 1e9)) : (a.createdAt || 0) - (b.createdAt || 0));
+    $("board").replaceChildren(...(loading ? skeletons(2) : open.length ? open.map(boardCard)
+      : [boardFilter === "near" && !avail.pos ? empty("Location needed", "Go online and allow location to see jobs near you.") : empty("No open requests right now", "New group requests appear here the moment a passenger sends one.")]));
 
     const order = { accepted: 0, enroute: 0, ontrip: 0, completed: 1, cancelled: 2 };
     const jobs = allRequests.filter((r) => r.driverId === me)
       .sort((a, b) => (order[a.status] - order[b.status]) || byNew(a, b));
     $("job-count").textContent = jobs.length;
-    $("my-jobs").replaceChildren(...(jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
+    $("my-jobs").replaceChildren(...(loading ? skeletons(1) : jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
     renderCredit();
+    renderEarnings();
+    showAvailability();
     renderAdmin();
     renderGeoNotes();
     updateLocationSharing();
+    Object.keys(offerSubs).forEach((id) => {
+      const r = allRequests.find((x) => x.id === id);
+      if (r && r.status !== "open") { offerSubs[id](); delete offerSubs[id]; delete offersData[id]; }
+    });
     // Stop following a taxi once its trip is over.
     Object.keys(trackSubs).forEach((id) => {
       const r = allRequests.find((x) => x.id === id);
@@ -2310,6 +2913,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       stat("Passenger money held", money(allRequests.filter((r) => r.payMode === "secure" && ["held", "disputed"].includes(r.payStatus)).reduce((t, r) => t + (Number(r.fare) || 0), 0)), "Not yet paid to drivers"));
     renderVetting();
     renderPayments();
+    renderBusiness();
+    renderReferrals();
 
     const feesBy = {};
     paid.forEach((r) => { if (r.driverId || r.status === "cancelled") feesBy[r.driverId] = (feesBy[r.driverId] || 0) + earnedFrom(r); });
@@ -2554,7 +3159,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
           driver.assoc ? h("span", { class: "meta", text: driver.assoc }) : null,
           h("span", { class: "pill " + (driver.pdp ? "go" : "done"), text: driver.pdp ? "Long trips allowed" : "Short trips only" }),
           h("span", { class: "rating", id: "my-driver-rating" }, ...ratingParts(statsCache[store.me] || {})))),
-        myPublic.vehiclePhoto ? h("img", { class: "vehicle-shot", style: "margin-top:12px", src: myPublic.vehiclePhoto, alt: "Your vehicle" }) : null);
+        myPublic.vehiclePhoto ? h("img", { class: "vehicle-shot", style: "margin-top:12px", src: myPublic.vehiclePhoto, alt: "Your vehicle" }) : null,
+        vet === "approved" ? inviteBox() : null);
     } else if (driver) {
       $("d-name").value = driver.name || ""; $("d-phone").value = driver.phone || ""; $("d-vehicle").value = driver.vehicle || "quantum";
       $("d-reg").value = driver.reg || ""; $("d-assoc").value = driver.assoc || ""; $("d-pdp").checked = !!driver.pdp;
@@ -2562,6 +3168,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       $("d-nationality").value = driver.nationality || "South African"; $("d-race").value = driver.race || "";
       ["bankName", "bankHolder", "bankAccount", "bankBranch"].forEach((k) => { $("d-" + k).value = driver[k] || ""; });
       $("d-consent").checked = !!driver.consentAt;
+      $("d-ref").value = driver.referredBy || "";
+      $("ref-wrap").hidden = !!driver.referredBy || vet === "approved";
       idLabel();
     }
     showDocState();
@@ -2569,7 +3177,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
   }
   $("edit-profile").addEventListener("click", () => { editingProfile = true; showProfile(); });
 
-  const IDENTITY = ["name", "idType", "idNumber", "nationality", "vehicle", "reg", "pdp", "bankName", "bankHolder", "bankAccount", "bankBranch"];
+  const IDENTITY = ["name", "idType", "idNumber", "nationality", "vehicle", "reg", "pdp", "bankName", "bankHolder", "bankAccount", "bankBranch", "referredBy"];
   $("driver-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const msg = $("driver-msg"); msg.className = "form-msg";
@@ -2579,6 +3187,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       vehicle: $("d-vehicle").value, reg: $("d-reg").value.trim().toUpperCase(), pdp: $("d-pdp").checked,
       bankName: $("d-bankName").value.trim(), bankHolder: $("d-bankHolder").value.trim(), bankAccount: $("d-bankAccount").value.replace(/\s+/g, ""), bankBranch: $("d-bankBranch").value.replace(/\s+/g, "")
     };
+    const refCode = $("d-ref").value.trim().toUpperCase().replace(/\s+/g, "");
+    if (refCode) f.referredBy = refCode;
     const docs = { ...(((account && account.docs) || (driver && driver.docs)) || {}) };
     DOC_KINDS.forEach((k) => { if (newFiles[k]) docs[k] = true; });
     const miss = [];
@@ -2591,6 +3201,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     if (!(newFiles.vehiclePhoto || myPublic.vehiclePhoto)) miss.push("a vehicle photo");
     DOC_KINDS.forEach((k) => { if (!docs[k]) miss.push({ idCopy: "your ID or passport copy", licence: "your driver's licence", prdp: "your PrDP" }[k]); });
     if (!$("d-consent").checked) miss.push("your agreement to the checks (tick the box)");
+    if (refCode && !/^SH-[A-Z0-9]{6}$/.test(refCode)) miss.push("a referral code like SH-AB12CD, or leave it empty");
+    if (refCode && refCode === ((account && account.code) || codeFor(store.me))) miss.push("someone else's referral code (not your own)");
     if (miss.length) { msg.classList.add("err"); msg.textContent = "Please add " + miss.join(", ") + "."; return; }
 
     if (store.mode === "db" && !isPermanent()) { openAuth("Sign in so your driver profile, approval and credit stay with you, even on a new phone."); return; }
@@ -2778,6 +3390,9 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
   }
 
   async function boot() {
+    setLang(lang);
+    maybeWelcome();
+    store.expectDb = !!(window.SIYAHAMBA_FIREBASE && window.SIYAHAMBA_FIREBASE.apiKey);
     showView();
     updateRoute();
     store.me = deviceId();
@@ -2790,8 +3405,10 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     account = { ...store.localAccount(), ...(driver || {}) };
     editingProfile = !driver || !driver.vetting; showProfile(); render();
     adminGate("demo");
+    if (safeLS.get("siyahamba.online") && driver) setOnline(true, false);
 
     const cfg = window.SIYAHAMBA_FIREBASE;
+    store.expectDb = !!(cfg && cfg.apiKey);
     if (!cfg || !cfg.apiKey) { banner("Demo mode: requests are saved on this device only. Add your Firebase settings to config.js to connect passengers and drivers.", false); return; }
     banner("Connecting to the shared request list…", false);
     let db;
@@ -2811,6 +3428,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     } catch (e) {
       console.error(e);
       banner("Couldn't connect to Firebase. Check config.js and that Anonymous sign-in is turned on. Running in demo mode.", true);
+      store.expectDb = false; render();
       return;
     }
     // This driver's credit account and top-ups
@@ -2830,8 +3448,10 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
         else if (store.user.displayName && !$("f-name").value) $("f-name").value = store.user.displayName;
       } catch (e) { console.warn(e); }
     }
+    let firstAccount = true;
     db.doc("drivers/" + store.me).onSnapshot((s) => {
       account = s.exists ? s.data() : null;
+      if (firstAccount) { firstAccount = false; if (account && account.online && account.vetting === "approved") setOnline(true, false); }
       if (account) driver = { ...(driver || {}), ...account };
       showProfile(); render();
     }, (e) => console.warn(e));
@@ -2855,6 +3475,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     db.collection("requests").onSnapshot((snap) => {
       store.items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       if (!snap.metadata.fromCache && !loaded) { loaded = true; clearTimeout(timer); if (store.canWrite) banner("", false); }
+      store.loaded = true;
       store.emit();
     }, (err) => {
       clearTimeout(timer);

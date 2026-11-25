@@ -60,6 +60,37 @@ Turn on both sign-in methods in Firebase, under **Authentication → Sign-in met
 
 Keep **Anonymous** turned on. It lets people browse before they sign in.
 
+## Languages and welcome screen
+
+- **Languages:** a language picker in the header offers **English, isiZulu, isiXhosa, Sesotho, Setswana and Afrikaans**. It translates the screen labels, buttons, booking options, trip statuses and the welcome screen, including new trip cards as they appear, and the app remembers the choice. Longer messages that include names or amounts stay in English.
+- **The translations are in `translations.js`.** Each English phrase is listed with its translation in each language. **Please have native speakers check them before launch.** You can fix any wording there directly, and add more phrases the same way.
+- **Welcome screen:** shown once, on someone's first visit, except on share links and the owner page. It has three short slides (whole-taxi group hire, checked drivers and live tracking, safe payment and ratings), a language picker, and then **"How will you use Siyahamba?"** with **I need a taxi** or **I'm a driver**.
+- On narrow phones, the trip progress line shows only the current step's name, so longer words never overlap.
+
+## Price offers, owner charts and referrals
+
+- **Price offers:** on any open trip that hasn't been paid in the app, an approved driver can tap **Offer a different price**. The offer can be between half and three times the quote, with an optional note such as "toll roads". The group sees all offers, cheapest first, with each driver's rating, vehicle and plate, and taps **Accept**. The trip's price changes to that offer, other drivers can no longer take it, and the chosen driver confirms with **Accept job**, paying 10% of the *agreed* price. The group can choose a different offer until the driver confirms. The original price is kept on the trip.
+- **Business charts (owner dashboard):** Siyahamba fees per week for the last 12 weeks (hover for values, or show as a table), trips by pick-up area, and top drivers with trips, fees and rating.
+- **Referral codes:** every approved driver sees **Invite drivers** with their `SH-` code and an **Invite on WhatsApp** button. New drivers can enter a friend's code when registering. Once the invited driver is approved and completes their first trip, the owner dashboard shows it under **Referral rewards**. Click **Give R50 credit**, and the reward appears in the inviting driver's credit and top-up history. Change the amount in `config.js`:
+
+```js
+window.SIYAHAMBA_REFERRAL_REWARD = 50;
+```
+
+## Driver tools, receipts and repeat bookings
+
+- **Availability:** drivers switch **I'm available for jobs** on or off. While online, they hear a two-tone sound, feel a vibration and see a pop-up when a new job appears, if their phone allows it and the app is open. The job board shows **"Pick-up about 11 km from you"**, sorts jobs nearest first, and has a **Near me** filter for jobs within 40 km. Sound can be turned off.
+- **My earnings:** this week, this month or all time, showing what the driver earned after Siyahamba's fee, trips completed, fees, and in-app payments paid out or still waiting. There's an 8-week bar chart (hover or tap a bar for details), with a table view.
+- **Receipts:** passengers tap **Receipt** and drivers tap **Trip statement** on a completed trip. Either can be printed or saved as PDF. Put your business details on them in `config.js`:
+
+```js
+window.SIYAHAMBA_BUSINESS = { name: "Malita (Pty) Ltd", reg: "2020/123456/07", address: "…", email: "…", phone: "…" };
+```
+
+  Ask your accountant whether anything else is needed on receipts for your business, for example VAT details.
+- **Book again / Book return trip:** on any past trip. This fills the booking form with the same details, or with pick-up and destination swapped, so the passenger only chooses a new date and time.
+- **Loading placeholders:** grey placeholder cards while trips load, instead of empty boxes.
+
 ## Live tracking, sharing, SOS and WhatsApp
 
 - **Trip progress:** every trip shows a progress line: Booked → Driver assigned → On the way → Picked up → Arrived.

@@ -34,6 +34,7 @@ service cloud.firestore {
         && !request.resource.data.keys().hasAny(['commission', 'driverId', 'heldAt', 'releasedAt', 'refundedAt', 'passengerConfirmed', 'issue', 'commissionDecision']);
 
       allow update: if isAdmin() || passengerCancels() || passengerClaimsPaid() || passengerConfirms() || passengerReports()
+        || passengerTakesOffer() || passengerUndoesOffer()
         || driverAccepts() || driverMovesOn() || driverGivesBack();
       allow delete: if isAdmin();
 
@@ -53,6 +54,26 @@ service cloud.firestore {
           && resource.data.status != 'cancelled'
           && request.resource.data.payStatus == 'claimed'
           && changed().hasOnly(['payStatus', 'paidClaimAt', 'updatedAt']);
+      }
+      // The passenger picks a driver's price offer. The price changes to the offer, before any payment.
+      function passengerTakesOffer() {
+        let off = get(/databases/$(database)/documents/requests/$(id)/offers/$(request.resource.data.offerTo)).data;
+        return isPassenger()
+          && resource.data.status == 'open'
+          && resource.data.get('payStatus', 'unpaid') == 'unpaid'
+          && changed().hasOnly(['fare', 'offerTo', 'offerAt', 'originalFare', 'updatedAt'])
+          && request.resource.data.originalFare == resource.data.get('originalFare', resource.data.fare)
+          && request.resource.data.fare == off.amount
+          && off.driverId == request.resource.data.offerTo;
+      }
+      // The passenger changes their mind: back to the original price, open to all drivers.
+      function passengerUndoesOffer() {
+        return isPassenger()
+          && resource.data.status == 'open'
+          && resource.data.get('offerTo', '') != ''
+          && changed().hasOnly(['fare', 'offerTo', 'offerAt', 'updatedAt'])
+          && request.resource.data.offerTo == ''
+          && request.resource.data.fare == resource.data.originalFare;
       }
       // "We arrived safely": the passenger's half of releasing the payment.
       function passengerConfirms() {
@@ -74,6 +95,7 @@ service cloud.firestore {
       function driverAccepts() {
         return permanent()
           && resource.data.status == 'open'
+          && (resource.data.get('offerTo', '') == '' || resource.data.offerTo == uid())
           && request.resource.data.status == 'accepted'
           && request.resource.data.driverId == uid()
           && request.resource.data.commission == feeFor(resource.data.fare)
@@ -104,6 +126,22 @@ service cloud.firestore {
       }
     }
 
+    // Price offers from drivers on an open trip. One per driver; the document ID is the driver's account ID.
+    match /requests/{rid}/offers/{did} {
+      allow read: if signedIn() && (isAdmin() || did == uid() || get(requestDoc(rid)).data.requesterId == uid());
+      allow create, update: if permanent() && did == uid()
+        && get(driverDoc(uid())).data.get('vetting', '') == 'approved'
+        && get(requestDoc(rid)).data.status == 'open'
+        && get(requestDoc(rid)).data.get('payStatus', 'unpaid') == 'unpaid'
+        && request.resource.data.keys().hasOnly(['driverId', 'driverName', 'driverReg', 'driverVehicle', 'amount', 'note', 'at'])
+        && request.resource.data.driverId == uid()
+        && request.resource.data.amount is number
+        && request.resource.data.amount >= get(requestDoc(rid)).data.get('originalFare', get(requestDoc(rid)).data.fare) * 0.5
+        && request.resource.data.amount <= get(requestDoc(rid)).data.get('originalFare', get(requestDoc(rid)).data.fare) * 3
+        && request.resource.data.get('note', '').size() <= 200;
+      allow delete: if signedIn() && (isAdmin() || did == uid() || get(requestDoc(rid)).data.requesterId == uid());
+    }
+
     // ---------------- Driver accounts (private: the driver and owners only) ----------------
     match /drivers/{id} {
       allow read: if signedIn() && (uid() == id || isAdmin());
@@ -115,11 +153,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       // Fields a driver can change at any time.
-      function openKeys() { return ['phone', 'assoc', 'race', 'updatedAt']; }
+      function openKeys() { return ['phone', 'assoc', 'race', 'online', 'onlineAt', 'updatedAt']; }
       // Fields the owner checks. Changing any of them sends the driver back for review.
       function identityKeys() {
         return ['name', 'idType', 'idNumber', 'nationality', 'vehicle', 'reg', 'pdp',
-          'bankName', 'bankHolder', 'bankAccount', 'bankBranch', 'docs', 'vetting', 'submittedAt', 'consentAt'];
+          'bankName', 'bankHolder', 'bankAccount', 'bankBranch', 'docs', 'vetting', 'submittedAt', 'consentAt', 'referredBy'];
       }
       function profileEdit() {
         return changed().hasOnly(openKeys().concat(identityKeys()))
