@@ -43,6 +43,23 @@ Without Firebase, the app runs in **demo mode**: each phone keeps its own reques
 
 Firebase web keys are safe to put in a public repository. Access is controlled by the security rules.
 
+## Accounts that follow people to any phone
+
+Passengers and drivers sign in with **Google** or **email and password**, using the **Sign in** button in the header. Their account then works on any phone:
+
+- **Drivers** keep their profile, approval, credit, `SH-` reference and jobs.
+- **Passengers** keep their trips, and their name and cellphone number are filled in automatically.
+
+Anyone can browse without signing in. **Booking a trip, registering as a driver and accepting jobs need an account.** The database rules enforce this, so it can't be skipped. A passenger asked to sign in while booking keeps everything they've filled in.
+
+**Nobody loses anything when they first sign in.** The first time someone signs in on a phone they already used, that phone's account is upgraded in place. A driver who already had credit keeps it, along with the same reference and approval. Drivers who haven't signed in yet see **Keep your account safe** until they do.
+
+Turn on both sign-in methods in Firebase, under **Authentication → Sign-in method**:
+- **Google** (already on)
+- **Email/Password**: **Add new provider → Email/Password → Enable → Save**
+
+Keep **Anonymous** turned on. It lets people browse before they sign in.
+
 ## Your earnings: 10% commission from driver credit
 
 Siyahamba takes **10% of each trip's price** from the driver's prepaid credit when they accept a job. Passengers pay drivers directly, as before.

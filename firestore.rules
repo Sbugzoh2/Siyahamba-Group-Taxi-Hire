@@ -4,6 +4,8 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
     function uid() { return request.auth.uid; }
+    // A real account (Google or email), not the automatic browse-only one. Accounts follow people to new phones.
+    function permanent() { return signedIn() && request.auth.token.firebase.get('sign_in_provider', '') != 'anonymous'; }
     // Owners are listed in the "admins" collection (added by hand in the Firebase console).
     function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
     function driverDoc(id) { return /databases/$(database)/documents/drivers/$(id); }
@@ -24,7 +26,7 @@ service cloud.firestore {
       allow read: if signedIn();
 
       // A passenger creates a request in their own name, as "open", with no driver, fee or payment progress.
-      allow create: if signedIn()
+      allow create: if permanent()
         && request.resource.data.requesterId == uid()
         && request.resource.data.status == 'open'
         && request.resource.data.fare is number && request.resource.data.fare > 0
@@ -70,7 +72,8 @@ service cloud.firestore {
 
       // Accepting a job: approved drivers only, paying exactly 10% from their own credit in the same write.
       function driverAccepts() {
-        return resource.data.status == 'open'
+        return permanent()
+          && resource.data.status == 'open'
           && request.resource.data.status == 'accepted'
           && request.resource.data.driverId == uid()
           && request.resource.data.commission == feeFor(resource.data.fare)
@@ -104,7 +107,7 @@ service cloud.firestore {
     // ---------------- Driver accounts (private: the driver and owners only) ----------------
     match /drivers/{id} {
       allow read: if signedIn() && (uid() == id || isAdmin());
-      allow create: if isAdmin() || (signedIn() && uid() == id
+      allow create: if isAdmin() || (permanent() && uid() == id
         && request.resource.data.credit == 0
         && request.resource.data.get('vetting', 'incomplete') in ['incomplete', 'pending']
         && request.resource.data.keys().hasOnly(openKeys().concat(identityKeys()).concat(['credit', 'code', 'createdAt'])));
@@ -158,6 +161,15 @@ service cloud.firestore {
         && request.resource.data.get('photo', '').size() < 300000
         && request.resource.data.get('vehiclePhoto', '').size() < 600000
         && notApprovedAfter(id));
+    }
+
+    // A person's saved name and cellphone, so the booking form is filled in on any phone.
+    match /profiles/{id} {
+      allow read: if signedIn() && uid() == id;
+      allow write: if permanent() && uid() == id
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'updatedAt'])
+        && request.resource.data.get('name', '').size() <= 120
+        && request.resource.data.get('phone', '').size() <= 30;
     }
 
     // Credit top-ups, recorded by an owner. Drivers can see their own.

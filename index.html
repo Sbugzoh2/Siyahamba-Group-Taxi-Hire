@@ -240,6 +240,25 @@ textarea { resize: vertical; min-height: 64px; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 0.88rem; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; overflow-wrap: anywhere; }
+.top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.acct { font: inherit; font-weight: 600; font-size: 0.88rem; color: #F3F5F7; background: transparent; border: 1.5px solid #3A4A59; border-radius: 999px; padding: 6px 14px; cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct:hover { border-color: var(--accent); }
+.acct:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+dialog.auth { border: none; border-radius: 16px; padding: 0; width: min(440px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
+.auth-in { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+.auth-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.auth-or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.82rem; }
+.auth-or::before, .auth-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.btn-google { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--surface); border: 1.5px solid var(--line); color: var(--ink); width: 100%; }
+.btn-google:hover { background: var(--surface-2); }
+.btn-google svg { width: 20px; height: 20px; flex: none; }
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--surface-2); padding: 4px; border-radius: 10px; }
+.auth-tabs button { font: inherit; font-weight: 600; font-size: 0.88rem; border: none; border-radius: 8px; padding: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.auth-tabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.secure-card { border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.secure-card p { margin: 0; flex: 1 1 220px; font-size: 0.9rem; }
+.secure-card b { display: block; font-family: var(--f-display); }
 .install { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
 .install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
 .install-text { flex: 1 1 220px; min-width: 0; font-size: 0.9rem; }
@@ -276,10 +295,13 @@ textarea { resize: vertical; min-height: 64px; }
       <div class="brand-name">Siya<span>hamba</span></div>
       <div class="brand-tag">Group taxi hire · South Africa</div>
     </div>
+    <div class="top-right">
+    <button type="button" class="acct" id="account-btn" hidden>Sign in</button>
     <nav class="roles" aria-label="Choose your role">
       <a href="#passenger" id="nav-passenger">I need a taxi</a>
       <a href="#driver" id="nav-driver">I'm a driver</a>
     </nav>
+    </div>
   </div>
   <div class="road-line" aria-hidden="true"></div>
 </header>
@@ -498,6 +520,10 @@ textarea { resize: vertical; min-height: 64px; }
           <div class="panel-head">
             <h2>My driver profile</h2>
             <button type="button" class="linkbtn" id="edit-profile" hidden>Edit</button>
+          </div>
+          <div class="secure-card" id="driver-signin-card" hidden style="margin-bottom:14px">
+            <p><b id="driver-signin-title">Create your driver account</b><span id="driver-signin-text">Sign in with Google or email first. Your profile, approval and credit then stay with you, even on a new phone.</span></p>
+            <button type="button" class="btn btn-primary btn-sm" id="driver-signin-btn">Sign in</button>
           </div>
           <div class="vet incomplete" id="vet-status"><b>Complete your profile</b>Add your details and documents, then send them for review.</div>
           <div id="profile-summary" hidden></div>
@@ -726,6 +752,47 @@ textarea { resize: vertical; min-height: 64px; }
     </div>
   </div>
 </main>
+
+<dialog class="auth" id="auth-dialog" aria-labelledby="auth-title">
+  <div class="auth-in">
+    <div class="auth-head">
+      <div>
+        <h2 id="auth-title">Sign in to Siyahamba</h2>
+        <p class="hint" id="auth-reason" style="margin:6px 0 0">Your account works on any phone. Your trips, driver profile and credit stay with you.</p>
+      </div>
+      <button type="button" class="linkbtn" id="auth-close" aria-label="Close">Close</button>
+    </div>
+    <div id="auth-signed-in" hidden>
+      <p style="margin:0" id="auth-who"></p>
+      <div class="actions"><button type="button" class="btn btn-ghost" id="auth-signout">Sign out</button></div>
+    </div>
+    <div id="auth-forms">
+      <button type="button" class="btn btn-google" id="auth-google">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-or" style="margin:14px 0">or use your email</div>
+      <div class="auth-tabs" role="group" aria-label="Email sign-in">
+        <button type="button" id="auth-tab-in" aria-pressed="true">Sign in</button>
+        <button type="button" id="auth-tab-up" aria-pressed="false">Create account</button>
+      </div>
+      <form id="auth-form" novalidate style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+        <div class="field">
+          <label for="auth-email">Email</label>
+          <input id="auth-email" type="email" autocomplete="email" inputmode="email">
+        </div>
+        <div class="field">
+          <label for="auth-pass">Password</label>
+          <input id="auth-pass" type="password" autocomplete="current-password" minlength="6">
+          <span class="hint" id="auth-pass-hint" hidden>At least 6 characters.</span>
+        </div>
+        <button type="submit" class="btn btn-primary" id="auth-submit">Sign in</button>
+        <button type="button" class="linkbtn" id="auth-forgot" style="align-self:flex-start">Forgot your password?</button>
+      </form>
+    </div>
+    <p class="form-msg" id="auth-msg" role="status" aria-live="polite" style="margin:0"></p>
+  </div>
+</dialog>
 
 
 <script>
@@ -1474,12 +1541,18 @@ textarea { resize: vertical; min-height: 64px; }
     if (problems.length) { msg.classList.add("err"); msg.textContent = "Please add: " + problems.join(", ") + "."; return; }
     if (f.type === "short" && f.km > SHORT_MAX_KM) { msg.classList.add("err"); msg.textContent = "This trip is over " + SHORT_MAX_KM + " km. Choose Long trip."; return; }
     if (f.type === "short" && f.crossBorder) { msg.classList.add("err"); msg.textContent = "Cross-border trips are long trips. Choose Long trip."; return; }
+    if (store.mode === "db" && !isPermanent()) {
+      saveDraft();
+      openAuth("Sign in to send your request. Your trips then stay with you on any phone. What you've filled in is kept.");
+      return;
+    }
     const q = quote(f);
     const data = { ...f, vehicle: q.vehicle, vehicles: q.count, fare: q.total, status: "open", requesterId: store.me, createdAt: Date.now(), updatedAt: Date.now() };
     if (f.payMode === "secure") data.payStatus = "unpaid";
     const btn = $("submit-btn"); btn.disabled = true; btn.textContent = "Sending…";
     try {
       await store.create(data);
+      if (store.mode === "db") store.db.doc("profiles/" + store.me).set({ name: f.contactName, phone: f.contactPhone, updatedAt: Date.now() }).catch((e) => console.warn(e));
       msg.classList.add("ok"); msg.textContent = "Request sent. Drivers can see it now.";
       $("f-notes").value = "";
     } catch (err) {
@@ -1662,11 +1735,11 @@ textarea { resize: vertical; min-height: 64px; }
           status: "accepted", driverId: store.me, driverName: driver.name, driverPhone: driver.phone,
           driverVehicle: driver.vehicle, driverReg: driver.reg, acceptedAt: Date.now()
         });
-        if (res === "taken") { msg.textContent = "Another driver took this job."; btn.textContent = "Taken"; }
+            if (res === "taken") { msg.textContent = "Another driver took this job."; btn.textContent = "Taken"; }
         else if (res === "no_credit") { msg.textContent = "Not enough credit. Top up to accept."; btn.textContent = "Accept job"; }
         else if (res === "not_approved") { msg.textContent = "Your profile isn't approved yet."; btn.textContent = "Accept job"; }
         else if (res === "no_account") { msg.textContent = "Save your vehicle details again, then accept."; btn.disabled = false; btn.textContent = "Accept job"; }
-      } catch (e) { console.warn(e); msg.textContent = "Couldn't accept. Try again."; btn.disabled = false; btn.textContent = "Accept job"; }
+      } catch (e) { console.warn(e); msg.textContent = isPermanent() || store.mode !== "db" ? "Couldn't accept. Try again." : "Sign in to accept jobs."; btn.disabled = false; btn.textContent = "Accept job"; }
     });
     if (!driver) msg.textContent = "Complete your driver profile to accept jobs.";
     if (r.payMode === "secure") card.insertBefore(h("div", { class: "split" }, "The group pays in the app. Siyahamba pays you after the trip."), card.lastChild);
@@ -2059,6 +2132,7 @@ textarea { resize: vertical; min-height: 64px; }
       idLabel();
     }
     showDocState();
+    if (typeof showAccount === "function") showAccount();
   }
   $("edit-profile").addEventListener("click", () => { editingProfile = true; showProfile(); });
 
@@ -2086,6 +2160,7 @@ textarea { resize: vertical; min-height: 64px; }
     if (!$("d-consent").checked) miss.push("your agreement to the checks (tick the box)");
     if (miss.length) { msg.classList.add("err"); msg.textContent = "Please add " + miss.join(", ") + "."; return; }
 
+    if (store.mode === "db" && !isPermanent()) { openAuth("Sign in so your driver profile, approval and credit stay with you, even on a new phone."); return; }
     const prev = account || driver || {};
     const identityChanged = !prev.vetting || prev.vetting !== "approved" || IDENTITY.some((k) => String(prev[k] ?? "") !== String(f[k] ?? ""))
       || !!(newFiles.photo || newFiles.vehiclePhoto || DOC_KINDS.some((k) => newFiles[k]));
@@ -2113,6 +2188,128 @@ textarea { resize: vertical; min-height: 64px; }
     } finally { btn.disabled = false; btn.textContent = "Save and send for review"; }
   });
 
+  /* ---------- Accounts: Google or email, the same on every phone ---------- */
+  const isPermanent = () => store.mode === "db" && !!store.user && !store.user.isAnonymous;
+  const DRAFT_KEY = "siyahamba.draft";
+  const DRAFT_IDS = ["f-pickup", "f-dropoff", "f-address", "f-km", "f-pax", "f-vehicle", "f-purpose", "f-when", "f-datetime", "f-luggage", "f-return", "f-nights", "f-name", "f-phone", "f-pay", "f-notes"];
+  function saveDraft() {
+    const v = {}; DRAFT_IDS.forEach((id) => { const el = $(id); v[id] = el.type === "checkbox" ? el.checked : el.value; });
+    try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ v, tripType, sel, kmManual })); } catch (e) {}
+  }
+  function restoreDraft() {
+    let d = null; try { d = JSON.parse(sessionStorage.getItem(DRAFT_KEY)); sessionStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    if (!d) return false;
+    DRAFT_IDS.forEach((id) => { const el = $(id); if (!(id in d.v)) return; if (el.type === "checkbox") el.checked = !!d.v[id]; else el.value = d.v[id]; });
+    if (d.sel) Object.assign(sel, d.sel);
+    setType(d.tripType === "long" ? "long" : "short");
+    $("when-wrap").hidden = $("f-when").value !== "later";
+    $("nights-wrap").hidden = d.tripType !== "long" || !$("f-return").checked;
+    updateRoute().then(() => { if (d.kmManual) { kmManual = true; $("f-km").value = d.v["f-km"]; refreshQuote(); } });
+    return true;
+  }
+
+  let authMode = "in";
+  function setAuthMode(m) {
+    authMode = m;
+    $("auth-tab-in").setAttribute("aria-pressed", m === "in"); $("auth-tab-up").setAttribute("aria-pressed", m === "up");
+    $("auth-submit").textContent = m === "in" ? "Sign in" : "Create account";
+    $("auth-pass").autocomplete = m === "in" ? "current-password" : "new-password";
+    $("auth-pass-hint").hidden = m === "in"; $("auth-forgot").hidden = m !== "in";
+    $("auth-msg").textContent = "";
+  }
+  $("auth-tab-in").addEventListener("click", () => setAuthMode("in"));
+  $("auth-tab-up").addEventListener("click", () => setAuthMode("up"));
+
+  function openAuth(reason) {
+    const dlg = $("auth-dialog"), signed = isPermanent();
+    $("auth-signed-in").hidden = !signed; $("auth-forms").hidden = signed;
+    $("auth-title").textContent = signed ? "Your account" : "Sign in to Siyahamba";
+    $("auth-reason").textContent = signed ? "This account works on any phone. Sign in with it on a new device to get everything back." : (reason || "Your account works on any phone. Your trips, driver profile and credit stay with you.");
+    if (signed) $("auth-who").textContent = "Signed in as " + (store.user.email || store.user.displayName || "your account") + ".";
+    $("auth-msg").className = "form-msg"; $("auth-msg").textContent = "";
+    if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+  }
+  function closeAuth() { const dlg = $("auth-dialog"); if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); }
+  $("auth-close").addEventListener("click", closeAuth);
+  $("account-btn").addEventListener("click", () => openAuth());
+  $("driver-signin-btn").addEventListener("click", () => openAuth("Sign in so your driver profile, approval and credit stay with you, even on a new phone."));
+
+  function authError(e) {
+    const c = e && e.code || "";
+    return c === "auth/popup-closed-by-user" || c === "auth/cancelled-popup-request" ? "Sign-in was cancelled."
+      : c === "auth/email-already-in-use" ? "There's already an account with this email. Choose Sign in instead."
+      : c === "auth/invalid-email" ? "That email address doesn't look right."
+      : c === "auth/weak-password" ? "Use a password of at least 6 characters."
+      : c === "auth/wrong-password" || c === "auth/invalid-credential" || c === "auth/invalid-login-credentials" || c === "auth/user-not-found" ? "The email or password is wrong."
+      : c === "auth/too-many-requests" ? "Too many tries. Wait a few minutes and try again."
+      : c === "auth/operation-not-allowed" ? "This sign-in method is turned off. The owner needs to enable it in Firebase."
+      : c === "auth/unauthorized-domain" ? "This website isn't allowed to sign in yet. The owner needs to add it in Firebase."
+      : c === "auth/network-request-failed" ? "No connection. Check your signal and try again."
+      : "Sign-in didn't work. Try again.";
+  }
+  function afterSignIn(note) {
+    const msg = $("auth-msg"); msg.className = "form-msg ok"; msg.textContent = note || "Signed in.";
+    setTimeout(() => location.reload(), 400);
+  }
+  // Signing in for the first time upgrades this phone's account in place, so nothing on it is lost.
+  $("auth-google").addEventListener("click", async () => {
+    const auth = firebase.auth(), provider = new firebase.auth.GoogleAuthProvider(), u = auth.currentUser, msg = $("auth-msg");
+    msg.className = "form-msg"; msg.textContent = "Opening Google…";
+    try {
+      if (u && u.isAnonymous) {
+        try { await u.linkWithPopup(provider); return afterSignIn("Signed in. Everything on this phone is now saved to your account."); }
+        catch (e) {
+          if (e.code === "auth/credential-already-in-use" && e.credential) { await auth.signInWithCredential(e.credential); return afterSignIn("Welcome back. Loading your account…"); }
+          if (e.code === "auth/popup-blocked") { await u.linkWithRedirect(provider); return; }
+          throw e;
+        }
+      }
+      try { await auth.signInWithPopup(provider); }
+      catch (e) { if (e.code === "auth/popup-blocked") { await auth.signInWithRedirect(provider); return; } throw e; }
+      afterSignIn();
+    } catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = authError(e); }
+  });
+  $("auth-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const auth = firebase.auth(), u = auth.currentUser, msg = $("auth-msg");
+    const email = $("auth-email").value.trim(), pass = $("auth-pass").value;
+    msg.className = "form-msg";
+    if (!/^\S+@\S+\.\S+$/.test(email)) { msg.classList.add("err"); msg.textContent = "Enter your email address."; return; }
+    if (pass.length < 6) { msg.classList.add("err"); msg.textContent = "Use a password of at least 6 characters."; return; }
+    const btn = $("auth-submit"); btn.disabled = true;
+    try {
+      if (authMode === "up") {
+        if (u && u.isAnonymous) await u.linkWithCredential(firebase.auth.EmailAuthProvider.credential(email, pass));
+        else await auth.createUserWithEmailAndPassword(email, pass);
+        afterSignIn("Account created. Everything on this phone is now saved to it.");
+      } else {
+        await auth.signInWithEmailAndPassword(email, pass);
+        afterSignIn("Welcome back. Loading your account…");
+      }
+    } catch (e) { console.warn(e); msg.classList.add("err"); msg.textContent = authError(e); btn.disabled = false; }
+  });
+  $("auth-forgot").addEventListener("click", async () => {
+    const email = $("auth-email").value.trim(), msg = $("auth-msg");
+    if (!/^\S+@\S+\.\S+$/.test(email)) { msg.className = "form-msg err"; msg.textContent = "Type your email above, then tap Forgot your password."; return; }
+    try { await firebase.auth().sendPasswordResetEmail(email); msg.className = "form-msg ok"; msg.textContent = "Check your email for a link to reset your password."; }
+    catch (e) { msg.className = "form-msg err"; msg.textContent = authError(e); }
+  });
+  $("auth-signout").addEventListener("click", async () => { await firebase.auth().signOut(); location.reload(); });
+
+  function showAccount() {
+    const btn = $("account-btn");
+    btn.hidden = store.mode !== "db";
+    btn.textContent = isPermanent() ? (store.user.displayName || store.user.email || "My account").split(" ")[0] : "Sign in";
+    const card = $("driver-signin-card");
+    const anon = store.mode === "db" && !isPermanent();
+    card.hidden = !anon;
+    if (anon && driver) {
+      $("driver-signin-title").textContent = "Keep your account safe";
+      $("driver-signin-text").textContent = "Sign in with Google or email so you never lose your profile, approval or credit if you change phones.";
+    }
+    if (anon && !driver) { $("profile-fields").hidden = true; $("profile-actions").hidden = true; }
+  }
+
   /* ---------- Owner sign-in ---------- */
   async function adminGate(mode) {
     const msg = $("admin-msg"), btn = $("admin-signin");
@@ -2120,8 +2317,8 @@ textarea { resize: vertical; min-height: 64px; }
     if (mode !== "db") { msg.textContent = "Connect Firebase in config.js to use the owner dashboard."; btn.hidden = true; return; }
     const user = store.user;
     if (!user || user.isAnonymous) {
-      msg.textContent = "Sign in with the Google account you use for Siyahamba. Use a computer or phone you don't drive with: signing in replaces this device's driver and passenger account.";
-      btn.hidden = false; return;
+      msg.textContent = "Sign in with the Google account or email you use as the Siyahamba owner. Use your own owner account, not a driver's.";
+      btn.hidden = false; btn.textContent = "Sign in"; return;
     }
     btn.hidden = true;
     let isAdmin = false;
@@ -2136,22 +2333,7 @@ textarea { resize: vertical; min-height: 64px; }
     store.db.collection("topups").orderBy("at", "desc").limit(50).onSnapshot((snap) => { admin.topups = snap.docs.map((d) => d.data()); renderAdmin(); }, (e) => console.warn(e));
     renderAdmin();
   }
-  $("admin-signin").addEventListener("click", async () => {
-    const auth = firebase.auth(), provider = new firebase.auth.GoogleAuthProvider();
-    const msg = $("admin-msg");
-    try {
-      try { await auth.signInWithPopup(provider); }
-      catch (e) { if (e.code === "auth/popup-blocked") { await auth.signInWithRedirect(provider); return; } throw e; }
-      location.reload();
-    } catch (e) {
-      console.warn(e);
-      msg.textContent = e.code === "auth/operation-not-allowed"
-        ? "Google sign-in is turned off. In Firebase, open Authentication, Sign-in method, and enable Google."
-        : e.code === "auth/unauthorized-domain"
-        ? "This website isn't allowed to sign in yet. In Firebase, add it under Authentication, Settings, Authorized domains."
-        : "Sign-in didn't finish. Try again.";
-    }
-  });
+  $("admin-signin").addEventListener("click", () => openAuth("Sign in with the Google account or email you use as the Siyahamba owner."));
   $("admin-signout").addEventListener("click", async () => { await firebase.auth().signOut(); location.hash = "#passenger"; location.reload(); });
 
   /* ---------- Boot ---------- */
@@ -2189,6 +2371,7 @@ textarea { resize: vertical; min-height: 64px; }
       db = firebase.firestore();
       store.mode = "db"; store.db = db; store.me = user.uid; store.user = user;
       account = null; myTopups = [];
+      try { await auth.getRedirectResult(); } catch (e) { console.warn(e); }
     } catch (e) {
       console.error(e);
       banner("Couldn't connect to Firebase. Check config.js and that Anonymous sign-in is turned on. Running in demo mode.", true);
@@ -2202,6 +2385,15 @@ textarea { resize: vertical; min-height: 64px; }
     }
     myPublic = await store.loadPublic(store.me);
     editingProfile = !driver || !driver.vetting || driver.vetting === "incomplete"; showProfile();
+    showAccount();
+    // Fill the booking form from this person's saved details, or from a form kept while they signed in.
+    if (!restoreDraft() && isPermanent()) {
+      try {
+        const pr = await db.doc("profiles/" + store.me).get();
+        if (pr.exists) { if (!$("f-name").value) $("f-name").value = pr.data().name || ""; if (!$("f-phone").value) $("f-phone").value = pr.data().phone || ""; }
+        else if (store.user.displayName && !$("f-name").value) $("f-name").value = store.user.displayName;
+      } catch (e) { console.warn(e); }
+    }
     db.doc("drivers/" + store.me).onSnapshot((s) => {
       account = s.exists ? s.data() : null;
       if (account) driver = { ...(driver || {}), ...account };
