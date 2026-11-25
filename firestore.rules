@@ -208,7 +208,8 @@ service cloud.firestore {
     // A person's saved name and cellphone, so the booking form is filled in on any phone.
     match /profiles/{id} {
       allow read: if signedIn() && (uid() == id || isAdmin());
-      allow write: if permanent() && uid() == id
+      allow delete: if isAdmin();
+      allow create, update: if permanent() && uid() == id
         && request.resource.data.keys().hasOnly(['name', 'phone', 'email', 'emergencyName', 'emergencyPhone', 'updatedAt'])
         && request.resource.data.get('name', '').size() <= 120
         && request.resource.data.get('phone', '').size() <= 30;
@@ -369,6 +370,16 @@ service cloud.firestore {
           && ((id == d.tripId + '_receipt_p' && d.toUids == [t.requesterId])
             || (id == d.tripId + '_receipt_d' && d.toUids == [t.driverId]));
       }
+    }
+
+    // "Delete my account": the request goes to the owners, who refund any balance and delete the data.
+    match /deletionRequests/{id} {
+      allow read: if signedIn() && (uid() == id || isAdmin());
+      allow create: if permanent() && uid() == id
+        && request.resource.data.keys().hasOnly(['at', 'email', 'status', 'reason'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.get('reason', '').size() <= 500;
+      allow update, delete: if isAdmin();
     }
 
     // Credit top-ups, recorded by an owner. Drivers can see their own.

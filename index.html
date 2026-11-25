@@ -414,6 +414,12 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
   .trip { animation: rise .25s ease-out both; }
   @keyframes rise { from { transform: translateY(4px); } to { transform: none; } }
 }
+.site-foot { display: flex; flex-wrap: wrap; gap: 8px 10px; justify-content: center; align-items: center; margin: 28px 0 8px; font-size: 0.85rem; color: var(--muted); }
+.site-foot a, .site-foot .linkbtn { color: inherit; text-decoration: underline; font-size: inherit; }
+.del-box { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.del-box summary { cursor: pointer; font-weight: 600; color: #C0392B; }
+.del-box #del-form { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.btn-danger { background: #B03A2E; color: #fff; border-color: #B03A2E; }
 </style>
 <script src="config.js"></script>
 <script src="translations.js"></script>
@@ -925,6 +931,10 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
         <div id="admin-review" hidden></div>
       </div>
       <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><h2>Account deletion requests</h2><span class="count" id="admin-del-count">0</span></div>
+        <div class="list" id="admin-deletions"></div>
+      </div>
+      <div class="panel" style="margin-bottom:20px">
         <div class="panel-head"><h2>Issues</h2><span class="count" id="admin-issues-count">0</span></div>
         <div class="list" id="admin-issues"></div>
       </div>
@@ -986,6 +996,13 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       <div><b>3. Pay safely, ride together</b>Pay in the app and Siyahamba holds the money until you confirm you've arrived. Or pay the driver directly.</div>
     </div>
   </div>
+  <footer class="site-foot">
+    <a href="privacy.html">Privacy policy</a>
+    <span aria-hidden="true">·</span>
+    <button type="button" class="linkbtn" id="foot-delete">Delete my account</button>
+    <span aria-hidden="true">·</span>
+    <span>© Siyahamba Group Taxi Hire</span>
+  </footer>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
@@ -1047,6 +1064,17 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     <div id="auth-signed-in" hidden>
       <p style="margin:0" id="auth-who"></p>
       <div class="actions"><button type="button" class="btn btn-ghost" id="auth-signout">Sign out</button></div>
+      <details class="del-box" id="del-box">
+        <summary>Delete my account</summary>
+        <div id="del-form">
+          <p class="hint" style="margin:0">We'll delete your profile, contact details, wallet, driver profile and uploaded documents. The law says we must keep trip and payment records for 5 years, but they are no longer linked to your contact details. Money left in your wallet or driver credit is paid back to you first.</p>
+          <div class="field"><label for="del-reason">Why are you leaving? (optional)</label><textarea id="del-reason" maxlength="500" rows="2"></textarea></div>
+          <label class="check" for="del-confirm"><input type="checkbox" id="del-confirm"> <span>I understand this can't be undone.</span></label>
+          <div class="actions" style="margin:0"><button type="button" class="btn btn-danger" id="del-submit">Request account deletion</button></div>
+        </div>
+        <p class="hint" id="del-status" hidden></p>
+      </details>
+      <p class="hint" style="margin:12px 0 0"><a href="privacy.html">How we use your information</a></p>
     </div>
     <div id="auth-forms">
       <button type="button" class="btn btn-google" id="auth-google">
@@ -1212,11 +1240,11 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     shortMin: 450,       // smallest price for a short trip
     nightPct: 0.15,      // +15% for trips between 20:00 and 05:00
     trailerShort: 300,   // luggage trailer
-    // Long trips (between cities): every km is charged twice,
-    // because the taxi drives there and back even if the group stays
-    longPerKm: 9.5,      // per km driven
+    // Long trips (between cities): the group pays for the drive there only.
+    // If the driver waits and brings them back, the drive back is charged too.
+    longPerKm: 9.5,      // per km driven with the group
     longMin: 2000,       // smallest price for a long trip
-    tollPerKm: 0.55,     // toll allowance per km driven on long trips (there and back)
+    tollPerKm: 0.55,     // toll allowance per km driven with the group on long trips
     trailerLong: 800,    // luggage trailer
     crossBorder: 1500    // cross-border permit and border costs, per vehicle
   };
@@ -1341,10 +1369,10 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       if (hour >= 20 || hour < 5) { rows.push(["Night trip +15%", money(per * RATES.nightPct)]); per *= 1 + RATES.nightPct; }
       if (q.luggage === "trailer") { per += RATES.trailerShort; rows.push(["Luggage trailer", money(RATES.trailerShort)]); }
     } else {
-      const driveKm = q.km * 2;
+      const driveKm = q.roundTrip ? q.km * 2 : q.km;
       per = RATES.longPerKm * driveKm;
       rows.push(["Drive there, " + q.km + " km", money(RATES.longPerKm * q.km)]);
-      rows.push([q.roundTrip ? "Drive back with the group, " + q.km + " km" : "Driver's drive home, " + q.km + " km", money(RATES.longPerKm * q.km)]);
+      if (q.roundTrip) rows.push(["Drive back with the group, " + q.km + " km", money(RATES.longPerKm * q.km)]);
       const tolls = Math.round(RATES.tollPerKm * driveKm);
       per += tolls; rows.push(["Toll allowance", money(tolls)]);
       if (q.roundTrip && q.nights > 0) rows.push(["Driver waits " + q.nights + " night" + (q.nights === 1 ? "" : "s"), "Driver's own cost"]);
@@ -3170,6 +3198,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     renderBusiness();
     renderReferrals();
     renderIssues();
+    renderDeletions();
 
     const feesBy = {};
     paid.forEach((r) => { if (r.driverId || r.status === "cancelled") feesBy[r.driverId] = (feesBy[r.driverId] || 0) + earnedFrom(r); });
@@ -3363,12 +3392,53 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     }) : [empty("No issues", "When a passenger or driver reports a problem, it shows here with their messages.")]));
   }
 
+  // ---- Account deletion requests ----
+  let adminDeletions = [];
+  function renderDeletions() {
+    if (!admin.on) return;
+    const list = adminDeletions.slice().sort((a, b) => (a.status === "pending" ? 0 : 1) - (b.status === "pending" ? 0 : 1) || a.at - b.at).slice(0, 30);
+    const pending = list.filter((d) => d.status === "pending");
+    loadProfiles(pending.map((d) => d.id));
+    $("admin-del-count").textContent = pending.length;
+    $("admin-deletions").replaceChildren(...(list.length ? list.map((d) => {
+      const pr = adminProfiles[d.id] || {}, w = adminWallets.find((x) => x.id === d.id), dr = admin.drivers.find((x) => x.id === d.id);
+      const bal = w ? Number(w.balance) || 0 : 0, cred = dr ? Number(dr.credit) || 0 : 0;
+      const active = allRequests.filter((r) => (r.requesterId === d.id || r.driverId === d.id) && ["open", "accepted", "enroute", "ontrip"].includes(r.status));
+      const done = d.status !== "pending", msg = h("span", { class: "form-msg" });
+      const go = h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: async () => {
+        if (!confirm("Delete " + (pr.name || d.email || "this person") + "'s profile, wallet, driver profile and documents? This can't be undone.")) return;
+        go.disabled = true;
+        try {
+          const db = store.db, files = await db.collection("driverFiles/" + d.id + "/files").get();
+          const batch = db.batch();
+          files.docs.forEach((f) => batch.delete(f.ref));
+          ["profiles", "wallets", "drivers", "driverPublic"].forEach((c) => batch.delete(db.doc(c + "/" + d.id)));
+          batch.update(db.doc("deletionRequests/" + d.id), { status: "done", doneAt: Date.now(), by: store.me });
+          if (d.email) batch.set(db.collection("mail").doc(), { to: [d.email], message: { subject: "Siyahamba: your account was deleted", text: "We've deleted your Siyahamba profile, contact details, wallet and documents as you asked. Trip and payment records are kept for 5 years as the law requires, without your contact details.\n\nThank you for riding with Siyahamba." }, at: Date.now(), kind: "deletion" });
+          await batch.commit();
+          toast(h("span", { text: "Their data was deleted." }));
+        } catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "That didn't work: " + (e.code || e.message); go.disabled = false; }
+      } }, "Delete their data");
+      const owed = bal + cred
+        ? "Pay back " + money(bal + cred) + " first (" + [bal ? money(bal) + " in their wallet" : "", cred ? money(cred) + " driver credit" : ""].filter(Boolean).join(", ") + "). "
+        : "Nothing owed to them. ";
+      const busy = active.length ? "They have " + active.length + " trip" + (active.length === 1 ? "" : "s") + " not finished yet. Wait until " + (active.length === 1 ? "it's" : "they're") + " done. " : "";
+      return h("article", { class: "trip", "data-status": done ? "completed" : "cancelled" },
+        h("div", { class: "trip-top" }, h("div", null, h("div", { class: "route", text: (pr.name || d.email || "Someone") + " asked to delete their account" }),
+          h("div", { class: "meta" }, h("span", { text: ago(d.at) }), d.email ? h("span", { text: d.email }) : null, pr.phone ? h("span", { class: "phone", text: pr.phone }) : null, dr ? h("span", { text: "Driver" }) : null)),
+          h("span", { class: "pill " + (done ? "done" : "cancel"), text: done ? "Deleted" : "To do" })),
+        d.reason ? h("p", { style: "margin:0", text: "Reason: " + d.reason }) : null,
+        done ? null : h("p", { class: "hint", style: "margin:0", text: owed + busy + "Trip and payment records stay for 5 years, as the law requires." }),
+        done ? null : h("div", { class: "trip-actions" }, go, msg));
+    }) : [empty("No deletion requests", "When someone asks to delete their account, it shows here. You have 30 days to do it.")]));
+  }
+
   // ---- Wallet top-ups to confirm ----
   let adminClaims = [], adminWallets = [], adminProfiles = {};
   function loadProfiles(ids) {
     ids.filter((id) => !(id in adminProfiles)).forEach((id) => {
       adminProfiles[id] = null;
-      store.db.doc("profiles/" + id).get().then((s) => { adminProfiles[id] = s.exists ? s.data() : {}; renderClaims(); }).catch(() => { adminProfiles[id] = {}; });
+      store.db.doc("profiles/" + id).get().then((s) => { adminProfiles[id] = s.exists ? s.data() : {}; renderClaims(); renderDeletions(); }).catch(() => { adminProfiles[id] = {}; });
     });
   }
   function renderClaims() {
@@ -3626,10 +3696,38 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     $("auth-signed-in").hidden = !signed; $("auth-forms").hidden = signed;
     $("auth-title").textContent = signed ? "Your account" : "Sign in to Siyahamba";
     $("auth-reason").textContent = signed ? "This account works on any phone. Sign in with it on a new device to get everything back." : (reason || "Your account works on any phone. Your trips, driver profile and credit stay with you.");
-    if (signed) $("auth-who").textContent = "Signed in as " + (store.user.email || store.user.displayName || "your account") + ".";
+    if (signed) { $("auth-who").textContent = "Signed in as " + (store.user.email || store.user.displayName || "your account") + "."; loadDeletion(); }
     $("auth-msg").className = "form-msg"; $("auth-msg").textContent = "";
     if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
   }
+  async function loadDeletion() {
+    const st = $("del-status"), form = $("del-form");
+    st.hidden = true; form.hidden = false;
+    if (store.mode !== "db") return;
+    try {
+      const s = await store.db.doc("deletionRequests/" + store.me).get();
+      if (s.exists) {
+        const d = s.data(); form.hidden = true; st.hidden = false;
+        st.textContent = d.status === "done" ? "Your data was deleted." : "You asked us to delete your account on " + new Date(d.at).toLocaleDateString("en-ZA") + ". We'll do it within 30 days and email you when it's done. Any money owed to you is paid back first.";
+      }
+    } catch (e) { console.warn(e); }
+  }
+  $("del-submit").addEventListener("click", async (e) => {
+    const msg = $("auth-msg"), btn = e.currentTarget;
+    if (!$("del-confirm").checked) { msg.className = "form-msg err"; msg.textContent = "Tick the box to confirm."; return; }
+    if (store.mode !== "db") { msg.className = "form-msg err"; msg.textContent = "Account deletion needs the online app."; return; }
+    btn.disabled = true;
+    try {
+      await store.db.doc("deletionRequests/" + store.me).set({ at: Date.now(), email: store.user.email || "", status: "pending", reason: $("del-reason").value.trim().slice(0, 500) });
+      msg.className = "form-msg ok"; msg.textContent = "Request sent.";
+      await loadDeletion();
+    } catch (err) { console.warn(err); msg.className = "form-msg err"; msg.textContent = "That didn't send. Check your connection and try again."; }
+    btn.disabled = false;
+  });
+  $("foot-delete").addEventListener("click", () => {
+    if (isPermanent()) { openAuth(); $("del-box").open = true; }
+    else openAuth("Sign in with the account you want to delete.");
+  });
   function closeAuth() { const dlg = $("auth-dialog"); if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); }
   $("auth-close").addEventListener("click", closeAuth);
   $("account-btn").addEventListener("click", () => openAuth());
@@ -3731,6 +3829,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     admin.on = true;
     store.db.collection("walletClaims").orderBy("at", "desc").limit(100).onSnapshot((snap) => { adminClaims = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderClaims(); }, (e) => console.warn(e));
     store.db.collection("wallets").onSnapshot((snap) => { adminWallets = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderAdmin(); }, (e) => console.warn(e));
+    store.db.collection("deletionRequests").onSnapshot((snap) => { adminDeletions = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderDeletions(); }, (e) => console.warn(e));
     store.db.collection("sos").orderBy("at", "desc").limit(30).onSnapshot((snap) => { sosAlerts = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderSOS(); }, (e) => console.warn(e));
     $("admin-gate").hidden = true; $("admin-body").hidden = false;
     store.db.collection("drivers").onSnapshot((snap) => { admin.drivers = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderAdmin(); }, (e) => console.warn(e));
