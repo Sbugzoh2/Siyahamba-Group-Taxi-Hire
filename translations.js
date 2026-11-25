@@ -1103,6 +1103,90 @@ window.SIYAHAMBA_I18N = {
       "st": "O ka amohela mesebetsi ha Siyahamba e o dumetse.",
       "tn": "O ka amogela ditiro fa Siyahamba e go dumeletse.",
       "af": "Jy kan werk aanvaar sodra Siyahamba jou goedkeur."
+    },
+    "Appearance": {
+      "zu": "Ukubukeka",
+      "xh": "Inkangeleko",
+      "st": "Ponahalo",
+      "tn": "Ponalo",
+      "af": "Voorkoms"
+    },
+    "Automatic (light by day)": {
+      "zu": "Okuzenzakalelayo (kukhanya emini)",
+      "xh": "Ngokuzenzekelayo (kukhanya emini)",
+      "st": "Ka bo yona (kganya motshehare)",
+      "tn": "Ka boyona (go phatsimo motshegare)",
+      "af": "Outomaties (lig bedags)"
+    },
+    "Light": {
+      "zu": "Kukhanya",
+      "xh": "Kukhanya",
+      "st": "Kganya",
+      "tn": "Phatsimo",
+      "af": "Lig"
+    },
+    "Dark": {
+      "zu": "Kumnyama",
+      "xh": "Mnyama",
+      "st": "Lefifi",
+      "tn": "Lefifi",
+      "af": "Donker"
+    },
+    "Now": {
+      "zu": "Manje",
+      "xh": "Ngoku",
+      "st": "Hona jwale",
+      "tn": "Jaanong",
+      "af": "Nou"
+    },
+    "Past trips": {
+      "zu": "Izinhambo ezedlule",
+      "xh": "Uhambo olugqithileyo",
+      "st": "Maeto a fetileng",
+      "tn": "Maeto a a fetileng",
+      "af": "Vorige ritte"
+    },
+    "Rebook": {
+      "zu": "Bhukha futhi",
+      "xh": "Bhukisha kwakhona",
+      "st": "Buka hape",
+      "tn": "Buka gape",
+      "af": "Bespreek weer"
+    },
+    "Add rating": {
+      "zu": "Faka isilinganiso",
+      "xh": "Yongeza ireyithi",
+      "st": "Kenya tekanyetso",
+      "tn": "Tsenya selekanyo",
+      "af": "Gee 'n gradering"
+    },
+    "Total": {
+      "zu": "Isamba",
+      "xh": "Isixa siphela",
+      "st": "Kakaretso",
+      "tn": "Palogotlhe",
+      "af": "Totaal"
+    },
+    "Get receipt": {
+      "zu": "Thola irisidi",
+      "xh": "Fumana irisithi",
+      "st": "Fumana rasiti",
+      "tn": "Bona rasiti",
+      "af": "Kry kwitansie"
+    },
+    "Get help with this trip": {
+      "zu": "Thola usizo ngalolu hambo",
+      "xh": "Fumana uncedo ngolu hambo",
+      "st": "Fumana thuso ka leeto lena",
+      "tn": "Bona thuso ka loeto lo",
+      "af": "Kry hulp met hierdie rit"
+    },
+    "Choose a bigger vehicle": {
+      "zu": "Khetha imoto enkulu",
+      "xh": "Khetha isithuthi esikhulu",
+      "st": "Kgetha koloi e kgolwanyane",
+      "tn": "Tlhopha koloi e kgolwane",
+      "af": "Kies 'n groter voertuig"
     }
   }
 };

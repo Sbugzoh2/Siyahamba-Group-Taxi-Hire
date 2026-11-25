@@ -36,6 +36,7 @@ service cloud.firestore {
         && request.resource.data.payMode == 'wallet'
         && request.resource.data.payStatus == 'held'
         && !request.resource.data.keys().hasAny(['commission', 'driverId', 'releasedAt', 'refundedAt', 'passengerConfirmed', 'issue', 'issueStatus', 'commissionDecision', 'offerTo', 'originalFare'])
+        && vehicleFits(request.resource.data)
         && exists(walletDoc(uid()))
         && getAfter(walletDoc(uid())).data.balance == get(walletDoc(uid())).data.balance - request.resource.data.fare
         && getAfter(walletDoc(uid())).data.balance >= 0;
@@ -44,6 +45,12 @@ service cloud.firestore {
         || passengerTakesOffer() || passengerUndoesOffer()
         || driverAccepts() || driverMovesOn() || driverGivesBack();
       allow delete: if isAdmin();
+
+      // The group must fit in the vehicle they book. Only buses can be booked as several vehicles.
+      function vehicleFits(d) {
+        return d.get('vehicle', 'quantum') == 'coach'
+          || (d.pax is int && d.pax <= {'seven': 6, 'quantum': 14, 'sprinter': 22, 'midibus': 35}.get(d.get('vehicle', 'quantum'), 0));
+      }
 
       function isPassenger() { return resource.data.requesterId == uid(); }
 
@@ -112,7 +119,7 @@ service cloud.firestore {
 
       function driverMovesOn() {
         return resource.data.driverId == uid()
-          && changed().hasOnly(['status', 'updatedAt'])
+          && changed().hasOnly(['status', 'updatedAt', 'enrouteAt', 'ontripAt', 'completedAt'])
           && ((resource.data.status == 'accepted' && request.resource.data.status == 'enroute')
             || (resource.data.status == 'enroute' && request.resource.data.status == 'ontrip')
             || (resource.data.status == 'ontrip' && request.resource.data.status == 'completed'));

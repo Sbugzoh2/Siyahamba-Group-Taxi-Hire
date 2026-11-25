@@ -5,6 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Group taxi hire for South Africa: book a minibus taxi, Sprinter or bus for short or long group trips.">
 <meta name="theme-color" content="#1B2631">
+<script>
+// Light by day, dark at night: switches at sunrise and sunset where the person is (Johannesburg if not known).
+// People can also choose Light or Dark under Account > Appearance.
+(function () {
+  function read(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function sunTimes(day, lat, lng) {
+    var rad = Math.PI / 180, base = Date.UTC(day.getFullYear(), day.getMonth(), day.getDate());
+    var g = 2 * Math.PI / 365 * ((base - Date.UTC(day.getFullYear(), 0, 0)) / 864e5 - 1);
+    var eqt = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+    var decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+    var ha = Math.acos(Math.cos(90.833 * rad) / (Math.cos(lat * rad) * Math.cos(decl)) - Math.tan(lat * rad) * Math.tan(decl)) / rad;
+    return [base + (720 - 4 * (lng + ha) - eqt) * 6e4, base + (720 - 4 * (lng - ha) - eqt) * 6e4];
+  }
+  function auto(now) {
+    var pos = read("siyahamba.lastPos"), lat = pos ? pos[0] : -26.2, lng = pos ? pos[1] : 28.05;
+    var t = sunTimes(now, lat, lng);
+    return now.getTime() >= t[0] && now.getTime() < t[1] ? "light" : "dark";
+  }
+  function apply() {
+    var pref = read("siyahamba.theme") || "auto";
+    var theme = pref === "light" || pref === "dark" ? pref : auto(new Date());
+    if (document.documentElement.getAttribute("data-theme") !== theme) document.documentElement.setAttribute("data-theme", theme);
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", theme === "dark" ? "#0A1016" : "#1B2631");
+  }
+  apply();
+  setInterval(apply, 60000);
+  window.siyahambaTheme = { apply: apply, sunTimes: sunTimes };
+})();
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -472,6 +501,62 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
 .menu-row select { font: inherit; font-weight: 500; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
 .menu-row.danger { color: #C0392B; }
 .menu-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.6); }
+
+/* Weather at the destination */
+.wx { display: flex; gap: 12px; align-items: flex-start; border-radius: 12px; padding: 12px 14px; background: var(--info-soft); color: var(--ink); font-size: 0.9rem; }
+.quote .wx { margin-top: 14px; background: rgba(255, 255, 255, 0.08); color: #F3F5F7; }
+.wx .wx-ico { font-size: 1.8rem; line-height: 1; }
+.wx b { display: block; }
+.wx .wx-tip { display: block; margin-top: 4px; font-weight: 600; }
+.wx .wx-sub { opacity: 0.85; }
+
+/* Activity: past trips list and trip details */
+.sub-head { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 8px 0 2px; }
+.past-row { display: flex; align-items: flex-start; gap: 14px; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 14px 2px; font: inherit; color: var(--ink); cursor: pointer; }
+.past-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 10px; }
+.veh-tile { width: 64px; height: 64px; flex: none; border-radius: 14px; background: var(--surface-2); display: grid; place-items: center; }
+.veh-tile svg { width: 46px; height: 46px; }
+.pr-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pr-main b { font-weight: 600; font-size: 1rem; line-height: 1.3; }
+.pr-main .meta { font-size: 0.88rem; }
+.pr-fare { font-weight: 700; white-space: nowrap; color: var(--ink); }
+.pr-fare.struck { text-decoration: line-through; color: var(--muted); }
+.past-feature { border: 1px solid var(--line); border-radius: 18px; overflow: hidden; margin: 6px 0 10px; background: var(--surface); }
+.past-feature .past-row { border-bottom: 0; padding: 14px 14px 8px; }
+.past-feature .chips { display: flex; gap: 10px; flex-wrap: wrap; padding: 0 14px 14px 92px; }
+.chip-btn { font: inherit; font-weight: 700; font-size: 0.9rem; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.static-map { position: relative; height: 170px; background: var(--surface-2); }
+.static-map .leaflet-container { height: 100%; background: var(--surface-2); }
+.map-chip { position: absolute; z-index: 500; top: 10px; left: 10px; background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 12px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18); }
+.trip-detail { display: flex; flex-direction: column; gap: 16px; }
+.td-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; font: inherit; font-weight: 700; color: var(--ink); padding: 6px 2px; cursor: pointer; }
+.td-back svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.td-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.td-title { font-family: var(--f-display); font-size: 1.6rem; line-height: 1.15; margin: 0 0 4px; }
+.td-face { width: 64px; height: 64px; border-radius: 50%; flex: none; background: var(--surface-2); display: grid; place-items: center; overflow: hidden; font: 800 1.4rem var(--f-display); color: var(--muted); }
+.td-face img { width: 100%; height: 100%; object-fit: cover; }
+.trip-detail .static-map { height: 200px; border-radius: 16px; overflow: hidden; }
+.td-section h4 { font-family: var(--f-display); font-size: 1.15rem; margin: 0 0 12px; }
+.td-route { list-style: none; margin: 0; padding: 0; }
+.td-route li { position: relative; padding: 0 0 18px 34px; }
+.td-route li:last-child { padding-bottom: 0; }
+.td-route li::before { content: ""; position: absolute; left: 4px; top: 3px; width: 10px; height: 10px; border-radius: 50%; border: 4px solid var(--go); background: var(--surface); }
+.td-route li:last-child::before { border-color: var(--ink); }
+.td-route li:not(:last-child)::after { content: ""; position: absolute; left: 11px; top: 21px; bottom: 2px; width: 3px; background: var(--go); }
+.td-route b { display: block; font-weight: 600; }
+.td-route .meta { display: block; }
+.td-buttons { display: flex; flex-direction: column; gap: 10px; }
+.td-buttons .btn { width: 100%; padding: 14px 18px; border-radius: 999px; font-size: 1rem; }
+.td-pay { background: var(--surface-2); border-radius: 16px; padding: 16px; }
+.td-pay dl { display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; margin: 0; }
+.td-pay dt { color: var(--ink); }
+.td-pay dd { margin: 0; text-align: right; font-family: var(--f-mono); }
+.td-pay .total { font-weight: 800; font-size: 1.2rem; border-top: 1px solid var(--line); padding-top: 12px; }
+.td-pay .paid-with { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-weight: 600; }
+.td-pay .paid-with svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.td-pay .paid-with span:last-child { margin-left: auto; font-family: var(--f-mono); }
+.panel.detail-open > .panel-head, .panel.detail-open > #my-rating { display: none !important; }
 </style>
 <script src="config.js"></script>
 <script src="translations.js"></script>
@@ -648,6 +733,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
           </div>
           <dl class="quote-rows" id="q-rows"></dl>
           <div class="quote-warn" id="q-warn" hidden></div>
+          <div class="wx" id="q-weather" hidden></div>
           <div class="quote-note" id="q-note"></div>
         </div>
 
@@ -697,6 +783,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
           <div class="menu">
             <button type="button" class="menu-row" data-act="auth"><span>Sign-in and account</span><span class="chev" aria-hidden="true">›</span></button>
             <label class="menu-row"><span>Language</span><select class="acct-lang" aria-label="Language"></select></label>
+            <label class="menu-row"><span>Appearance</span><select class="acct-theme" aria-label="Appearance"><option value="auto">Automatic (light by day)</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
             <a class="menu-row" href="#driver"><span>Switch to driver mode</span><span class="chev" aria-hidden="true">›</span></a>
             <a class="menu-row" href="privacy.html"><span>Privacy policy</span><span class="chev" aria-hidden="true">›</span></a>
             <button type="button" class="menu-row danger" data-act="delete"><span>Delete my account</span><span class="chev" aria-hidden="true">›</span></button>
@@ -946,6 +1033,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
           <div class="menu">
             <button type="button" class="menu-row" data-act="auth"><span>Sign-in and account</span><span class="chev" aria-hidden="true">›</span></button>
             <label class="menu-row"><span>Language</span><select class="acct-lang" aria-label="Language"></select></label>
+            <label class="menu-row"><span>Appearance</span><select class="acct-theme" aria-label="Appearance"><option value="auto">Automatic (light by day)</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
             <a class="menu-row" href="#passenger"><span>Switch to passenger mode</span><span class="chev" aria-hidden="true">›</span></a>
             <a class="menu-row" href="privacy.html"><span>Privacy policy</span><span class="chev" aria-hidden="true">›</span></a>
             <button type="button" class="menu-row danger" data-act="delete"><span>Delete my account</span><span class="chev" aria-hidden="true">›</span></button>
@@ -1678,18 +1766,27 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     if (!tabRole || !TABS[tabRole].some((x) => x[0] === t)) return;
     if (tabsOff) { const el = document.querySelector("#view-" + tabRole + " [data-tab=\"" + t + "\"]:not([hidden])"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     const prev = curTab[tabRole];
+    if (!fromHistory && openTripId && (t !== "activity" || prev === "activity")) {
+      if (t === "activity") { closeTrip(); return; }
+      openTripId = null; render();
+    }
     if (!fromHistory && prev !== t) {
       try {
-        if (t === "home" && history.state && history.state.tab) { history.back(); return; }
-        if (prev === "home") history.pushState({ tab: t }, "", location.hash || "#" + tabRole);
-        else history.replaceState({ tab: t }, "", location.hash || "#" + tabRole);
+        const depth = (history.state && history.state.depth) || 0;
+        if (t === "home" && depth) { history.go(-depth); return; }
+        if (prev === "home") history.pushState({ tab: t, depth: 1 }, "", location.hash || "#" + tabRole);
+        else history.replaceState({ tab: t, depth: depth || 1 }, "", location.hash || "#" + tabRole);
       } catch (e) { /* history not available */ }
     }
     curTab[tabRole] = t;
     applyTab();
     window.scrollTo(0, 0);
   }
-  window.addEventListener("popstate", (e) => { if (tabRole) goTab((e.state && e.state.tab) || "home", true); });
+  window.addEventListener("popstate", (e) => {
+    const trip = (e.state && e.state.trip) || null;
+    if (trip !== openTripId) { openTripId = trip; render(); }
+    if (tabRole) goTab((e.state && e.state.tab) || "home", true);
+  });
   function setBadge(id, n) { const b = $("badge-" + id); if (!b) return; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n); }
   function nowStrip(el, title, sub, go, tab) {
     if (!title) { el.hidden = true; return; }
@@ -1722,6 +1819,14 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     });
   }
   document.querySelectorAll('.menu-row[data-act="auth"]').forEach((b) => b.addEventListener("click", () => openAuth()));
+  document.querySelectorAll(".acct-theme").forEach((sel) => {
+    sel.value = safeLS.get("siyahamba.theme") || "auto";
+    sel.addEventListener("change", () => {
+      safeLS.set("siyahamba.theme", sel.value);
+      document.querySelectorAll(".acct-theme").forEach((x) => { x.value = sel.value; });
+      if (window.siyahambaTheme) siyahambaTheme.apply();
+    });
+  });
   document.querySelectorAll('.menu-row[data-act="delete"]').forEach((b) => b.addEventListener("click", () => $("foot-delete").click()));
 
   /* ---------- Routing ---------- */
@@ -2043,6 +2148,80 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     };
   }
 
+  // A group may not book a vehicle with fewer seats than people (only buses can be booked as several vehicles).
+  function vehicleTooSmall(f) {
+    const v = VEHICLES[f.vehicle];
+    return v && f.vehicle !== "coach" && f.pax > v.seats ? v : null;
+  }
+  function smallText(v, pax) {
+    return "The " + v.short + " is too small for your group: it takes " + v.seats + " passengers and you are " + pax + ". Choose a bigger vehicle, or “Best fit for my group”.";
+  }
+
+  /* ---------- Weather at the destination (long trips) ---------- */
+  // Free forecast from Open-Meteo (no key needed). Only the destination's map position and date are sent.
+  const WX = { 0: ["☀️", "Sunny"], 1: ["🌤️", "Mostly sunny"], 2: ["⛅", "Partly cloudy"], 3: ["☁️", "Cloudy"], 45: ["🌫️", "Fog"], 48: ["🌫️", "Fog"],
+    51: ["🌦️", "Light drizzle"], 53: ["🌦️", "Drizzle"], 55: ["🌧️", "Heavy drizzle"], 56: ["🌧️", "Icy drizzle"], 57: ["🌧️", "Icy drizzle"],
+    61: ["🌦️", "Light rain"], 63: ["🌧️", "Rain"], 65: ["🌧️", "Heavy rain"], 66: ["🌧️", "Icy rain"], 67: ["🌧️", "Icy rain"],
+    71: ["🌨️", "Light snow"], 73: ["🌨️", "Snow"], 75: ["❄️", "Heavy snow"], 77: ["🌨️", "Snow"], 80: ["🌦️", "Rain showers"], 81: ["🌧️", "Rain showers"], 82: ["⛈️", "Heavy showers"],
+    85: ["🌨️", "Snow showers"], 86: ["❄️", "Snow showers"], 95: ["⛈️", "Thunderstorms"], 96: ["⛈️", "Thunderstorms with hail"], 99: ["⛈️", "Thunderstorms with hail"] };
+  const wxCache = {};
+  const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  function tripDay(when) { const d = when && when !== "now" ? new Date(when) : new Date(); return isNaN(d) ? new Date() : d; }
+  function forecast(ll, day) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const ahead = Math.round((new Date(day.getFullYear(), day.getMonth(), day.getDate()) - today) / 864e5);
+    if (ahead < 0) return Promise.resolve(null);
+    if (ahead > 15) return Promise.resolve({ tooFar: true, ahead });
+    const key = ll[0].toFixed(2) + "," + ll[1].toFixed(2) + "," + ymd(day);
+    if (!wxCache[key]) {
+      const url = "https://api.open-meteo.com/v1/forecast?latitude=" + ll[0].toFixed(3) + "&longitude=" + ll[1].toFixed(3)
+        + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&start_date=" + ymd(day) + "&end_date=" + ymd(day);
+      wxCache[key] = fetch(url).then((r) => r.ok ? r.json() : null).then((j) => {
+        const d = j && j.daily; if (!d || !d.time || !d.time.length) return null;
+        return { code: d.weather_code[0], max: Math.round(d.temperature_2m_max[0]), min: Math.round(d.temperature_2m_min[0]), rain: d.precipitation_probability_max ? d.precipitation_probability_max[0] : null };
+      }).catch(() => { delete wxCache[key]; return null; });
+    }
+    return wxCache[key];
+  }
+  function wxTip(w) {
+    if (w.code >= 95) return "Storms expected. Allow extra time and drive safely.";
+    if (w.rain != null && w.rain >= 50) return "Rain is likely. Pack umbrellas or raincoats.";
+    if (w.max >= 32) return "It will be hot. Bring water for everyone.";
+    if (w.min <= 5) return "It will be cold. Pack warm clothes and blankets.";
+    return "";
+  }
+  // Fills el with the forecast for the destination on the trip day. Hides it when there's nothing to show.
+  function fillWeather(el, ll, when, place) {
+    if (!ll) { el.hidden = true; return; }
+    const day = tripDay(when), token = ll.join(",") + "|" + ymd(day);
+    el.dataset.wx = token;
+    forecast(ll, day).then((w) => {
+      if (el.dataset.wx !== token) return;
+      if (!w) { el.hidden = true; return; }
+      const label = "Weather in " + place + ", " + day.toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" });
+      if (w.tooFar) { el.replaceChildren(h("span", { class: "wx-ico", "aria-hidden": "true", text: "🗓️" }), h("span", null, h("b", { text: label }), h("span", { class: "wx-sub", text: "The forecast shows here from 16 days before your trip." }))); el.hidden = false; return; }
+      const [ico, desc] = WX[w.code] || ["🌡️", "Weather"];
+      const tip = wxTip(w);
+      el.replaceChildren(h("span", { class: "wx-ico", "aria-hidden": "true", text: ico }),
+        h("span", null, h("b", { text: label }), h("span", { class: "wx-sub", text: desc + " · " + w.min + "° to " + w.max + "°C" + (w.rain != null ? " · " + w.rain + "% chance of rain" : "") }), tip ? h("span", { class: "wx-tip", text: tip }) : null));
+      el.hidden = false;
+    });
+  }
+  function destLL(r) { return Array.isArray(r.dropAddressLL) ? r.dropAddressLL : Array.isArray(r.dropoffLL) ? r.dropoffLL : findPlace(r.dropoff); }
+  function weatherFor(r) {
+    if (r.type !== "long") return null;
+    const el = h("div", { class: "wx" }); el.hidden = true;
+    fillWeather(el, destLL(r), r.when, r.dropoff);
+    return el;
+  }
+  let wxTimer = 0;
+  function updateQuoteWeather(f) {
+    clearTimeout(wxTimer);
+    const el = $("q-weather");
+    if (f.type !== "long" || !f.dropoff) { el.hidden = true; delete el.dataset.wx; return; }
+    wxTimer = setTimeout(() => fillWeather(el, f.dropAddressLL || f.dropoffLL || findPlace(f.dropoff), f.when, f.dropoff), 400);
+  }
+
   function refreshQuote() {
     const f = readForm();
     const rows = $("q-rows"); rows.replaceChildren();
@@ -2052,6 +2231,15 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
       $("q-per").textContent = "Choose where you're going and how many people.";
       $("q-note").textContent = "";
       warn.hidden = true;
+      return;
+    }
+    const small = vehicleTooSmall(f);
+    updateQuoteWeather(f);
+    if (small) {
+      $("q-total").textContent = "—";
+      $("q-per").textContent = "Choose a bigger vehicle";
+      $("q-note").textContent = "";
+      warn.textContent = smallText(small, f.pax); warn.hidden = false;
       return;
     }
     const q = quote(f);
@@ -2068,13 +2256,15 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     if (f.type === "long" && f.km <= SHORT_MAX_KM) w = "This is only " + f.km + " km. A short trip will cost you less.";
     if (f.crossBorder) w = (f.type === "short" ? "Cross-border trips are long trips. " : "") + "Everyone needs a valid passport, and the driver needs a cross-border permit.";
     warn.textContent = w; warn.hidden = !w;
-    $("q-note").textContent = "This is the final amount. It includes the driver, fuel, " + (f.type === "long" ? "the drive back, toll allowance, " : "") + (f.luggage === "trailer" ? "the trailer, " : "") + "and Siyahamba's fee." + (f.roundTrip ? " The driver pays for their own accommodation." : "") + " Nothing more to pay.";
+    $("q-note").textContent = "This is the final amount. It includes the driver, fuel, " + (f.type === "long" ? (f.roundTrip ? "the drive back with the group, " : "") + "toll allowance, " : "") + (f.luggage === "trailer" ? "the trailer, " : "") + "and Siyahamba's fee." + (f.roundTrip ? " The driver pays for their own accommodation." : "") + " Nothing more to pay.";
   }
 
   $("req-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const msg = $("form-msg"); msg.className = "form-msg";
     const f = readForm();
+    const small = vehicleTooSmall(f);
+    if (small) { msg.classList.add("err"); msg.textContent = smallText(small, f.pax); return; }
     const problems = [];
     if (!f.pickup) problems.push("pick-up place");
     if (!f.dropoff) problems.push("destination");
@@ -2089,6 +2279,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     if (problems.length) { msg.classList.add("err"); msg.textContent = "Please add: " + problems.join(", ") + "."; return; }
     if (f.type === "short" && f.km > SHORT_MAX_KM) { msg.classList.add("err"); msg.textContent = "This trip is over " + SHORT_MAX_KM + " km. Choose Long trip."; return; }
     if (f.type === "short" && f.crossBorder) { msg.classList.add("err"); msg.textContent = "Cross-border trips are long trips. Choose Long trip."; return; }
+
     if (store.mode === "db" && !isPermanent()) {
       saveDraft();
       openAuth("Sign in to send your request. Your trips then stay with you on any phone. What you've filled in is kept.");
@@ -2114,6 +2305,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
       }
       msg.classList.add("ok"); msg.textContent = money(data.fare) + " paid from your wallet. Request sent: drivers can see it now.";
       $("f-notes").value = "";
+      openTripId = null;
       goTab("activity"); toast(h("span", { text: msg.textContent }));
     } catch (err) {
       msg.classList.add("err");
@@ -2595,9 +2787,10 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
   }
   function pickupLL(r) { return Array.isArray(r.addressLL) ? r.addressLL : Array.isArray(r.pickupLL) ? r.pickupLL : null; }
   function kmFromMe(r) { const ll = pickupLL(r); return avail.pos && ll ? Math.round(kmBetween(avail.pos, ll) * 1.25) : null; }
+  function rememberPos(ll) { if (Array.isArray(ll)) { safeLS.set("siyahamba.lastPos", [Math.round(ll[0] * 10) / 10, Math.round(ll[1] * 10) / 10]); if (window.siyahambaTheme) siyahambaTheme.apply(); } }
   function refreshPosition() {
     if (!("geolocation" in navigator)) return;
-    navigator.geolocation.getCurrentPosition((p) => { avail.pos = [p.coords.latitude, p.coords.longitude]; avail.posAt = Date.now(); render(); },
+    navigator.geolocation.getCurrentPosition((p) => { avail.pos = [p.coords.latitude, p.coords.longitude]; avail.posAt = Date.now(); rememberPos(avail.pos); render(); },
       () => { avail.pos = null; showAvailability(); }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 120000 });
   }
   function setOnline(on, save) {
@@ -3091,6 +3284,104 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     if (r.passengerConfirmed) return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Thanks for confirming" }), h("p", { text: "Siyahamba is paying the driver." }));
     return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Paid from your wallet: " + money(r.fare) }), h("p", { text: "Siyahamba holds it safely and only pays the driver after you arrive and confirm." }));
   }
+  /* ---------- Activity: past trips and trip details (like other ride apps) ---------- */
+  let openTripId = null;
+  const staticMaps = {};
+  const MINIBUS_SVG = '<svg viewBox="0 0 64 40" aria-hidden="true"><path d="M6 12c0-3 2-5 5-5h30c2 0 3.6.8 4.8 2.3l8.6 10.6c1 1.2 1.6 2.8 1.6 4.4V30a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z" fill="#F7F9FB" stroke="#9AA7B3" stroke-width="1.5"/><path d="M10 11h8v8h-8zM21 11h8v8h-8zM32 11h8v8h-8zM43 11h1.5c.9 0 1.7.4 2.3 1.1l5.2 6.9H43z" fill="#2B3A48"/><path d="M6 23h50" stroke="#F2B705" stroke-width="3"/><circle cx="17" cy="32" r="5" fill="#1B2631"/><circle cx="17" cy="32" r="2" fill="#C9D2DA"/><circle cx="47" cy="32" r="5" fill="#1B2631"/><circle cx="47" cy="32" r="2" fill="#C9D2DA"/></svg>';
+  const needsAction = (r) => r.status === "completed" && (r.payMode === "wallet" || r.payMode === "secure") && (r.payStatus || "held") === "held" && !r.passengerConfirmed;
+  const isCurrent = (r) => ["open", "accepted", "enroute", "ontrip"].includes(r.status) || needsAction(r) || r.issueStatus === "open";
+  function tripDate(r) { const d = r.when && r.when !== "now" ? new Date(r.when) : new Date(r.createdAt || Date.now()); return isNaN(d) ? new Date(r.createdAt || Date.now()) : d; }
+  function shortWhen(d) { return d.toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) + ", " + d.toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }); }
+  function clock(ts) { return ts ? new Date(ts).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" }) : ""; }
+  function vehTile() { const t = h("span", { class: "veh-tile" }); t.innerHTML = MINIBUS_SVG; return t; }
+  function tripEnds(r) {
+    const a = Array.isArray(r.addressLL) ? r.addressLL : Array.isArray(r.pickupLL) ? r.pickupLL : findPlace(r.pickup);
+    return [a, destLL(r)];
+  }
+  function staticMap(r, key) {
+    const k = r.id + key;
+    if (staticMaps[k]) { requestAnimationFrame(() => staticMaps[k].fit()); return staticMaps[k].el; }
+    const [a, b] = tripEnds(r);
+    const dur = r.durationMin ? durText(r.durationMin) : "";
+    const chip = h("span", { class: "map-chip", text: r.km + " km" + (dur ? " · " + dur : "") });
+    const el = h("div", { class: "static-map", role: "img", "aria-label": "Map from " + r.pickup + " to " + r.dropoff }, chip);
+    if (!window.L || !a || !b) { el.style.height = "56px"; staticMaps[k] = { el, fit() {} }; return el; }
+    const inner = h("div", { style: "position:absolute;inset:0" }); el.prepend(inner);
+    const map = L.map(inner, { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, attributionControl: true });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+    L.polyline([a, b], { color: "#1A7F52", weight: 5, opacity: 0.85 }).addTo(map);
+    L.circleMarker(a, { radius: 8, color: "#1A7F52", fillColor: "#ffffff", fillOpacity: 1, weight: 5 }).addTo(map);
+    L.circleMarker(b, { radius: 8, color: "#14202B", fillColor: "#ffffff", fillOpacity: 1, weight: 5 }).addTo(map);
+    const fit = () => { map.invalidateSize(); map.fitBounds([a, b], { padding: [36, 36], maxZoom: 14 }); };
+    staticMaps[k] = { el, fit };
+    requestAnimationFrame(fit);
+    return el;
+  }
+  function openTrip(id) {
+    openTripId = id;
+    try { history.pushState({ tab: "activity", trip: id, depth: ((history.state && history.state.depth) || 0) + 1 }, "", location.hash || "#passenger"); } catch (e) { /* no history */ }
+    render(); window.scrollTo(0, 0);
+  }
+  function closeTrip() {
+    if (history.state && history.state.trip) { history.back(); return; }
+    openTripId = null; render(); window.scrollTo(0, 0);
+  }
+  function pastRow(r, featured) {
+    const cancelled = r.status === "cancelled";
+    const row = h("button", { type: "button", class: "past-row", "data-trip": r.id, onclick: () => openTrip(r.id) }, vehTile(),
+      h("span", { class: "pr-main" }, h("b", { text: r.dropAddress ? r.dropAddress + ", " + r.dropoff : r.dropoff }),
+        h("span", { class: "meta", text: shortWhen(tripDate(r)) + (cancelled ? " · Cancelled" : "") })),
+      h("span", { class: "pr-fare" + (cancelled ? " struck" : ""), text: money(r.fare) }));
+    if (!featured) return row;
+    const rated = myRated.has(r.id + "_p");   // "_p" = a passenger's rating of the driver
+    return h("div", { class: "past-feature" }, staticMap(r, "-f"), row,
+      h("div", { class: "chips" },
+        r.status === "completed" && r.driverId && !rated ? h("button", { type: "button", class: "chip-btn", onclick: () => openTrip(r.id) }, "Add rating") : null,
+        h("button", { type: "button", class: "chip-btn", onclick: () => bookAgain(r, false) }, "Rebook")));
+  }
+  function tripDetail(r) {
+    const first = (r.driverName || "").split(" ")[0];
+    const face = h("span", { class: "td-face", "aria-hidden": "true", text: (first || "S").charAt(0) });
+    if (r.driverId) { const fill = (pub) => { if (pub && pub.photo) face.replaceChildren(h("img", { src: pub.photo, alt: "" })); };
+      if (pubCache[r.driverId]) fill(pubCache[r.driverId]); else store.loadPublic(r.driverId).then((pub) => { pubCache[r.driverId] = pub || {}; fill(pubCache[r.driverId]); }); }
+    const back = h("button", { type: "button", class: "td-back", "aria-label": "Back to my trips", onclick: closeTrip });
+    back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg><span>My trips</span>';
+    const d = tripDate(r), veh = VEHICLES[r.driverVehicle || r.vehicle] || VEHICLES.quantum;
+    const wrap = h("div", { class: "trip-detail", "data-trip": r.id }, back,
+      h("div", { class: "td-head" }, h("div", null,
+        h("h3", { class: "td-title", text: first ? "Trip with " + first : "Trip to " + r.dropoff }),
+        h("div", { class: "meta" }, h("span", { text: d.toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) }), h("span", { class: "ref", text: tripRef(r.id) }), r.status === "cancelled" ? statusPill("cancelled") : null)), face),
+      staticMap(r, "-d"));
+    if (r.status === "completed" && r.driverId) wrap.append(rateBox(r, "driver"));
+    const pb = payBox(r); if (pb) wrap.append(pb);
+    const pickupTime = clock(r.ontripAt) || clock(r.enrouteAt) || "", dropTime = clock(r.completedAt);
+    wrap.append(h("div", { class: "td-section" }, h("h4", { text: "Route" }), h("ol", { class: "td-route" },
+      h("li", null, h("b", { text: r.address || r.pickup }), h("span", { class: "meta", text: (r.address ? r.pickup : "") + (pickupTime ? (r.address ? " · " : "") + "Picked up " + pickupTime : "") })),
+      h("li", null, h("b", { text: r.dropAddress || r.dropoff }), h("span", { class: "meta", text: (r.dropAddress ? r.dropoff : "") + (dropTime ? (r.dropAddress ? " · " : "") + "Arrived " + dropTime : "") })))));
+    if (r.driverName) wrap.append(h("div", { class: "driver-box" }, h("span", null, "Driver ", h("b", { text: r.driverName })), ratingFor(r.driverId),
+      h("span", { text: veh.name }), r.driverReg ? h("span", { class: "plate", text: r.driverReg }) : null));
+    wrap.append(h("div", { class: "td-buttons" },
+      h("button", { type: "button", class: "btn btn-primary", onclick: () => bookAgain(r, false) }, "Rebook"),
+      h("button", { type: "button", class: "btn btn-ghost", onclick: () => bookAgain(r, true) }, "Book return trip")));
+    const sb = supportBox(r, "passenger");
+    if (sb) wrap.append(h("div", { class: "td-section" }, h("h4", { text: "Get help with this trip" }), sb));
+    if (r.status === "completed") wrap.append(h("p", { class: "hint", style: "margin:0;text-align:center", text: "Your receipt was also emailed to you." }));
+    const original = Number(r.originalFare) || 0, change = original && original !== r.fare ? r.fare - original : 0;
+    const wallet = h("span"); wallet.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M16 13.5h1.5"/></svg>';
+    const paidNote = r.status === "cancelled" ? (r.payStatus === "refunded" ? "Refunded to your wallet" : "Refund being reviewed")
+      : r.payStatus === "released" ? "Paid out to the driver" : r.passengerConfirmed ? "Being paid to the driver" : "Held safely by Siyahamba";
+    wrap.append(h("div", { class: "td-pay td-section" }, h("h4", { text: "Payment" }),
+      h("dl", null,
+        h("dt", { text: "Trip fare · " + (r.vehicles > 1 ? r.vehicles + " × " : "") + veh.short }), h("dd", { text: money(original || r.fare) }),
+        change ? h("dt", { text: "Driver's price change" }) : null, change ? h("dd", { text: (change > 0 ? "+ " : "− ") + money(Math.abs(change)) }) : null,
+        h("dt", { text: "Siyahamba fee, fuel and tolls" }), h("dd", { text: "Included" }),
+        h("dt", { class: "total", text: "Total" }), h("dd", { class: "total", text: money(r.fare) })),
+      h("div", { class: "paid-with" }, wallet, h("span", { text: "Siyahamba wallet" }), h("span", { text: money(r.fare) })),
+      h("p", { class: "hint", style: "margin:6px 0 0", text: paidNote }),
+      r.status === "completed" ? h("div", { class: "td-buttons", style: "margin-top:14px" }, h("button", { type: "button", class: "btn btn-ghost", onclick: () => openReceipt(r, false) }, "Get receipt")) : null));
+    return wrap;
+  }
+
   function passengerCard(r) {
     const card = h("article", { class: "trip", "data-status": r.status },
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
@@ -3117,6 +3408,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
       shareBtn.addEventListener("click", () => shareTrip(r, holder, shareBtn));
       card.append(h("div", { class: "trip-actions" }, shareBtn, sosButton(r, "passenger")), holder);
     }
+    if (["open", "accepted", "enroute"].includes(r.status)) { const wx = weatherFor(r); if (wx) card.append(wx); }
     const offers = passengerOffersBox(r);
     if (offers) card.append(offers);
     const pb = payBox(r);
@@ -3220,6 +3512,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
       r.status !== "cancelled" && r.status !== "completed" ? routeLinks(r, true) : null
     );
     if (isActive(r)) card.append(geoNote(r));
+    if (["accepted", "enroute"].includes(r.status)) { const wx = weatherFor(r); if (wx) card.append(wx); }
     if (r.status !== "cancelled") {
       card.append(h("div", { class: "driver-box" },
         h("span", null, "Group leader ", h("b", { text: r.contactName })),
@@ -3250,7 +3543,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     if (nx) acts.append(h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
       e.currentTarget.disabled = true;
       const b = e.currentTarget;
-      try { await store.update(r.id, { status: nx.to }); if (nx.to === "completed") queueReceipts(r); } catch (err) { b.disabled = false; }
+      try { await store.update(r.id, { status: nx.to, [nx.to + "At"]: Date.now() }); if (nx.to === "completed") queueReceipts(r); } catch (err) { b.disabled = false; }
     } }, nx.label));
     if (r.status === "accepted") acts.append(h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: (e) => confirmInline(e.currentTarget, r.commission ? "Give this job back? Your " + money(r.commission) + " fee comes back to your credit." : "Give this job back?", async () => {
       const res = await store.giveBack(r.id);
@@ -3274,7 +3567,14 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     const mine = allRequests.filter((r) => r.requesterId === me).sort(byNew);
     $("my-count").textContent = mine.length;
     const loading = !!store.expectDb && !store.loaded;
-    $("my-trips").replaceChildren(...(loading ? skeletons(2) : mine.length ? mine.map(passengerCard) : [empty("No trips yet", "Fill in the form and tap Request taxi. Your trip and driver details show up here.")]));
+    const detail = openTripId && !loading ? mine.find((r) => r.id === openTripId) : null;
+    if (openTripId && !loading && !detail) openTripId = null;
+    $("my-trips").closest(".panel").classList.toggle("detail-open", !!detail);
+    const nowTrips = mine.filter(isCurrent), past = mine.filter((r) => !isCurrent(r));
+    $("my-trips").replaceChildren(...(loading ? skeletons(2) : detail ? [tripDetail(detail)] : mine.length ? [
+      nowTrips.length && past.length ? h("h3", { class: "sub-head", text: "Now" }) : null, ...nowTrips.map(passengerCard),
+      past.length ? h("h3", { class: "sub-head", text: "Past trips" }) : null, ...past.map((r, i) => pastRow(r, i === 0))
+    ] : [empty("No trips yet", "Fill in the form and tap Request taxi. Your trip and driver details show up here.")]));
 
     const allOpen = allRequests.filter((r) => r.status === "open" && r.payStatus === "held" && (!r.offerTo || r.offerTo === me));
     if (!loading) checkNewJobs(allOpen);
