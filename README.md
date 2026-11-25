@@ -62,6 +62,29 @@ The directions buttons work even without a key. Without a key, distances are est
 
 **Costs:** each Google product has a free monthly allowance, about 10,000 place searches and 10,000 route lookups, which is plenty for a small launch. To be safe, set a **budget alert** under **Billing → Budgets & alerts**.
 
+## Mobile app
+
+Siyahamba is an installable web app (a PWA). People open the site on their phone and install it. It gets its own icon on the home screen, opens full screen, and its screens load even with no signal.
+
+- **Android (Chrome):** an **Install app** card appears at the top of the page. Tap it. Chrome's menu (⋮) also has **Install app**.
+- **iPhone (Safari):** tap **Share**, then **Add to Home Screen**. The page shows this tip on iPhones.
+
+Files: `manifest.webmanifest` (name, colours, icons), `sw.js` (offline support) and `icons/`.
+
+### Google Play Store
+
+1. Go to https://www.pwabuilder.com and enter `https://sbugzoh2.github.io/Siyahamba-Group-Taxi-Hire/`
+2. Click **Package for stores → Android → Generate**. Download the zip. It contains:
+   - an `.aab` file, which is what you upload to Google Play
+   - a **signing key**. Keep it safe and backed up: without it you can never update the app.
+   - an `assetlinks.json` file
+3. **Remove the address bar.** Create a GitHub repository named exactly `Sbugzoh2.github.io`. Add an empty `.nojekyll` file and put `assetlinks.json` in a folder named `.well-known`. Without this step the app still works, but shows a browser address bar at the top.
+4. In **Google Play Console** (https://play.google.com/console), create the app, upload the `.aab`, and complete the store listing, screenshots, content rating and **Data safety** form. Google Play also needs a **privacy policy** link, because the app collects names and phone numbers. A new developer account costs a once-off US$25.
+
+### Apple App Store
+
+This needs a Mac, an Apple Developer account (US$99 a year) and a native wrapper. Apple often rejects apps that are mainly a website. Until there's demand, iPhone users can use **Add to Home Screen**.
+
 ## Try it on your computer
 
 Open `index.html` in a browser, or run a small local server:

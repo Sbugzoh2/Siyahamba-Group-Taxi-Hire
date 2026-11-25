@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Group taxi hire for South Africa: book a minibus taxi, Sprinter or bus for short or long group trips.">
 <meta name="theme-color" content="#1B2631">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Siyahamba">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 :root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 body { margin: 0; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -181,6 +188,11 @@ textarea { resize: vertical; min-height: 64px; }
 .map-wrap { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
 .map-wrap iframe { display: block; width: 100%; height: 240px; border: 0; }
 .hint.warn-text { color: var(--warn); font-weight: 600; }
+.install { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
+.install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
+.install-text { flex: 1 1 220px; min-width: 0; font-size: 0.9rem; }
+.install-text b { display: block; font-family: var(--f-display); font-size: 1rem; }
+.install-actions { display: flex; gap: 8px; align-items: center; }
 .route-info { margin: 10px 0 0; font-size: 0.88rem; color: var(--muted); }
 .route-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
 .route-links a, a.linkbtn { color: var(--info); font-weight: 600; font-size: 0.85rem; text-decoration: none; }
@@ -221,6 +233,14 @@ textarea { resize: vertical; min-height: 64px; }
 </header>
 
 <main>
+  <div class="install" id="install-card" hidden>
+    <img src="icons/icon-192.png" alt="">
+    <div class="install-text"><b>Get the Siyahamba app</b><span id="install-msg">Add it to your phone's home screen. It opens full screen, like any other app.</span></div>
+    <div class="install-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="install-btn">Install app</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="install-later">Not now</button>
+    </div>
+  </div>
   <div id="conn-banner" class="banner" hidden></div>
 
   <!-- PASSENGER -->
@@ -1371,6 +1391,33 @@ textarea { resize: vertical; min-height: 64px; }
 
   // keep "posted x min ago" fresh
   setInterval(render, 60000);
+
+  /* ---------- Install as an app ---------- */
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Service worker:", e));
+  }
+  (function installPrompt() {
+    const card = $("install-card"), btn = $("install-btn"), msg = $("install-msg");
+    const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    const dismissed = safeLS.get("siyahamba.installDismissed");
+    if (standalone || (dismissed && Date.now() - dismissed < 14 * 86400000)) return;
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    let deferred = null;
+    window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; card.hidden = false; btn.hidden = false; });
+    window.addEventListener("appinstalled", () => { card.hidden = true; });
+    if (ios) {
+      msg.textContent = "On iPhone: tap the Share button in Safari, then Add to Home Screen.";
+      btn.hidden = true; card.hidden = false;
+    }
+    btn.addEventListener("click", async () => {
+      if (!deferred) return;
+      deferred.prompt();
+      const choice = await deferred.userChoice.catch(() => null);
+      deferred = null;
+      if (choice && choice.outcome === "accepted") card.hidden = true;
+    });
+    $("install-later").addEventListener("click", () => { card.hidden = true; safeLS.set("siyahamba.installDismissed", Date.now()); });
+  })();
   boot();
 })();
 </script>

@@ -1,0 +1,23 @@
+{
+  "id": "./",
+  "name": "Siyahamba Group Taxi Hire",
+  "short_name": "Siyahamba",
+  "description": "Book a minibus taxi, Sprinter or bus for your group, for short trips in town or long trips between cities. Drivers accept jobs and keep the group updated.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1B2631",
+  "theme_color": "#1B2631",
+  "lang": "en-ZA",
+  "categories": ["travel", "navigation", "business"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Book a taxi", "url": "./#passenger", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Driver jobs", "url": "./#driver", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
