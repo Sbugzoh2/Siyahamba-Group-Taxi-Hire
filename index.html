@@ -259,6 +259,25 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
 .secure-card { border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 .secure-card p { margin: 0; flex: 1 1 220px; font-size: 0.9rem; }
 .secure-card b { display: block; font-family: var(--f-display); }
+.rating { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.85rem; }
+.rating .avg { font-family: var(--f-mono); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rating .avg::before { content: "★ "; color: var(--accent); }
+.rating .cnt { color: var(--muted); }
+.badge { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; border: 1.5px solid transparent; }
+.badge.gold { background: #FFE9A8; color: #6B4E00; border-color: #E0B53C; }
+.badge.silver { background: #E7ECF1; color: #3D4A57; border-color: #AAB6C1; }
+.badge.bronze { background: #F5DCC7; color: #6E3B12; border-color: #C98A5A; }
+.badge.rated { background: var(--surface-2); color: var(--muted); border-color: var(--line); }
+.badge.low { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+.badge.new { background: var(--info-soft); color: var(--info); }
+.rate-box { border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; }
+.rate-box b.t { font-family: var(--f-display); font-size: 0.95rem; }
+.stars { display: flex; gap: 4px; }
+.stars button { font: inherit; font-size: 1.7rem; line-height: 1; background: none; border: none; padding: 2px; cursor: pointer; color: var(--line); }
+.stars button[aria-pressed="true"] { color: var(--accent); }
+.stars button:focus-visible { outline: 2px solid var(--focus); border-radius: 4px; }
+.rated-note { font-size: 0.85rem; color: var(--muted); }
+.rated-note .gold-stars { color: var(--accent); letter-spacing: 1px; }
 .install { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
 .install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
 .install-text { flex: 1 1 220px; min-width: 0; font-size: 0.9rem; }
@@ -465,6 +484,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
             <h2>My trips</h2>
             <span class="count" id="my-count">0</span>
           </div>
+          <div class="rating" id="my-rating" style="margin:-6px 0 12px" hidden></div>
           <div class="list" id="my-trips"></div>
         </div>
       </div>
@@ -724,7 +744,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
         <div class="panel-head"><h2>Drivers</h2><span class="count" id="admin-driver-count">0</span></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Driver</th><th>Status</th><th>Reference</th><th>Vehicle</th><th style="text-align:right">Credit</th><th style="text-align:right">Fees paid</th></tr></thead>
+            <thead><tr><th>Driver</th><th>Status</th><th>Reference</th><th>Vehicle</th><th>Rating</th><th style="text-align:right">Credit</th><th style="text-align:right">Fees paid</th></tr></thead>
             <tbody id="admin-drivers"></tbody>
           </table>
         </div>
@@ -1607,6 +1627,79 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     else if (id) store.loadPublic(id).then((pub) => { pubCache[id] = pub || {}; fill(pubCache[id]); });
     return box;
   }
+  /* ---------- Ratings and badges ---------- */
+  const MIN_FOR_BADGE = 3;
+  function badgeFor(st) {
+    const count = Number(st && st.count) || 0, avg = count ? (Number(st.sum) || 0) / count : 0;
+    if (count < MIN_FOR_BADGE) return { avg, count, cls: "new", label: "New" };
+    if (avg >= 4.8) return { avg, count, cls: "gold", label: "Gold" };
+    if (avg >= 4.5) return { avg, count, cls: "silver", label: "Silver" };
+    if (avg >= 4.0) return { avg, count, cls: "bronze", label: "Bronze" };
+    if (avg >= 3.0) return { avg, count, cls: "rated", label: "Rated" };
+    return { avg, count, cls: "low", label: "Low rating" };
+  }
+  function ratingParts(st) {
+    const b = badgeFor(st);
+    return [b.count ? h("span", { class: "avg", text: b.avg.toFixed(1) }) : null,
+      h("span", { class: "cnt", text: b.count ? "(" + b.count + " rating" + (b.count === 1 ? "" : "s") + ")" : "No ratings yet" }),
+      h("span", { class: "badge " + b.cls, text: b.label })].filter(Boolean);
+  }
+  const statsCache = {};
+  function loadStats(id) {
+    if (!id) return Promise.resolve({});
+    if (statsCache[id]) return Promise.resolve(statsCache[id]);
+    if (store.mode !== "db") return Promise.resolve(statsCache[id] = localStats(id));
+    return store.db.doc("ratingStats/" + id).get().then((s) => (statsCache[id] = s.exists ? s.data() : { sum: 0, count: 0 })).catch(() => ({}));
+  }
+  function ratingFor(id) {
+    const el = h("span", { class: "rating" });
+    if (statsCache[id]) el.replaceChildren(...ratingParts(statsCache[id]));
+    else loadStats(id).then((st) => el.replaceChildren(...ratingParts(st)));
+    return el;
+  }
+  let myRated = new Set();      // rating IDs this person has given: tripId + "_p" or "_d"
+  function localRatings() { return safeLS.get("siyahamba.ratings") || []; }
+  function localStats(id) { return localRatings().filter((x) => x.to === id).reduce((a, x) => ({ sum: a.sum + x.stars, count: a.count + 1 }), { sum: 0, count: 0 }); }
+  async function giveRating(r, role, stars, comment) {
+    const rid = r.id + (role === "driver" ? "_p" : "_d");
+    const to = role === "driver" ? r.driverId : r.requesterId;
+    const data = { tripId: r.id, from: store.me, to, role, stars, comment: comment.slice(0, 300), at: Date.now() };
+    if (store.mode === "db") {
+      const db = store.db, rRef = db.doc("ratings/" + rid), sRef = db.doc("ratingStats/" + to);
+      await db.runTransaction(async (tx) => {
+        const ss = await tx.get(sRef), old = ss.exists ? ss.data() : { sum: 0, count: 0 };
+        tx.set(rRef, data);
+        tx.set(sRef, { sum: (Number(old.sum) || 0) + stars, count: (Number(old.count) || 0) + 1, lastRating: rid, updatedAt: Date.now() });
+      });
+    } else {
+      safeLS.set("siyahamba.ratings", [...localRatings(), { ...data, id: rid }]);
+    }
+    delete statsCache[to];
+    myRated.add(rid);
+    render();
+  }
+  function rateBox(r, role) {
+    const rid = r.id + (role === "driver" ? "_p" : "_d");
+    if (myRated.has(rid)) {
+      const mine = store.mode === "db" ? null : localRatings().find((x) => x.id === rid);
+      return h("div", { class: "rated-note" }, "You rated this trip", mine ? h("span", { class: "gold-stars", text: " " + "★".repeat(mine.stars) }) : ". Thank you.");
+    }
+    let stars = 0;
+    const btns = [1, 2, 3, 4, 5].map((n) => h("button", { type: "button", "aria-pressed": "false", "aria-label": n + " star" + (n === 1 ? "" : "s"),
+      onclick: () => { stars = n; btns.forEach((b, i) => b.setAttribute("aria-pressed", i < n ? "true" : "false")); send.disabled = false; } }, "★"));
+    const note = h("textarea", { maxlength: "300", placeholder: role === "driver" ? "Optional: how was the driver and the taxi?" : "Optional: how was the group?", "aria-label": "Comment (optional)" });
+    const msg = h("span", { class: "form-msg" });
+    const send = h("button", { type: "button", class: "btn btn-primary btn-sm", disabled: true, onclick: async () => {
+      if (store.mode === "db" && !isPermanent()) { openAuth("Sign in to rate your trip."); return; }
+      send.disabled = true; msg.textContent = "";
+      try { await giveRating(r, role, stars, note.value.trim()); }
+      catch (e) { console.warn(e); msg.className = "form-msg err"; msg.textContent = "Your rating didn't save. Try again."; send.disabled = false; }
+    } }, "Send rating");
+    return h("div", { class: "rate-box" },
+      h("b", { class: "t", text: role === "driver" ? "Rate your driver" : "Rate the group" }),
+      h("div", { class: "stars", role: "group", "aria-label": "Stars" }, ...btns), note, h("div", { class: "actions", style: "margin:0" }, send, msg));
+  }
+
   function payBox(r) {
     if (r.payMode !== "secure") return null;
     const ref = tripRef(r.id), ps = r.payStatus || "unpaid";
@@ -1675,6 +1768,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       card.append(h("div", { class: "driver-box" },
         driverFaces(r.driverId),
         h("span", null, "Driver ", h("b", { text: r.driverName })),
+        ratingFor(r.driverId),
         r.driverPhone ? h("span", null, h("span", { class: "phone", text: r.driverPhone }), " ", copyBtn(r.driverPhone)) : null,
         v ? h("span", { text: v.name }) : null,
         r.driverReg ? h("span", { class: "plate", text: r.driverReg }) : null
@@ -1682,6 +1776,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     }
     const pb = payBox(r);
     if (pb) card.append(pb);
+    if (r.status === "completed" && r.driverId) card.append(rateBox(r, "driver"));
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
     if (["open", "accepted"].includes(r.status)) {
       const paid = r.payMode === "secure" && ["claimed", "held"].includes(r.payStatus);
@@ -1743,6 +1838,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     });
     if (!driver) msg.textContent = "Complete your driver profile to accept jobs.";
     if (r.payMode === "secure") card.insertBefore(h("div", { class: "split" }, "The group pays in the app. Siyahamba pays you after the trip."), card.lastChild);
+    card.insertBefore(h("div", { class: "split", style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }, "Group leader", ratingFor(r.requesterId)), card.lastChild);
     foot.append(h("span", { class: "actions", style: "margin:0" }, msg, btn));
     card.append(foot);
     return card;
@@ -1764,6 +1860,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     if (r.status !== "cancelled") {
       card.append(h("div", { class: "driver-box" },
         h("span", null, "Group leader ", h("b", { text: r.contactName })),
+        ratingFor(r.requesterId),
         h("span", null, h("span", { class: "phone", text: r.contactPhone }), " ", copyBtn(r.contactPhone)),
         h("span", { text: r.payment })
       ));
@@ -1778,6 +1875,7 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       card.append(h("div", { class: "pay-box" + (ps === "held" || ps === "released" ? " ok" : ps === "disputed" ? " warn" : "") }, h("p", { text: line })));
     }
     if (r.commission && r.status !== "cancelled") card.append(h("div", { class: "split" }, "You receive ", h("b", { text: money(r.fare - r.commission) }), " · Siyahamba fee ", h("b", { text: money(r.commission) }), " paid from credit"));
+    if (r.status === "completed") card.append(rateBox(r, "passenger"));
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
     const acts = h("span", { class: "actions", style: "margin:0" });
     const nx = NEXT[r.status];
@@ -1819,6 +1917,9 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     $("my-jobs").replaceChildren(...(jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
     renderCredit();
     renderAdmin();
+    const mr = $("my-rating"), st = statsCache[store.me];
+    mr.hidden = !(st && st.count);
+    if (st && st.count) mr.replaceChildren(h("span", { class: "cnt", text: "Your rating as a passenger:" }), ...ratingParts(st));
   }
 
   document.querySelectorAll(".filters button").forEach((b) => b.addEventListener("click", () => {
@@ -1889,9 +1990,10 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       h("td", null, h("span", { class: "pill " + ({ approved: "go", pending: "open", rejected: "cancel" }[d.vetting] || "done"), text: ({ approved: "Approved", pending: "To review", rejected: "Not approved" }[d.vetting] || "Incomplete") })),
       h("td", null, h("span", { class: "ref", text: d.code || codeFor(d.id) })),
       h("td", null, h("span", { text: (VEHICLES[d.vehicle] || VEHICLES.quantum).short + " " }), d.reg ? h("span", { class: "plate", text: d.reg }) : null),
+      h("td", null, ratingFor(d.id)),
       h("td", { class: "num", text: money(Number(d.credit) || 0) }),
       h("td", { class: "num", text: money(feesBy[d.id] || 0) })))
-      : [h("tr", null, h("td", { colspan: "6", class: "meta", text: "No drivers yet. Drivers appear here once they save their vehicle details." }))]));
+      : [h("tr", null, h("td", { colspan: "7", class: "meta", text: "No drivers yet. Drivers appear here once they save their vehicle details." }))]));
 
     const sel = $("a-driver"), keep = sel.value;
     sel.replaceChildren(h("option", { value: "", text: "Choose a driver" }), ...drivers.map((d) =>
@@ -2120,7 +2222,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
           h("span", { text: v.name + ", " + v.seats + " seats" }),
           h("span", null, h("span", { class: "plate", text: driver.reg || "" })),
           driver.assoc ? h("span", { class: "meta", text: driver.assoc }) : null,
-          h("span", { class: "pill " + (driver.pdp ? "go" : "done"), text: driver.pdp ? "Long trips allowed" : "Short trips only" }))),
+          h("span", { class: "pill " + (driver.pdp ? "go" : "done"), text: driver.pdp ? "Long trips allowed" : "Short trips only" }),
+          h("span", { class: "rating", id: "my-driver-rating" }, ...ratingParts(statsCache[store.me] || {})))),
         myPublic.vehiclePhoto ? h("img", { class: "vehicle-shot", style: "margin-top:12px", src: myPublic.vehiclePhoto, alt: "Your vehicle" }) : null);
     } else if (driver) {
       $("d-name").value = driver.name || ""; $("d-phone").value = driver.phone || ""; $("d-vehicle").value = driver.vehicle || "quantum";
@@ -2349,6 +2452,8 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
     store.me = deviceId();
     store.loadLocal();
     store.subscribe((items) => { allRequests = items; render(); });
+    myRated = new Set(localRatings().filter((x) => x.from === store.me).map((x) => x.id));
+    statsCache[store.me] = localStats(store.me);
     driver = await store.loadProfile();
     myPublic = await store.loadPublic(store.me);
     account = { ...store.localAccount(), ...(driver || {}) };
@@ -2398,6 +2503,13 @@ dialog.auth::backdrop { background: rgba(10, 16, 22, 0.55); }
       account = s.exists ? s.data() : null;
       if (account) driver = { ...(driver || {}), ...account };
       showProfile(); render();
+    }, (e) => console.warn(e));
+    myRated = new Set();
+    db.collection("ratings").where("from", "==", store.me).onSnapshot((snap) => {
+      myRated = new Set(snap.docs.map((d) => d.id)); render();
+    }, (e) => console.warn(e));
+    db.doc("ratingStats/" + store.me).onSnapshot((s) => {
+      statsCache[store.me] = s.exists ? s.data() : { sum: 0, count: 0 }; showProfile(); render();
     }, (e) => console.warn(e));
     db.collection("topups").where("driverId", "==", store.me).onSnapshot((snap) => {
       myTopups = snap.docs.map((d) => d.data()); renderCredit();

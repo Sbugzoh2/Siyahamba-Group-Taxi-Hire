@@ -172,6 +172,51 @@ service cloud.firestore {
         && request.resource.data.get('phone', '').size() <= 30;
     }
 
+    // ---------------- Ratings ----------------
+    // One rating per side per completed trip. The ID is the trip's ID plus "_p" (passenger rates the driver)
+    // or "_d" (driver rates the passenger). Ratings can't be changed afterwards.
+    function ratingDoc(id) { return /databases/$(database)/documents/ratings/$(id); }
+    function statsDoc(id) { return /databases/$(database)/documents/ratingStats/$(id); }
+
+    match /ratings/{rid} {
+      allow read: if signedIn();
+      allow create: if permanent() && validRating(rid);
+      allow update: if false;
+      allow delete: if isAdmin();
+
+      function validRating(rid) {
+        let d = request.resource.data;
+        let trip = get(requestDoc(d.tripId)).data;
+        return d.keys().hasOnly(['tripId', 'from', 'to', 'role', 'stars', 'comment', 'at'])
+          && d.from == uid()
+          && d.stars is int && d.stars >= 1 && d.stars <= 5
+          && d.get('comment', '') is string && d.get('comment', '').size() <= 300
+          && trip.status == 'completed'
+          && ((d.role == 'driver' && trip.requesterId == uid() && d.to == trip.driverId && rid == d.tripId + '_p')
+            || (d.role == 'passenger' && trip.driverId == uid() && d.to == trip.requesterId && rid == d.tripId + '_d'))
+          && getAfter(statsDoc(d.to)).data.lastRating == rid;
+      }
+    }
+
+    // Each person's running total. It can only grow by exactly one new rating, written at the same time.
+    match /ratingStats/{id} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() || (permanent() && addsOneRating(id));
+      allow delete: if isAdmin();
+
+      function addsOneRating(id) {
+        let r = request.resource.data.lastRating;
+        let rd = getAfter(ratingDoc(r)).data;
+        let oldSum = resource == null ? 0 : resource.data.sum;
+        let oldCount = resource == null ? 0 : resource.data.count;
+        return request.resource.data.keys().hasOnly(['sum', 'count', 'lastRating', 'updatedAt'])
+          && !exists(ratingDoc(r))
+          && rd.to == id && rd.from == uid()
+          && request.resource.data.sum == oldSum + rd.stars
+          && request.resource.data.count == oldCount + 1;
+      }
+    }
+
     // Credit top-ups, recorded by an owner. Drivers can see their own.
     match /topups/{id} {
       allow read: if signedIn() && (isAdmin() || resource.data.driverId == uid());

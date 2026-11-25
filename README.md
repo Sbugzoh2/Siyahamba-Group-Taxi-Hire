@@ -60,6 +60,27 @@ Turn on both sign-in methods in Firebase, under **Authentication → Sign-in met
 
 Keep **Anonymous** turned on. It lets people browse before they sign in.
 
+## Ratings and badges
+
+When a trip is complete, the **passenger rates the driver** and the **driver rates the group leader**. Each gives 1 to 5 stars and an optional comment of up to 300 characters. Each side rates a trip **once**, and ratings can't be changed afterwards.
+
+Everyone's average and number of ratings show on their profile, with a badge:
+
+| Badge | Average |
+|---|---|
+| Gold | 4.8 and above |
+| Silver | 4.5–4.79 |
+| Bronze | 4.0–4.49 |
+| Rated | 3.0–3.99 |
+| Low rating | below 3.0 |
+| New | fewer than 3 ratings |
+
+- **Passengers** see the driver's rating and badge once a driver is assigned.
+- **Drivers** see the group leader's rating on the job board before accepting.
+- **Your dashboard** has a Rating column for every driver.
+
+The database rules make sure only people on a completed trip can rate it, and that averages only change by real ratings. As owner, you can delete an abusive rating under **Firestore → Data → ratings**. If you do, adjust that person's total under `ratingStats` too.
+
 ## Your earnings: 10% commission from driver credit
 
 Siyahamba takes **10% of each trip's price** from the driver's prepaid credit when they accept a job. Passengers pay drivers directly, as before.
