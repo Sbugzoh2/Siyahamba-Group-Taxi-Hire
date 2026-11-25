@@ -420,6 +420,58 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
 .del-box summary { cursor: pointer; font-weight: 600; color: #C0392B; }
 .del-box #del-form { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 .btn-danger { background: #B03A2E; color: #fff; border-color: #B03A2E; }
+
+/* Bottom tabs, like other ride apps. Each panel says which tab it belongs to (data-tab). */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; justify-content: space-around; gap: 2px; background: var(--surface); border-top: 1px solid var(--line); padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); box-shadow: 0 -6px 18px rgba(10, 16, 22, 0.08); }
+.tabbar button { flex: 1 1 0; min-width: 0; max-width: 128px; min-height: 52px; background: none; border: 0; font: inherit; font-size: 0.72rem; font-weight: 600; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 2px; cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent; }
+.tabbar .tab-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabbar .tab-ico { display: grid; place-items: center; width: 54px; height: 30px; border-radius: 999px; transition: background .15s; }
+.tabbar svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar button[aria-current="page"] { color: var(--ink); font-weight: 800; }
+.tabbar button[aria-current="page"] .tab-ico { background: var(--accent); color: var(--accent-ink); }
+.tabbar button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 12px; }
+.tab-badge { position: absolute; top: 0; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #C0392B; color: #fff; font-size: 0.68rem; font-weight: 800; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px var(--surface); }
+body.tabbed { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+body.tabbed [data-tab]:not(.tab-on) { display: none !important; }
+body.tabbed .toast { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 900px) { body.tabbed .toast { bottom: 120px; } }
+body.tabbed:not([data-tab="home"]) .view-head { display: none; }
+body.tabbed:not([data-tab="account"]):not([data-tab="profile"]) .site-foot { display: none; }
+body.tabbed .grid { grid-template-columns: minmax(0, 1fr); max-width: 760px; margin-inline: auto; }
+body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
+@media (min-width: 861px) {
+  body.tabbed[data-tab="home"] #view-passenger .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); max-width: none; }
+  body.tabbed[data-tab="home"] #view-passenger .now-strip { max-width: none; }
+}
+@media (min-width: 900px) {
+  .tabbar { left: 50%; right: auto; transform: translateX(-50%); bottom: 16px; width: min(600px, calc(100% - 32px)); border: 1px solid var(--line); border-radius: 20px; padding: 6px; box-shadow: 0 12px 32px rgba(10, 16, 22, 0.18); }
+  body.tabbed { padding-bottom: 112px; }
+}
+@media (max-width: 760px) {
+  body.tabbed .brand-tag, body.tabbed #lang-select, body.tabbed #account-btn { display: none !important; }
+  body.tabbed .topbar-inner { padding-block: 10px; flex-wrap: nowrap; gap: 10px; }
+  body.tabbed .roles a { padding: 6px 11px; font-size: 0.8rem; }
+  body.tabbed .view-head h1 { font-size: 1.35rem; }
+  body.tabbed .view-head .lede { display: none; }
+}
+.now-strip { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--road); color: #F3F5F7; border: 0; border-radius: 14px; padding: 14px 16px; margin: 0 0 16px; font: inherit; cursor: pointer; box-shadow: 0 6px 18px rgba(10, 16, 22, 0.15); }
+.now-strip .ns-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex: none; box-shadow: 0 0 0 4px rgba(242, 183, 5, 0.25); }
+.now-strip .ns-text { min-width: 0; display: flex; flex-direction: column; }
+.now-strip b { color: var(--accent); font-size: 0.95rem; }
+.now-strip .ns-sub { font-size: 0.85rem; color: #C9D2DA; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.now-strip .ns-go { margin-left: auto; font-weight: 700; white-space: nowrap; color: #fff; }
+.now-strip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.acct-head { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--road); color: var(--accent); display: grid; place-items: center; font: 800 1.4rem var(--f-display); flex: none; overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.acct-head b { display: block; font-size: 1.1rem; }
+.acct-head .meta { display: block; }
+.menu { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.menu-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 54px; padding: 12px 2px; border: 0; border-bottom: 1px solid var(--line); background: none; font: inherit; font-weight: 600; color: var(--ink); text-decoration: none; text-align: left; cursor: pointer; }
+.menu-row .chev { color: var(--muted); font-size: 1.4rem; line-height: 1; }
+.menu-row select { font: inherit; font-weight: 500; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.menu-row.danger { color: #C0392B; }
+.menu-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
 </style>
 <script src="config.js"></script>
 <script src="translations.js"></script>
@@ -461,9 +513,10 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       <h1>Book one taxi for the whole group</h1>
       <p class="lede">Hire a minibus taxi, Sprinter or bus for your group. Short trips around town or long trips between cities and provinces. You see the price before you book.</p>
     </div>
+    <button type="button" class="now-strip" id="p-now" data-tab="home" hidden></button>
 
     <div class="grid">
-      <form class="panel" id="req-form" novalidate>
+      <form class="panel" id="req-form" data-tab="home" novalidate>
         <div class="seg" role="group" aria-label="Trip type">
           <button type="button" id="t-short" aria-pressed="true"><strong>Short trip</strong><span>In town or nearby, up to 60 km</span></button>
           <button type="button" id="t-long" aria-pressed="false"><strong>Long trip</strong><span>Between cities and provinces</span></button>
@@ -586,7 +639,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       </form>
 
       <div class="stack">
-        <div class="quote" aria-live="polite">
+        <div class="quote" aria-live="polite" data-tab="home">
           <div>
             <div class="label">Final amount for the group</div>
             <div class="quote-total" id="q-total">R 0</div>
@@ -597,7 +650,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           <div class="quote-note" id="q-note"></div>
         </div>
 
-        <div class="panel" id="route-panel" hidden>
+        <div class="panel" id="route-panel" data-tab="home" hidden>
           <div class="panel-head">
             <h2>Route</h2>
             <div class="route-links"><a id="route-link" href="https://www.google.com/maps" target="_blank" rel="noopener">Open in Google Maps</a></div>
@@ -606,7 +659,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           <p class="route-info" id="route-info"></p>
         </div>
 
-        <div class="panel" id="wallet-panel">
+        <div class="panel" id="wallet-panel" data-tab="wallet">
           <div class="panel-head"><h2>My wallet</h2><span class="count" id="wallet-ref">SP-…</span></div>
           <div class="credit-row">
             <div><div class="label">Balance</div><div class="credit-num" id="wallet-bal">R 0</div></div>
@@ -627,13 +680,34 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           <div class="mini-list" id="wallet-list"></div>
         </div>
 
-        <div class="panel">
+        <div class="panel" data-tab="activity">
           <div class="panel-head">
             <h2>My trips</h2>
             <span class="count" id="my-count">0</span>
           </div>
           <div class="rating" id="my-rating" style="margin:-6px 0 12px" hidden></div>
           <div class="list" id="my-trips"></div>
+        </div>
+        <div class="panel" id="p-account" data-tab="account">
+          <div class="acct-head">
+            <div class="avatar" id="p-avatar" aria-hidden="true">S</div>
+            <div><b id="p-acct-name">Your account</b><span class="meta" id="p-acct-sub"></span></div>
+          </div>
+          <div class="menu">
+            <button type="button" class="menu-row" data-act="auth"><span>Sign-in and account</span><span class="chev" aria-hidden="true">›</span></button>
+            <label class="menu-row"><span>Language</span><select class="acct-lang" aria-label="Language"></select></label>
+            <a class="menu-row" href="#driver"><span>Switch to driver mode</span><span class="chev" aria-hidden="true">›</span></a>
+            <a class="menu-row" href="privacy.html"><span>Privacy policy</span><span class="chev" aria-hidden="true">›</span></a>
+            <button type="button" class="menu-row danger" data-act="delete"><span>Delete my account</span><span class="chev" aria-hidden="true">›</span></button>
+          </div>
+        </div>
+        <div class="panel" data-tab="account">
+          <h3 style="margin-bottom:10px">How it works</h3>
+          <div class="how">
+            <div><b>1. The group requests</b>One person books for everyone, picks a short or long trip, and sees the price for the whole group and per person.</div>
+            <div><b>2. A checked driver accepts</b>Every driver's ID, licence, PrDP and vehicle are checked by Siyahamba. You see their photo, their taxi and its number plate.</div>
+            <div><b>3. Pay safely, ride together</b>Pay in the app and Siyahamba holds the money until you confirm you've arrived. Or pay the driver directly.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -646,9 +720,16 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       <p class="lede">Accept a group request, keep the passengers updated, and get paid the quoted price. Short trips are local hires. Long trips are intercity, often booked days ahead.</p>
     </div>
 
+    <button type="button" class="now-strip" id="d-now" data-tab="home" hidden></button>
     <div class="grid">
       <div class="stack">
-        <div class="panel">
+        <div class="panel" id="avail-panel" data-tab="home">
+          <div class="panel-head"><h2>Availability</h2></div>
+          <label class="switch" for="d-online"><input type="checkbox" id="d-online" role="switch"> <span id="online-text">I'm available for jobs</span></label>
+          <p class="hint" id="online-note" style="margin:10px 0 0"></p>
+          <label class="check" for="d-sound" style="margin-top:10px;font-weight:600"><input type="checkbox" id="d-sound"> Sound and vibration for new jobs</label>
+        </div>
+        <div class="panel" data-tab="home">
           <div class="panel-head">
             <h2>Job board</h2>
             <div class="filters" role="group" aria-label="Filter jobs">
@@ -663,14 +744,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       </div>
 
       <div class="stack">
-        <div class="panel" id="avail-panel">
-          <div class="panel-head"><h2>Availability</h2></div>
-          <label class="switch" for="d-online"><input type="checkbox" id="d-online" role="switch"> <span id="online-text">I'm available for jobs</span></label>
-          <p class="hint" id="online-note" style="margin:10px 0 0"></p>
-          <label class="check" for="d-sound" style="margin-top:10px;font-weight:600"><input type="checkbox" id="d-sound"> Sound and vibration for new jobs</label>
-        </div>
-
-        <div class="panel" id="earn-panel">
+        <div class="panel" id="earn-panel" data-tab="earnings">
           <div class="panel-head">
             <h2>My earnings</h2>
             <div class="filters" role="group" aria-label="Earnings period">
@@ -685,7 +759,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           <details class="table-view"><summary>Show as a table</summary><div id="earn-table"></div></details>
         </div>
 
-        <div class="panel" id="credit-panel">
+        <div class="panel" id="credit-panel" data-tab="wallet">
           <div class="panel-head">
             <h2>My credit</h2>
             <span class="count">10% fee per job</span>
@@ -707,7 +781,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           <div class="mini-list" id="topup-list"></div>
         </div>
 
-        <form class="panel" id="driver-form" novalidate>
+        <form class="panel" id="driver-form" data-tab="profile" novalidate>
           <div class="panel-head">
             <h2>My driver profile</h2>
             <button type="button" class="linkbtn" id="edit-profile" hidden>Edit</button>
@@ -862,7 +936,20 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           </div>
         </form>
 
-        <div class="panel">
+        <div class="panel" id="d-account" data-tab="profile">
+          <div class="acct-head">
+            <div class="avatar" id="d-avatar" aria-hidden="true">S</div>
+            <div><b id="d-acct-name">Your account</b><span class="meta" id="d-acct-sub"></span></div>
+          </div>
+          <div class="menu">
+            <button type="button" class="menu-row" data-act="auth"><span>Sign-in and account</span><span class="chev" aria-hidden="true">›</span></button>
+            <label class="menu-row"><span>Language</span><select class="acct-lang" aria-label="Language"></select></label>
+            <a class="menu-row" href="#passenger"><span>Switch to passenger mode</span><span class="chev" aria-hidden="true">›</span></a>
+            <a class="menu-row" href="privacy.html"><span>Privacy policy</span><span class="chev" aria-hidden="true">›</span></a>
+            <button type="button" class="menu-row danger" data-act="delete"><span>Delete my account</span><span class="chev" aria-hidden="true">›</span></button>
+          </div>
+        </div>
+        <div class="panel" data-tab="jobs">
           <div class="panel-head">
             <h2>My jobs</h2>
             <span class="count" id="job-count">0</span>
@@ -988,14 +1075,6 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     </div>
   </section>
 
-  <div class="panel" style="margin-top:20px">
-    <h3 style="margin-bottom:10px">How it works</h3>
-    <div class="how">
-      <div><b>1. The group requests</b>One person books for everyone, picks a short or long trip, and sees the price for the whole group and per person.</div>
-      <div><b>2. A checked driver accepts</b>Every driver's ID, licence, PrDP and vehicle are checked by Siyahamba. You see their photo, their taxi and its number plate.</div>
-      <div><b>3. Pay safely, ride together</b>Pay in the app and Siyahamba holds the money until you confirm you've arrived. Or pay the driver directly.</div>
-    </div>
-  </div>
   <footer class="site-foot">
     <a href="privacy.html">Privacy policy</a>
     <span aria-hidden="true">·</span>
@@ -1004,6 +1083,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     <span>© Siyahamba Group Taxi Hire</span>
   </footer>
 </main>
+<nav class="tabbar" id="tabbar" aria-label="Main" hidden></nav>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <dialog class="welcome" id="welcome" aria-labelledby="wel-title">
@@ -1553,9 +1633,103 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
   let myTopups = [];
   const admin = { on: false, drivers: [], topups: [] };
 
+  /* ---------- Bottom tabs ---------- */
+  const TAB_ICONS = {
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>',
+    activity: '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    wallet: '<path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M16 13.5h1.5"/>',
+    account: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+    jobs: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2"/><path d="M12 3.5V10M4 14.5l6.2-1.7M20 14.5l-6.2-1.7"/>',
+    earnings: '<path d="M4 20h16"/><path d="M7 16v-4M12 16V8M17 16v-7"/>'
+  };
+  const TABS = {
+    passenger: [["home", "Home", "home"], ["activity", "Activity", "activity"], ["wallet", "Wallet", "wallet"], ["account", "Account", "account"]],
+    driver: [["home", "Home", "home"], ["jobs", "Jobs", "jobs"], ["earnings", "Earnings", "earnings"], ["wallet", "Wallet", "wallet"], ["profile", "Profile", "account"]]
+  };
+  const tabsOff = !!safeLS.get("siyahamba.allTabs");
+  try { history.scrollRestoration = "manual"; } catch (e) { /* older browsers */ }   // shows every panel at once (used by the automated tests)
+  const curTab = { passenger: "home", driver: "home" };
+  let tabRole = null;
+  function applyTab() {
+    const on = !tabsOff && !!tabRole;
+    document.body.classList.toggle("tabbed", on);
+    $("tabbar").hidden = !on;
+    if (!on) { delete document.body.dataset.tab; return; }
+    const t = curTab[tabRole];
+    document.body.dataset.tab = t;
+    document.querySelectorAll("#view-" + tabRole + " [data-tab]").forEach((el) => el.classList.toggle("tab-on", el.dataset.tab === t));
+    $("tabbar").querySelectorAll("button").forEach((b) => { if (b.dataset.go === t) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  }
+  function buildTabbar(role) {
+    $("tabbar").replaceChildren(...TABS[role].map(([id, label, icon]) => {
+      const ico = h("span", { class: "tab-ico", "aria-hidden": "true" });
+      ico.innerHTML = '<svg viewBox="0 0 24 24">' + TAB_ICONS[icon] + "</svg>";
+      const badge = h("span", { class: "tab-badge", id: "badge-" + id });
+      badge.hidden = true;
+      return h("button", { type: "button", "data-go": id, onclick: () => goTab(id) }, ico, h("span", { class: "tab-label", text: label }), badge);
+    }));
+    translateTree($("tabbar"));
+  }
+  // Switch tab. Leaving Home adds one step to the history, so the phone's Back button returns to Home.
+  function goTab(t, fromHistory) {
+    if (!tabRole || !TABS[tabRole].some((x) => x[0] === t)) return;
+    if (tabsOff) { const el = document.querySelector("#view-" + tabRole + " [data-tab=\"" + t + "\"]:not([hidden])"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    const prev = curTab[tabRole];
+    if (!fromHistory && prev !== t) {
+      try {
+        if (t === "home" && history.state && history.state.tab) { history.back(); return; }
+        if (prev === "home") history.pushState({ tab: t }, "", location.hash || "#" + tabRole);
+        else history.replaceState({ tab: t }, "", location.hash || "#" + tabRole);
+      } catch (e) { /* history not available */ }
+    }
+    curTab[tabRole] = t;
+    applyTab();
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener("popstate", (e) => { if (tabRole) goTab((e.state && e.state.tab) || "home", true); });
+  function setBadge(id, n) { const b = $("badge-" + id); if (!b) return; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n); }
+  function nowStrip(el, title, sub, go, tab) {
+    if (!title) { el.hidden = true; return; }
+    el.hidden = false;
+    el.replaceChildren(h("span", { class: "ns-dot" }), h("span", { class: "ns-text" }, h("b", { text: title }), sub ? h("span", { class: "ns-sub", text: sub }) : null), h("span", { class: "ns-go", text: go }));
+    el.onclick = () => goTab(tab);
+  }
+  // Home-screen strips, badges and the account card. Called on every render.
+  function renderTabs(mine, jobs, openCount) {
+    const live = mine.filter((r) => ["open", "accepted", "enroute", "ontrip"].includes(r.status));
+    setBadge("activity", live.length);
+    const cur = live[0];
+    nowStrip($("p-now"), cur ? (STATUS[cur.status] || {}).label : "", cur ? cur.pickup + " → " + cur.dropoff : "", "View trip", "activity");
+    const activeJobs = jobs.filter(isActive);
+    setBadge("jobs", activeJobs.length);
+    setBadge("home", tabRole === "driver" ? openCount : 0);
+    const job = activeJobs[0], approved = account && account.vetting === "approved";
+    if (job) nowStrip($("d-now"), "Job in progress", job.pickup + " → " + job.dropoff, "Open", "jobs");
+    else if (!approved && store.mode === "db") nowStrip($("d-now"), account && account.vetting === "pending" ? "Your profile is being checked" : "Finish your driver profile", "You can accept jobs once Siyahamba approves you.", "Profile", "profile");
+    else nowStrip($("d-now"), "");
+    const signed = isPermanent(), email = store.user && store.user.email;
+    const pName = ($("f-name").value || "").trim() || (store.user && store.user.displayName) || "";
+    const dName = (account && account.name) || pName;
+    [["p", pName], ["d", dName]].forEach(([k, name]) => {
+      $(k + "-acct-name").textContent = name || (signed ? "Your account" : "Welcome to Siyahamba");
+      $(k + "-acct-sub").textContent = signed ? (email || "Signed in") : "Sign in to keep your trips, wallet and profile on any phone.";
+      const av = $(k + "-avatar"), photo = k === "d" && myPublic && myPublic.photo;
+      if (photo) { if (!av.querySelector("img") || av.querySelector("img").src !== photo) av.replaceChildren(h("img", { src: photo, alt: "" })); }
+      else av.textContent = (name || "S").trim().charAt(0).toUpperCase();
+    });
+  }
+  document.querySelectorAll('.menu-row[data-act="auth"]').forEach((b) => b.addEventListener("click", () => openAuth()));
+  document.querySelectorAll('.menu-row[data-act="delete"]').forEach((b) => b.addEventListener("click", () => $("foot-delete").click()));
+
   /* ---------- Routing ---------- */
   function showView() {
     const r = location.hash === "#driver" ? "driver" : location.hash === "#admin" ? "admin" : /^#track-/.test(location.hash) ? "track" : "passenger";
+    const role = r === "passenger" || r === "driver" ? r : null;
+    if (role !== tabRole) {
+      tabRole = role;
+      if (role) { curTab[role] = (history.state && history.state.tab) || "home"; buildTabbar(role); }
+    }
+    applyTab();
     $("view-track").hidden = r !== "track";
     $("view-passenger").hidden = r !== "passenger";
     $("view-driver").hidden = r !== "driver";
@@ -1931,11 +2105,13 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       if (!res.ok) {
         msg.classList.add("err");
         msg.textContent = "Your wallet doesn't have enough. Top up at least " + money(res.short) + " more, then tap Request taxi.";
+        toast(h("span", { text: msg.textContent })); goTab("wallet");
         $("wallet-panel").scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
       msg.classList.add("ok"); msg.textContent = money(data.fare) + " paid from your wallet. Request sent: drivers can see it now.";
       $("f-notes").value = "";
+      goTab("activity"); toast(h("span", { text: msg.textContent }));
     } catch (err) {
       msg.classList.add("err");
       msg.textContent = err && err.code === "quota_exceeded" ? "The request list is full. Ask the app owner to clear old trips." : "Your request didn't send. Check your connection and try again.";
@@ -2281,9 +2457,10 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     safeLS.set("siyahamba.lang", lang);
     document.documentElement.lang = lang === "en" ? "en" : lang;
     $("lang-select").value = lang; $("wel-lang").value = lang;
+    document.querySelectorAll(".acct-lang").forEach((x) => { x.value = lang; });
     translateTree(document.body);
   }
-  [$("lang-select"), $("wel-lang")].forEach((sel) => {
+  [$("lang-select"), $("wel-lang"), ...document.querySelectorAll(".acct-lang")].forEach((sel) => {
     sel.replaceChildren(...Object.entries(I18N.langs).map(([k, v]) => h("option", { value: k, text: v })));
     sel.addEventListener("change", (e) => setLang(e.target.value));
   });
@@ -2613,7 +2790,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           const b = e.currentTarget;
           try {
             const res = await store.walletTripChange(r, { fare: o.amount, offerTo: o.driverId, offerAt: Date.now(), originalFare: r.originalFare || r.fare }, o.amount, false);
-            if (!res.ok) { b.disabled = false; toast(h("span", { text: res.short ? "Top up at least " + money(res.short) + " to take this offer." : "This trip changed. Try again." })); if (res.short) $("wallet-panel").scrollIntoView({ behavior: "smooth" }); }
+            if (!res.ok) { b.disabled = false; toast(h("span", { text: res.short ? "Top up at least " + money(res.short) + " to take this offer." : "This trip changed. Try again." })); if (res.short) { goTab("wallet"); $("wallet-panel").scrollIntoView({ behavior: "smooth" }); } }
           } catch (err) { console.warn(err); b.disabled = false; }
         } }, "Accept " + money(o.amount) + (o.amount > r.fare ? " (pay " + money(o.amount - r.fare) + " more)" : o.amount < r.fare ? " (get " + money(r.fare - o.amount) + " back)" : "")))));
   }
@@ -2812,6 +2989,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
     kmManual = false; updateRoute();
     const msg = $("form-msg"); msg.className = "form-msg ok";
     msg.textContent = reverse ? "Return trip filled in. Check the date and time, then tap Request taxi." : "Details copied from your earlier trip. Check the date and time, then tap Request taxi.";
+    goTab("home");
     $("req-form").scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => $("f-datetime").focus(), 400);
   }
@@ -3006,6 +3184,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
           status: "accepted", driverId: store.me, driverName: driver.name, driverPhone: driver.phone,
           driverVehicle: driver.vehicle, driverReg: driver.reg, acceptedAt: Date.now()
         });
+        if (res === "ok") goTab("jobs");
             if (res === "taken") { msg.textContent = "Another driver took this job."; btn.textContent = "Taken"; }
         else if (res === "no_credit") { msg.textContent = "Not enough credit. Top up to accept."; btn.textContent = "Accept job"; }
         else if (res === "not_approved") { msg.textContent = "Your profile isn't approved yet."; btn.textContent = "Accept job"; }
@@ -3106,6 +3285,7 @@ dialog.welcome::backdrop { background: rgba(10, 16, 22, 0.7); }
       .sort((a, b) => (order[a.status] - order[b.status]) || byNew(a, b));
     $("job-count").textContent = jobs.length;
     $("my-jobs").replaceChildren(...(loading ? skeletons(1) : jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
+    renderTabs(mine, jobs, allOpen.length);
     renderCredit();
     renderWallet();
     renderEarnings();

@@ -956,6 +956,153 @@ window.SIYAHAMBA_I18N = {
       "st": "Romela",
       "tn": "Romela",
       "af": "Stuur"
+    },
+    "Home": {
+      "zu": "Ekhaya",
+      "xh": "Ekhaya",
+      "st": "Lehae",
+      "tn": "Gae",
+      "af": "Tuis"
+    },
+    "Activity": {
+      "zu": "Izinhambo",
+      "xh": "Uhambo",
+      "st": "Maeto",
+      "tn": "Maeto",
+      "af": "Ritte"
+    },
+    "Wallet": {
+      "zu": "Isikhwama",
+      "xh": "Isipaji",
+      "st": "Sepache",
+      "tn": "Sepatšhe",
+      "af": "Beursie"
+    },
+    "Account": {
+      "zu": "I-akhawunti",
+      "xh": "I-akhawunti",
+      "st": "Akhaonte",
+      "tn": "Akhaonto",
+      "af": "Rekening"
+    },
+    "Jobs": {
+      "zu": "Imisebenzi",
+      "xh": "Imisebenzi",
+      "st": "Mesebetsi",
+      "tn": "Ditiro",
+      "af": "Werk"
+    },
+    "Earnings": {
+      "zu": "Imali engenile",
+      "xh": "Ingeniso",
+      "st": "Moputso",
+      "tn": "Letseno",
+      "af": "Verdienste"
+    },
+    "Profile": {
+      "zu": "Iphrofayili",
+      "xh": "Iprofayile",
+      "st": "Profaele",
+      "tn": "Porofaele",
+      "af": "Profiel"
+    },
+    "Sign-in and account": {
+      "zu": "Ukungena ne-akhawunti",
+      "xh": "Ukungena ne-akhawunti",
+      "st": "Ho kena le akhaonte",
+      "tn": "Go tsena le akhaonto",
+      "af": "Aanmelding en rekening"
+    },
+    "Switch to driver mode": {
+      "zu": "Shintshela kumshayeli",
+      "xh": "Tshintshela kumqhubi",
+      "st": "Fetohela ho mokganni",
+      "tn": "Fetogela go mokgweetsi",
+      "af": "Skakel oor na bestuurder"
+    },
+    "Switch to passenger mode": {
+      "zu": "Shintshela kumgibeli",
+      "xh": "Tshintshela kumkhweli",
+      "st": "Fetohela ho mopalami",
+      "tn": "Fetogela go mopalami",
+      "af": "Skakel oor na passasier"
+    },
+    "Privacy policy": {
+      "zu": "Inqubomgomo yobumfihlo",
+      "xh": "Umgaqo-nkqubo wabucala",
+      "st": "Leano la lekunutu",
+      "tn": "Pholisi ya sephiri",
+      "af": "Privaatheidsbeleid"
+    },
+    "Delete my account": {
+      "zu": "Susa i-akhawunti yami",
+      "xh": "Cima iakhawunti yam",
+      "st": "Hlakola akhaonte ya ka",
+      "tn": "Phimola akhaonto ya me",
+      "af": "Skrap my rekening"
+    },
+    "Your account": {
+      "zu": "I-akhawunti yakho",
+      "xh": "Iakhawunti yakho",
+      "st": "Akhaonte ya hao",
+      "tn": "Akhaonto ya gago",
+      "af": "Jou rekening"
+    },
+    "Welcome to Siyahamba": {
+      "zu": "Siyakwamukela kuSiyahamba",
+      "xh": "Wamkelekile kwiSiyahamba",
+      "st": "Rea o amohela ho Siyahamba",
+      "tn": "O amogetswe mo Siyahamba",
+      "af": "Welkom by Siyahamba"
+    },
+    "Sign in to keep your trips, wallet and profile on any phone.": {
+      "zu": "Ngena ukuze ugcine izinhambo, isikhwama nephrofayili yakho kunoma iyiphi ifoni.",
+      "xh": "Ngena ukuze ugcine uhambo, isipaji neprofayile yakho kuyo nayiphi ifowuni.",
+      "st": "Kena ho boloka maeto, sepache le profaele ya hao fonong efe kapa efe.",
+      "tn": "Tsena go boloka maeto, sepatšhe le porofaele ya gago mo fonong efe kapa efe.",
+      "af": "Meld aan om jou ritte, beursie en profiel op enige foon te hou."
+    },
+    "View trip": {
+      "zu": "Buka uhambo",
+      "xh": "Jonga uhambo",
+      "st": "Sheba leeto",
+      "tn": "Bona loeto",
+      "af": "Sien rit"
+    },
+    "Job in progress": {
+      "zu": "Umsebenzi uyaqhubeka",
+      "xh": "Umsebenzi uyaqhubeka",
+      "st": "Mosebetsi o ntse o tswela pele",
+      "tn": "Tiro e a tswelela",
+      "af": "Werk aan die gang"
+    },
+    "Open": {
+      "zu": "Vula",
+      "xh": "Vula",
+      "st": "Bula",
+      "tn": "Bula",
+      "af": "Maak oop"
+    },
+    "Finish your driver profile": {
+      "zu": "Qedela iphrofayili yakho yomshayeli",
+      "xh": "Gqibezela iprofayile yakho yomqhubi",
+      "st": "Phethela profaele ya hao ya mokganni",
+      "tn": "Feleletsa porofaele ya gago ya mokgweetsi",
+      "af": "Voltooi jou bestuurderprofiel"
+    },
+    "Your profile is being checked": {
+      "zu": "Iphrofayili yakho iyahlolwa",
+      "xh": "Iprofayile yakho iyahlolwa",
+      "st": "Profaele ya hao e ntse e hlahlojwa",
+      "tn": "Porofaele ya gago e a tlhatlhobiwa",
+      "af": "Jou profiel word nagegaan"
+    },
+    "You can accept jobs once Siyahamba approves you.": {
+      "zu": "Ungamukela imisebenzi uma uSiyahamba ekuvumile.",
+      "xh": "Ungamkela imisebenzi xa iSiyahamba ikuvumile.",
+      "st": "O ka amohela mesebetsi ha Siyahamba e o dumetse.",
+      "tn": "O ka amogela ditiro fa Siyahamba e go dumeletse.",
+      "af": "Jy kan werk aanvaar sodra Siyahamba jou goedkeur."
     }
   }
 };
