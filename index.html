@@ -558,6 +558,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
             <label for="f-vehicle">Vehicle</label>
             <select id="f-vehicle">
               <option value="auto">Best fit for my group</option>
+              <option value="seven">7-seater (people carrier), 6 passengers</option>
               <option value="quantum">Minibus taxi (Quantum), 14 seats</option>
               <option value="sprinter">Sprinter, 22 seats</option>
               <option value="midibus">Midibus, 35 seats</option>
@@ -873,7 +874,8 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
             <div class="field">
               <label for="d-vehicle">Vehicle</label>
               <select id="d-vehicle">
-                <option value="quantum">Minibus taxi (Quantum), 14 seats</option>
+                <option value="seven">7-seater (people carrier), 6 passengers</option>
+              <option value="quantum">Minibus taxi (Quantum), 14 seats</option>
                 <option value="sprinter">Sprinter, 22 seats</option>
                 <option value="midibus">Midibus, 35 seats</option>
                 <option value="coach">Bus, 60 seats</option>
@@ -1306,12 +1308,13 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
   }
   const CROSS_BORDER_WORDS = /lesotho|eswatini|swaziland|botswana|mozambique|zimbabwe|namibia/i;
   const VEHICLES = {
+    seven:    { name: "7-seater (people carrier)", short: "7-seater", seats: 6, mult: 0.75 },
     quantum:  { name: "Minibus taxi (Quantum)", short: "Quantum", seats: 14, mult: 1.0 },
     sprinter: { name: "Sprinter", short: "Sprinter", seats: 22, mult: 1.4 },
     midibus:  { name: "Midibus", short: "Midibus", seats: 35, mult: 1.9 },
     coach:    { name: "Bus", short: "Bus", seats: 60, mult: 2.6 }
   };
-  // Prices in Rand for one minibus taxi (Quantum). Bigger vehicles use the "mult" above.
+  // Prices in Rand for one minibus taxi (Quantum). Other vehicles use the "mult" above (7-seater 25% less).
   // Change these to your own rates. Last updated November 2026.
   const RATES = {
     // Short trips (in town, up to 60 km)
@@ -1433,7 +1436,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
       const v = VEHICLES[choice];
       return { key: choice, count: Math.max(1, Math.ceil(pax / v.seats)) };
     }
-    for (const k of ["quantum", "sprinter", "midibus", "coach"]) if (pax <= VEHICLES[k].seats) return { key: k, count: 1 };
+    for (const k of ["seven", "quantum", "sprinter", "midibus", "coach"]) if (pax <= VEHICLES[k].seats) return { key: k, count: 1 };
     return { key: "coach", count: Math.ceil(pax / VEHICLES.coach.seats) };
   }
   function quote(q) {
@@ -1460,7 +1463,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
       if (q.luggage === "trailer") { per += RATES.trailerLong; rows.push(["Luggage trailer", money(RATES.trailerLong)]); }
       per = Math.max(RATES.longMin, per);
     }
-    if (veh.mult !== 1) rows.push([veh.short + " (bigger vehicle) ×" + veh.mult, ""]);
+    if (veh.mult !== 1) rows.push([veh.short + (veh.mult < 1 ? " (smaller vehicle) ×" : " (bigger vehicle) ×") + veh.mult, ""]);
     const total = round10(per * veh.mult * v.count);
     rows.push(["Vehicles", v.count + " × " + veh.short]);
     return { total, perPerson: total / q.pax, vehicle: v.key, count: v.count, rows };
@@ -3165,7 +3168,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     );
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "meta", style: "display:inline", text: r.payment + " · posted " + ago(r.createdAt) })));
     const msg = h("span", { class: "mismatch" });
-    if (mine && mine.seats < need.seats) msg.textContent = "Needs a " + need.short + ". Your " + mine.short + " has " + mine.seats + " seats.";
+    if (mine && mine.seats < need.seats) msg.textContent = "Needs a " + need.short + ". Your " + mine.short + " takes " + mine.seats + " passengers.";
     else if (r.vehicles > 1) msg.textContent = "Needs " + r.vehicles + " vehicles. Bring drivers from your rank.";
     if (r.type === "long" && driver && !driver.pdp) msg.textContent = "Long trips need a PrDP and operating licence.";
     const fee = feeFor(r.fare), credit = account ? Number(account.credit) || 0 : 0;
@@ -3757,7 +3760,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
         myPublic.photo ? h("img", { class: "avatar lg", src: myPublic.photo, alt: "Your profile photo" }) : null,
         h("div", { style: "display:flex;flex-direction:column;gap:4px;min-width:0" },
           h("b", { text: driver.name || "" }),
-          h("span", { text: v.name + ", " + v.seats + " seats" }),
+          h("span", { text: v.name + ", " + v.seats + " passengers" }),
           h("span", null, h("span", { class: "plate", text: driver.reg || "" })),
           driver.assoc ? h("span", { class: "meta", text: driver.assoc }) : null,
           h("span", { class: "pill " + (driver.pdp ? "go" : "done"), text: driver.pdp ? "Long trips allowed" : "Short trips only" }),
