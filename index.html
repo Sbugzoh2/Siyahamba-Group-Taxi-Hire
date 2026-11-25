@@ -210,6 +210,36 @@ textarea { resize: vertical; min-height: 64px; }
 .table-wrap td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .admin-form { display: grid; grid-template-columns: 2fr 1fr 1.4fr auto; gap: 10px; align-items: end; }
 @media (max-width: 640px) { .admin-form { grid-template-columns: 1fr; } }
+.avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--surface-2); border: 2px solid var(--line); flex: none; }
+.avatar.lg { width: 88px; height: 88px; }
+.vehicle-shot { width: 100%; max-width: 320px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); display: block; }
+.vehicle-shot.sm { max-width: 140px; }
+.up-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1.5px dashed var(--line); border-radius: 10px; }
+.up-row .up-text { flex: 1 1 180px; min-width: 0; font-size: 0.88rem; }
+.up-row .up-text b { display: block; font-size: 0.92rem; }
+.up-row input[type=file] { width: auto; max-width: 100%; padding: 6px; font-size: 0.82rem; }
+.chip { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.chip.ok { background: var(--go-soft); color: var(--go); }
+.chip.miss { background: var(--warn-soft); color: var(--warn); }
+.form-section { grid-column: 1 / -1; font-family: var(--f-display); font-weight: 750; font-size: 1rem; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.vet { border-radius: 10px; padding: 10px 14px; font-size: 0.9rem; margin-bottom: 14px; }
+.vet b { display: block; font-family: var(--f-display); }
+.vet.incomplete { background: var(--warn-soft); color: var(--warn); }
+.vet.pending { background: var(--info-soft); color: var(--info); }
+.vet.approved { background: var(--go-soft); color: var(--go); }
+.vet.rejected { background: var(--warn-soft); color: var(--warn); }
+.pay-box { border-radius: 10px; padding: 12px 14px; font-size: 0.88rem; display: flex; flex-direction: column; gap: 8px; background: var(--info-soft); }
+.pay-box.ok { background: var(--go-soft); }
+.pay-box.warn { background: var(--warn-soft); }
+.pay-box b.t { font-family: var(--f-display); font-size: 0.95rem; }
+.pay-box p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+.pay-box textarea { min-height: 60px; }
+.review { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 12px; }
+.review figure { margin: 0; display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; color: var(--muted); }
+.review figure img { width: 100%; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 0.88rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
 .install { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
 .install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
 .install-text { flex: 1 1 220px; min-width: 0; font-size: 0.9rem; }
@@ -369,10 +399,11 @@ textarea { resize: vertical; min-height: 64px; }
           <div class="field">
             <label for="f-pay">Payment</label>
             <select id="f-pay">
-              <option>Cash to driver</option>
-              <option>EFT before the trip</option>
-              <option>Card</option>
+              <option value="secure">Pay in the app (held until you arrive)</option>
+              <option value="cash">Cash to driver</option>
+              <option value="eft">EFT to driver</option>
             </select>
+            <span class="hint" id="pay-hint">You pay Siyahamba. We only pay the driver once you've arrived safely and confirmed the trip.</span>
           </div>
           <div class="field full">
             <label for="f-notes">Notes for the driver</label>
@@ -454,6 +485,7 @@ textarea { resize: vertical; min-height: 64px; }
             <button type="button" class="btn btn-ghost btn-sm" id="demo-topup" hidden>Add R500 test credit</button>
           </div>
           <p class="hint" id="credit-note" style="margin:10px 0 0"></p>
+          <p class="split" id="held-line" style="margin:8px 0 0" hidden></p>
           <div class="topup-box" id="topup-box">
             <div class="label">How to top up</div>
             <p id="topup-info"></p>
@@ -464,19 +496,85 @@ textarea { resize: vertical; min-height: 64px; }
 
         <form class="panel" id="driver-form" novalidate>
           <div class="panel-head">
-            <h2>My vehicle</h2>
+            <h2>My driver profile</h2>
             <button type="button" class="linkbtn" id="edit-profile" hidden>Edit</button>
           </div>
-          <div id="profile-summary" class="profile-sum" hidden></div>
+          <div class="vet incomplete" id="vet-status"><b>Complete your profile</b>Add your details and documents, then send them for review.</div>
+          <div id="profile-summary" hidden></div>
           <div class="fields" id="profile-fields">
+            <div class="field full">
+              <div class="up-row">
+                <img class="avatar lg" id="d-photo-preview" alt="Your profile photo">
+                <div class="up-text"><b>Profile photo</b>A clear photo of your face, like an ID photo. Passengers see it.</div>
+                <input type="file" id="d-photo" accept="image/*">
+              </div>
+            </div>
+
+            <div class="form-section">Personal details</div>
+            <div class="field full">
+              <label for="d-name">Full names and surname</label>
+              <input id="d-name" autocomplete="name" placeholder="Exactly as on your ID or passport">
+            </div>
             <div class="field">
-              <label for="d-name">Your name</label>
-              <input id="d-name" autocomplete="name" placeholder="As passengers will see it">
+              <label for="d-idtype">Identity document</label>
+              <select id="d-idtype">
+                <option value="sa_id">South African ID</option>
+                <option value="passport">Passport</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="d-idnumber" id="d-idnumber-label">ID number</label>
+              <input id="d-idnumber" inputmode="numeric" autocomplete="off" placeholder="13 digits">
+            </div>
+            <div class="field">
+              <label for="d-nationality">Nationality</label>
+              <input id="d-nationality" list="nationalities" value="South African">
+              <datalist id="nationalities">
+                <option value="South African"><option value="Zimbabwean"><option value="Mozambican"><option value="Mosotho (Lesotho)">
+                <option value="Swazi (Eswatini)"><option value="Motswana (Botswana)"><option value="Malawian"><option value="Namibian"><option value="Other">
+              </datalist>
+            </div>
+            <div class="field">
+              <label for="d-race">Race (optional)</label>
+              <select id="d-race">
+                <option value="">Prefer not to say</option>
+                <option>Black African</option>
+                <option>Coloured</option>
+                <option>Indian or Asian</option>
+                <option>White</option>
+                <option>Other</option>
+              </select>
+              <span class="hint">Only used for B-BBEE reporting. Never shown to passengers.</span>
             </div>
             <div class="field">
               <label for="d-phone">Cellphone number</label>
               <input id="d-phone" type="tel" inputmode="tel" placeholder="e.g. 083 555 0101">
             </div>
+
+            <div class="form-section">Documents</div>
+            <div class="field full">
+              <div class="up-row">
+                <div class="up-text"><b>Certified copy of ID or passport</b>A clear photo or scan of the certified copy</div>
+                <span class="chip miss" id="chip-idCopy">Missing</span>
+                <input type="file" id="d-idCopy" accept="image/*,application/pdf">
+              </div>
+            </div>
+            <div class="field full">
+              <div class="up-row">
+                <div class="up-text"><b>Driver's licence</b>The front of your licence card</div>
+                <span class="chip miss" id="chip-licence">Missing</span>
+                <input type="file" id="d-licence" accept="image/*,application/pdf">
+              </div>
+            </div>
+            <div class="field full">
+              <div class="up-row">
+                <div class="up-text"><b>PrDP (professional driving permit)</b>Needed to carry paying passengers</div>
+                <span class="chip miss" id="chip-prdp">Missing</span>
+                <input type="file" id="d-prdp" accept="image/*,application/pdf">
+              </div>
+            </div>
+
+            <div class="form-section">Vehicle</div>
             <div class="field">
               <label for="d-vehicle">Vehicle</label>
               <select id="d-vehicle">
@@ -491,15 +589,49 @@ textarea { resize: vertical; min-height: 64px; }
               <input id="d-reg" placeholder="e.g. JK 45 PL GP" autocapitalize="characters">
             </div>
             <div class="field full">
+              <div class="up-row">
+                <img class="vehicle-shot sm" id="d-vehiclePhoto-preview" alt="Your vehicle">
+                <div class="up-text"><b>Vehicle photo</b>Take it from the front or back so the number plate is easy to read</div>
+                <input type="file" id="d-vehiclePhoto" accept="image/*">
+              </div>
+            </div>
+            <div class="field full">
               <label for="d-assoc">Taxi association or rank</label>
               <input id="d-assoc" placeholder="e.g. Bara Rank, Soweto">
             </div>
             <div class="field full">
-              <label class="check" for="d-pdp"><input type="checkbox" id="d-pdp"> I have a valid PrDP and operating licence for long-distance routes</label>
+              <label class="check" for="d-pdp"><input type="checkbox" id="d-pdp"> My operating licence covers long-distance routes</label>
+            </div>
+
+            <div class="form-section">Bank account for payouts</div>
+            <p class="hint full" style="grid-column:1/-1;margin:0">When a group pays in the app, Siyahamba pays you into this account after the trip.</p>
+            <div class="field">
+              <label for="d-bankName">Bank</label>
+              <input id="d-bankName" list="banks" placeholder="e.g. Capitec">
+              <datalist id="banks">
+                <option value="Absa"><option value="African Bank"><option value="Capitec"><option value="Discovery Bank"><option value="FNB">
+                <option value="Investec"><option value="Nedbank"><option value="Standard Bank"><option value="TymeBank">
+              </datalist>
+            </div>
+            <div class="field">
+              <label for="d-bankHolder">Account holder</label>
+              <input id="d-bankHolder" placeholder="Name on the account">
+            </div>
+            <div class="field">
+              <label for="d-bankAccount">Account number</label>
+              <input id="d-bankAccount" inputmode="numeric" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="d-bankBranch">Branch code</label>
+              <input id="d-bankBranch" inputmode="numeric" autocomplete="off">
+            </div>
+
+            <div class="field full">
+              <label class="check" for="d-consent" style="align-items:flex-start"><input type="checkbox" id="d-consent" style="margin-top:3px"> <span style="font-weight:500">I confirm these details and documents are true and my own. I agree that Siyahamba may check them, and keep them safely as required by POPIA.</span></label>
             </div>
           </div>
           <div class="actions" id="profile-actions">
-            <button type="submit" class="btn btn-primary">Save vehicle</button>
+            <button type="submit" class="btn btn-primary" id="driver-save">Save and send for review</button>
             <span class="form-msg" id="driver-msg" role="status" aria-live="polite"></span>
           </div>
         </form>
@@ -535,6 +667,15 @@ textarea { resize: vertical; min-height: 64px; }
     <div id="admin-body" hidden>
       <div class="stats" id="admin-stats"></div>
       <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><h2>Drivers to approve</h2><span class="count" id="admin-vet-count">0</span></div>
+        <div class="list" id="admin-vetting"></div>
+        <div id="admin-review" hidden></div>
+      </div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><h2>Passenger payments</h2></div>
+        <div class="list" id="admin-payments"></div>
+      </div>
+      <div class="panel" style="margin-bottom:20px">
         <div class="panel-head"><h2>Add credit for a driver</h2></div>
         <form class="admin-form" id="admin-topup" novalidate>
           <div class="field">
@@ -557,7 +698,7 @@ textarea { resize: vertical; min-height: 64px; }
         <div class="panel-head"><h2>Drivers</h2><span class="count" id="admin-driver-count">0</span></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Driver</th><th>Reference</th><th>Vehicle</th><th style="text-align:right">Credit</th><th style="text-align:right">Fees paid</th></tr></thead>
+            <thead><tr><th>Driver</th><th>Status</th><th>Reference</th><th>Vehicle</th><th style="text-align:right">Credit</th><th style="text-align:right">Fees paid</th></tr></thead>
             <tbody id="admin-drivers"></tbody>
           </table>
         </div>
@@ -580,8 +721,8 @@ textarea { resize: vertical; min-height: 64px; }
     <h3 style="margin-bottom:10px">How it works</h3>
     <div class="how">
       <div><b>1. The group requests</b>One person books for everyone, picks a short or long trip, and sees the price for the whole group and per person.</div>
-      <div><b>2. A driver accepts</b>Drivers with the right size vehicle take the job. The group leader gets the driver's name, number and number plate.</div>
-      <div><b>3. Ride together</b>Follow the trip from "on the way" to "arrived". Pay the driver the way you agreed.</div>
+      <div><b>2. A checked driver accepts</b>Every driver's ID, licence, PrDP and vehicle are checked by Siyahamba. You see their photo, their taxi and its number plate.</div>
+      <div><b>3. Pay safely, ride together</b>Pay in the app and Siyahamba holds the money until you confirm you've arrived. Or pay the driver directly.</div>
     </div>
   </div>
 </main>
@@ -736,8 +877,25 @@ textarea { resize: vertical; min-height: 64px; }
   const COMMISSION_PCT = 10;
   const feeFor = (fare) => (Number(fare) || 0) * COMMISSION_PCT / 100;
   const codeFor = (id) => "SH-" + String(id || "").replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase();
+  const PAYMENT_INFO_RAW = String(window.SIYAHAMBA_PAYMENT_INFO || "").trim();
+  const CARD_PAY_URL = /^https:\/\//.test(String(window.SIYAHAMBA_CARD_PAY_URL || "")) ? String(window.SIYAHAMBA_CARD_PAY_URL) : "";
+  const tripRef = (id) => "TR-" + String(id || "").replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase();
+  const VET = {
+    incomplete: { cls: "incomplete", title: "Complete your profile", text: "Add your details and documents, then send them for review. You can accept jobs once you're approved." },
+    pending: { cls: "pending", title: "Waiting for approval", text: "Siyahamba is checking your details and documents. This usually takes a day." },
+    approved: { cls: "approved", title: "Approved", text: "You can accept jobs. Changing your name, ID, documents, vehicle or bank details sends your profile for review again." },
+    rejected: { cls: "rejected", title: "Not approved yet", text: "" }
+  };
+  function saIdValid(id) {
+    if (!/^\d{13}$/.test(id)) return false;
+    let sum = 0;
+    for (let i = 0; i < 13; i++) { let d = +id[12 - i]; if (i % 2 === 1) { d *= 2; if (d > 9) d -= 9; } sum += d; }
+    const mm = +id.slice(2, 4), dd = +id.slice(4, 6);
+    return sum % 10 === 0 && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31;
+  }
   const TOPUP_INFO = String(window.SIYAHAMBA_TOPUP_INFO || "").trim() ||
     "Pay Siyahamba by EFT and use your reference below. Your credit is added once the payment clears.";
+  const PAYMENT_INFO = PAYMENT_INFO_RAW || String(window.SIYAHAMBA_TOPUP_INFO || "").trim() || "Ask Siyahamba for the bank details.";
 
   const STATUS = {
     open:      { label: "Waiting for a driver", cls: "open" },
@@ -874,6 +1032,7 @@ textarea { resize: vertical; min-height: 64px; }
           const rs = await tx.get(reqRef), ds = await tx.get(drvRef);
           if (!rs.exists || rs.data().status !== "open") return "taken";
           if (!ds.exists) return "no_account";
+          if (ds.data().vetting !== "approved") return "not_approved";
           const fee = feeFor(rs.data().fare), credit = Number(ds.data().credit) || 0;
           if (credit < fee) return "no_credit";
           tx.update(reqRef, { ...patch, commission: fee, updatedAt: now });
@@ -915,21 +1074,43 @@ textarea { resize: vertical; min-height: 64px; }
     saveLocalAccount(acc) { safeLS.set("siyahamba.account", acc); account = acc; renderCredit(); },
     async loadProfile() {
       if (this.mode === "db") {
-        try {
-          const s = await this.db.doc("drivers/" + this.me).get();
-          if (s.exists) { const d = s.data(); return { name: d.name, phone: d.phone, vehicle: d.vehicle, reg: d.reg, assoc: d.assoc || "", pdp: !!d.pdp }; }
-        } catch (e) { console.warn(e); }
+        try { const s = await this.db.doc("drivers/" + this.me).get(); if (s.exists) return { ...s.data() }; } catch (e) { console.warn(e); }
       }
       return safeLS.get("siyahamba.driver");
     },
+    async loadPublic(id) {
+      if (this.mode !== "db") return safeLS.get("siyahamba.driverPublic") || {};
+      try { const s = await this.db.doc("driverPublic/" + id).get(); return s.exists ? s.data() : {}; } catch (e) { console.warn(e); return {}; }
+    },
+    // Moves an old, local-only profile into the database, unreviewed.
     async saveProfile(p) {
-      safeLS.set("siyahamba.driver", p);
       if (this.mode !== "db") return;
       const ref = this.db.doc("drivers/" + this.me), now = Date.now();
-      const fields = { name: p.name, phone: p.phone, vehicle: p.vehicle, reg: p.reg, assoc: p.assoc || "", pdp: !!p.pdp };
+      if ((await ref.get()).exists) return;
+      await ref.set({ name: p.name || "", phone: p.phone || "", vehicle: p.vehicle || "quantum", reg: p.reg || "", assoc: p.assoc || "", pdp: !!p.pdp,
+        vetting: "incomplete", docs: {}, credit: 0, code: codeFor(this.me), createdAt: now, updatedAt: now });
+    },
+    // Saves the registration. Anything the owner checks sends the profile back for review.
+    async saveRegistration(fields, publicDoc, files, vetting, identityChanged) {
+      const now = Date.now();
+      if (this.mode !== "db") {
+        const prev = safeLS.get("siyahamba.driver") || {};
+        const next = { ...prev, ...fields, vetting: identityChanged ? "approved" : prev.vetting || "approved", demo: true };
+        safeLS.set("siyahamba.driver", next);
+        if (publicDoc) safeLS.set("siyahamba.driverPublic", { ...(safeLS.get("siyahamba.driverPublic") || {}), ...publicDoc });
+        return next;
+      }
+      const db = this.db, ref = db.doc("drivers/" + this.me), pub = db.doc("driverPublic/" + this.me);
       const snap = await ref.get();
-      if (snap.exists) await ref.update({ ...fields, updatedAt: now });
-      else await ref.set({ ...fields, credit: 0, code: codeFor(this.me), createdAt: now, updatedAt: now });
+      const batch = db.batch();
+      if (!snap.exists) batch.set(ref, { ...fields, vetting, credit: 0, code: codeFor(this.me), createdAt: now, updatedAt: now });
+      else batch.update(ref, identityChanged ? { ...fields, vetting, updatedAt: now } : { ...fields, updatedAt: now });
+      if (publicDoc) batch.set(pub, { ...publicDoc, updatedAt: now }, { merge: true });
+      await batch.commit();
+      for (const kind in files) {
+        await db.doc("driverFiles/" + this.me + "/files/" + kind).set({ ...files[kind], at: now });
+      }
+      return (await ref.get()).data();
     }
   };
 
@@ -945,7 +1126,9 @@ textarea { resize: vertical; min-height: 64px; }
   let driver = null;
   let editingProfile = true;
   let allRequests = [];
-  let account = null;          // this driver's credit account
+  let account = null;          // this driver's account: profile, vetting and credit
+  let myPublic = {};           // this driver's photo and vehicle photo
+  const pubCache = {};         // drivers' public photos, for passengers
   let myTopups = [];
   const admin = { on: false, drivers: [], topups: [] };
 
@@ -955,9 +1138,9 @@ textarea { resize: vertical; min-height: 64px; }
     $("view-passenger").hidden = r !== "passenger";
     $("view-driver").hidden = r !== "driver";
     $("view-admin").hidden = r !== "admin";
-    $("nav-passenger").toggleAttribute("aria-current", r === "passenger");
-    $("nav-driver").toggleAttribute("aria-current", r === "driver");
-    if (r === "passenger") $("nav-passenger").setAttribute("aria-current", "page"); else $("nav-driver").setAttribute("aria-current", "page");
+    $("nav-passenger").removeAttribute("aria-current");
+    $("nav-driver").removeAttribute("aria-current");
+    if (r !== "admin") $("nav-" + r).setAttribute("aria-current", "page");
   }
   window.addEventListener("hashchange", showView);
 
@@ -1216,6 +1399,11 @@ textarea { resize: vertical; min-height: 64px; }
   }
   $("f-km").addEventListener("input", () => { kmManual = true; $("km-hint").textContent = "Using the distance you typed."; refreshQuote(); });
   ["f-pax", "f-vehicle", "f-luggage", "f-nights", "f-datetime"].forEach((id) => $(id).addEventListener("input", refreshQuote));
+  $("f-pay").addEventListener("change", () => {
+    $("pay-hint").textContent = $("f-pay").value === "secure"
+      ? "You pay Siyahamba. We only pay the driver once you've arrived safely and confirmed the trip."
+      : "You pay the driver directly. Siyahamba can't hold or refund this money.";
+  });
 
   function readForm() {
     return {
@@ -1233,7 +1421,8 @@ textarea { resize: vertical; min-height: 64px; }
       nights: tripType === "long" && $("f-return").checked ? Math.max(0, Math.round(Number($("f-nights").value) || 0)) : 0,
       contactName: $("f-name").value.trim(),
       contactPhone: $("f-phone").value.trim(),
-      payment: $("f-pay").value,
+      payMode: $("f-pay").value,
+      payment: $("f-pay").selectedOptions[0].textContent,
       notes: $("f-notes").value.trim(),
       crossBorder: isCrossBorder(),
       pickupPlaceId: sel.pickup.placeId || null,
@@ -1287,6 +1476,7 @@ textarea { resize: vertical; min-height: 64px; }
     if (f.type === "short" && f.crossBorder) { msg.classList.add("err"); msg.textContent = "Cross-border trips are long trips. Choose Long trip."; return; }
     const q = quote(f);
     const data = { ...f, vehicle: q.vehicle, vehicles: q.count, fare: q.total, status: "open", requesterId: store.me, createdAt: Date.now(), updatedAt: Date.now() };
+    if (f.payMode === "secure") data.payStatus = "unpaid";
     const btn = $("submit-btn"); btn.disabled = true; btn.textContent = "Sending…";
     try {
       await store.create(data);
@@ -1334,6 +1524,73 @@ textarea { resize: vertical; min-height: 64px; }
   }
   function typeTag(r) { return h("span", { class: "tag" + (r.type === "long" ? " long" : ""), text: r.type === "long" ? "Long trip" : "Short trip" }); }
 
+  function driverFaces(id) {
+    const box = h("span", { class: "faces", style: "display:flex;gap:10px;align-items:center" });
+    const fill = (pub) => {
+      box.replaceChildren(...[pub.photo ? h("img", { class: "avatar", src: pub.photo, alt: "Driver's photo" }) : null,
+        pub.vehiclePhoto ? h("img", { class: "vehicle-shot sm", src: pub.vehiclePhoto, alt: "Driver's vehicle" }) : null].filter(Boolean));
+    };
+    if (pubCache[id]) fill(pubCache[id]);
+    else if (id) store.loadPublic(id).then((pub) => { pubCache[id] = pub || {}; fill(pubCache[id]); });
+    return box;
+  }
+  function payBox(r) {
+    if (r.payMode !== "secure") return null;
+    const ref = tripRef(r.id), ps = r.payStatus || "unpaid";
+    if (r.status === "cancelled") {
+      if (ps === "refunded") return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Refunded" }), h("p", { text: "Siyahamba refunded your payment of " + money(r.fare) + "." }));
+      if (ps === "held" || ps === "claimed" || ps === "disputed") return h("div", { class: "pay-box warn" }, h("b", { class: "t", text: "Refund on its way" }), h("p", { text: "You cancelled after paying. Siyahamba will refund you. Reference " + ref + "." }));
+      return null;
+    }
+    if (ps === "unpaid") {
+      const box = h("div", { class: "pay-box" },
+        h("b", { class: "t", text: "Pay " + money(r.fare) + " to Siyahamba" }),
+        h("p", { text: PAYMENT_INFO }),
+        h("div", null, "Reference: ", h("span", { class: "ref", text: ref }), " ", copyBtn(ref)),
+        h("p", { class: "hint", text: "We keep the money safe and only pay the driver once you confirm you arrived." }));
+      const acts = h("div", { class: "actions", style: "margin:0" });
+      if (CARD_PAY_URL) acts.append(h("a", { class: "btn btn-ghost btn-sm", href: CARD_PAY_URL, target: "_blank", rel: "noopener", style: "text-decoration:none" }, "Pay by card"));
+      acts.append(h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
+        e.currentTarget.disabled = true;
+        try { await store.update(r.id, { payStatus: "claimed", paidClaimAt: Date.now() }); } catch (err) { console.warn(err); e.currentTarget.disabled = false; }
+      } }, "I've paid"));
+      box.append(acts);
+      return box;
+    }
+    if (ps === "claimed") return h("div", { class: "pay-box" }, h("b", { class: "t", text: "Checking your payment" }), h("p", { text: "Siyahamba will confirm once your " + money(r.fare) + " arrives. Reference " + ref + "." }), reportLink(r));
+    if (ps === "disputed") return h("div", { class: "pay-box warn" }, h("b", { class: "t", text: "Problem reported" }), h("p", { text: "Siyahamba is looking into it and is holding the payment until it's sorted out." }));
+    if (ps === "released") return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Driver paid" }), h("p", { text: "Thank you for travelling with Siyahamba." }));
+    if (ps === "refunded") return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Refunded" }), h("p", { text: "Siyahamba refunded your payment." }));
+    // held
+    if (r.status === "completed" && !r.passengerConfirmed) {
+      const box = h("div", { class: "pay-box" }, h("b", { class: "t", text: "Did you arrive safely?" }),
+        h("p", { text: "When you confirm, Siyahamba pays your " + money(r.fare) + " to the driver." }));
+      box.append(h("div", { class: "actions", style: "margin:0" },
+        h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: async (e) => {
+          e.currentTarget.disabled = true;
+          try { await store.update(r.id, { passengerConfirmed: true }); } catch (err) { console.warn(err); e.currentTarget.disabled = false; }
+        } }, "Yes, pay the driver"), reportLink(r)));
+      return box;
+    }
+    if (r.passengerConfirmed) return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Thanks for confirming" }), h("p", { text: "Siyahamba is paying the driver." }));
+    return h("div", { class: "pay-box ok" }, h("b", { class: "t", text: "Paid: " + money(r.fare) + " held safely" }), h("p", { text: "Siyahamba pays the driver only after you arrive and confirm." }), reportLink(r));
+  }
+  function reportLink(r) {
+    const wrap = h("span");
+    const open = h("button", { type: "button", class: "linkbtn", onclick: () => {
+      const ta = h("textarea", { "aria-label": "What went wrong?", placeholder: "What went wrong?" });
+      const send = h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: async () => {
+        const issue = ta.value.trim().slice(0, 1000);
+        if (!issue) { ta.focus(); return; }
+        send.disabled = true;
+        try { await store.update(r.id, { payStatus: "disputed", issue }); } catch (err) { console.warn(err); send.disabled = false; }
+      } }, "Send to Siyahamba");
+      wrap.replaceChildren(h("div", { style: "display:flex;flex-direction:column;gap:8px;width:100%" }, ta, h("div", null, send)));
+    } }, "Report a problem");
+    wrap.append(open);
+    return wrap;
+  }
+
   function passengerCard(r) {
     const card = h("article", { class: "trip", "data-status": r.status },
       h("div", { class: "trip-top" }, h("div", null, routeLine(r)), statusPill(r.status)),
@@ -1343,15 +1600,19 @@ textarea { resize: vertical; min-height: 64px; }
     if (r.driverName && ["accepted", "enroute", "ontrip", "completed"].includes(r.status)) {
       const v = VEHICLES[r.driverVehicle] || null;
       card.append(h("div", { class: "driver-box" },
+        driverFaces(r.driverId),
         h("span", null, "Driver ", h("b", { text: r.driverName })),
         r.driverPhone ? h("span", null, h("span", { class: "phone", text: r.driverPhone }), " ", copyBtn(r.driverPhone)) : null,
         v ? h("span", { text: v.name }) : null,
         r.driverReg ? h("span", { class: "plate", text: r.driverReg }) : null
       ));
     }
+    const pb = payBox(r);
+    if (pb) card.append(pb);
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
     if (["open", "accepted"].includes(r.status)) {
-      foot.append(h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: (e) => confirmInline(e.currentTarget, "Cancel this trip?", async () => {
+      const paid = r.payMode === "secure" && ["claimed", "held"].includes(r.payStatus);
+      foot.append(h("button", { type: "button", class: "btn btn-danger btn-sm", onclick: (e) => confirmInline(e.currentTarget, paid ? "Cancel this trip? Siyahamba will refund you." : "Cancel this trip?", async () => {
         await store.update(r.id, { status: "cancelled" });
       }) }, "Cancel trip"));
     } else {
@@ -1390,8 +1651,10 @@ textarea { resize: vertical; min-height: 64px; }
     const fee = feeFor(r.fare), credit = account ? Number(account.credit) || 0 : 0;
     const short = Math.max(0, fee - credit);
     card.insertBefore(h("div", { class: "split" }, "Siyahamba fee ", h("b", { text: money(fee) }), " from your credit · You receive ", h("b", { text: money(r.fare - fee) })), card.lastChild);
+    const approved = vettingOf() === "approved";
     if (driver && short > 0) msg.textContent = "Top up at least " + money(short) + " to accept this job.";
-    const btn = h("button", { type: "button", class: "btn btn-go btn-sm", disabled: !driver || !store.canWrite || (r.type === "long" && !driver.pdp) || short > 0 }, "Accept job");
+    if (!approved) msg.textContent = account && account.vetting === "pending" ? "You can accept jobs once Siyahamba approves your profile." : "Complete your driver profile to accept jobs.";
+    const btn = h("button", { type: "button", class: "btn btn-go btn-sm", disabled: !driver || !approved || !store.canWrite || (r.type === "long" && !driver.pdp) || short > 0 }, "Accept job");
     btn.addEventListener("click", async () => {
       btn.disabled = true; btn.textContent = "Accepting…";
       try {
@@ -1401,10 +1664,12 @@ textarea { resize: vertical; min-height: 64px; }
         });
         if (res === "taken") { msg.textContent = "Another driver took this job."; btn.textContent = "Taken"; }
         else if (res === "no_credit") { msg.textContent = "Not enough credit. Top up to accept."; btn.textContent = "Accept job"; }
+        else if (res === "not_approved") { msg.textContent = "Your profile isn't approved yet."; btn.textContent = "Accept job"; }
         else if (res === "no_account") { msg.textContent = "Save your vehicle details again, then accept."; btn.disabled = false; btn.textContent = "Accept job"; }
       } catch (e) { console.warn(e); msg.textContent = "Couldn't accept. Try again."; btn.disabled = false; btn.textContent = "Accept job"; }
     });
-    if (!driver) msg.textContent = "Save your vehicle details to accept jobs.";
+    if (!driver) msg.textContent = "Complete your driver profile to accept jobs.";
+    if (r.payMode === "secure") card.insertBefore(h("div", { class: "split" }, "The group pays in the app. Siyahamba pays you after the trip."), card.lastChild);
     foot.append(h("span", { class: "actions", style: "margin:0" }, msg, btn));
     card.append(foot);
     return card;
@@ -1429,6 +1694,15 @@ textarea { resize: vertical; min-height: 64px; }
         h("span", null, h("span", { class: "phone", text: r.contactPhone }), " ", copyBtn(r.contactPhone)),
         h("span", { text: r.payment })
       ));
+    }
+    if (r.payMode === "secure" && r.status !== "cancelled") {
+      const ps = r.payStatus || "unpaid";
+      const line = ps === "released" ? "Paid out to your bank account. Thank you."
+        : ps === "held" ? (r.passengerConfirmed ? "The group confirmed. Siyahamba is paying you " + money(r.fare) + "." : money(r.fare) + " is paid and held by Siyahamba. You're paid after the group confirms they arrived.")
+        : ps === "claimed" ? "The group says they've paid. Siyahamba is checking."
+        : ps === "disputed" ? "The group reported a problem. Siyahamba is holding the payment and will contact you."
+        : "Waiting for the group to pay in the app. Don't start the trip until it shows as held.";
+      card.append(h("div", { class: "pay-box" + (ps === "held" || ps === "released" ? " ok" : ps === "disputed" ? " warn" : "") }, h("p", { text: line })));
     }
     if (r.commission && r.status !== "cancelled") card.append(h("div", { class: "split" }, "You receive ", h("b", { text: money(r.fare - r.commission) }), " · Siyahamba fee ", h("b", { text: money(r.commission) }), " paid from credit"));
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
@@ -1490,8 +1764,12 @@ textarea { resize: vertical; min-height: 64px; }
     $("topup-ref").textContent = driver ? (account && account.code) || codeFor(store.me) : "Save your vehicle first";
     $("demo-topup").hidden = store.mode === "db";
     $("credit-note").textContent = !driver
-      ? "Save your vehicle details below to open your credit account."
+      ? "Complete your driver profile below to open your credit account."
       : "When you accept a job, Siyahamba's " + COMMISSION_PCT + "% fee comes off your credit. If you give the job back, the fee is returned.";
+    const mineHeld = allRequests.filter((r) => r.driverId === store.me && r.payMode === "secure" && r.payStatus === "held" && r.status !== "cancelled");
+    const heldSum = mineHeld.reduce((t, r) => t + (Number(r.fare) || 0), 0);
+    $("held-line").hidden = !heldSum;
+    $("held-line").replaceChildren("Held for you by Siyahamba: ", h("b", { text: money(heldSum) }), " (" + mineHeld.length + " trip" + (mineHeld.length === 1 ? "" : "s") + ")");
     const list = myTopups.slice().sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 5);
     $("topup-list").replaceChildren(...list.map((t) => h("div", null,
       h("span", { text: new Date(t.at).toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) + (t.ref ? " · " + t.ref : "") }),
@@ -1524,7 +1802,10 @@ textarea { resize: vertical; min-height: 64px; }
       stat("Earned this month", money(earnedMonth), month.length + " job" + (month.length === 1 ? "" : "s") + " accepted"),
       stat("Earned all time", money(earned), paid.length + " job" + (paid.length === 1 ? "" : "s") + " with a fee"),
       stat("Driver credit held", money(held), "Paid in, not yet used"),
-      stat("Fees to review", String(pending.length), pending.length ? money(pending.reduce((t, r) => t + r.commission, 0)) + " waiting" : "Nothing waiting"));
+      stat("Fees to review", String(pending.length), pending.length ? money(pending.reduce((t, r) => t + r.commission, 0)) + " waiting" : "Nothing waiting"),
+      stat("Passenger money held", money(allRequests.filter((r) => r.payMode === "secure" && ["held", "disputed"].includes(r.payStatus)).reduce((t, r) => t + (Number(r.fare) || 0), 0)), "Not yet paid to drivers"));
+    renderVetting();
+    renderPayments();
 
     const feesBy = {};
     paid.forEach((r) => { if (r.driverId || r.status === "cancelled") feesBy[r.driverId] = (feesBy[r.driverId] || 0) + earnedFrom(r); });
@@ -1532,11 +1813,12 @@ textarea { resize: vertical; min-height: 64px; }
     $("admin-driver-count").textContent = drivers.length;
     $("admin-drivers").replaceChildren(...(drivers.length ? drivers.map((d) => h("tr", null,
       h("td", null, h("b", { text: d.name || "Unnamed" }), h("div", { class: "meta" }, h("span", { class: "phone", text: d.phone || "" }))),
+      h("td", null, h("span", { class: "pill " + ({ approved: "go", pending: "open", rejected: "cancel" }[d.vetting] || "done"), text: ({ approved: "Approved", pending: "To review", rejected: "Not approved" }[d.vetting] || "Incomplete") })),
       h("td", null, h("span", { class: "ref", text: d.code || codeFor(d.id) })),
       h("td", null, h("span", { text: (VEHICLES[d.vehicle] || VEHICLES.quantum).short + " " }), d.reg ? h("span", { class: "plate", text: d.reg }) : null),
       h("td", { class: "num", text: money(Number(d.credit) || 0) }),
       h("td", { class: "num", text: money(feesBy[d.id] || 0) })))
-      : [h("tr", null, h("td", { colspan: "5", class: "meta", text: "No drivers yet. Drivers appear here once they save their vehicle details." }))]));
+      : [h("tr", null, h("td", { colspan: "6", class: "meta", text: "No drivers yet. Drivers appear here once they save their vehicle details." }))]));
 
     const sel = $("a-driver"), keep = sel.value;
     sel.replaceChildren(h("option", { value: "", text: "Choose a driver" }), ...drivers.map((d) =>
@@ -1560,6 +1842,101 @@ textarea { resize: vertical; min-height: 64px; }
       h("span", { text: (names[t.driverId] || "Driver") + " · " + new Date(t.at).toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) + (t.ref ? " · " + t.ref : "") }),
       h("b", { text: "+" + money(t.amount) }))) : [h("div", { class: "meta", text: "No top-ups yet." })]));
   }
+  // ---- Driver approvals ----
+  let reviewing = null;
+  function renderVetting() {
+    const list = admin.drivers.filter((d) => d.vetting === "pending").sort((a, b) => (a.submittedAt || 0) - (b.submittedAt || 0));
+    $("admin-vet-count").textContent = list.length;
+    $("admin-vetting").replaceChildren(...(list.length ? list.map((d) => h("article", { class: "trip", "data-status": "open" },
+      h("div", { class: "trip-top" }, h("div", null, h("div", { class: "route", text: d.name || "Unnamed" }),
+        h("div", { class: "meta" }, h("span", { text: (d.idType === "passport" ? "Passport " : "ID ") + (d.idNumber || "") }), h("span", { text: d.nationality || "" }), h("span", { class: "phone", text: d.phone || "" }))),
+        h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: () => openReview(d.id) }, "Review"))))
+      : [empty("No drivers waiting", "New drivers show here once they send their profile for review.")]));
+  }
+  async function openReview(id) {
+    reviewing = id;
+    const d = admin.drivers.find((x) => x.id === id); if (!d) return;
+    const box = $("admin-review"); box.hidden = false;
+    box.replaceChildren(h("p", { class: "meta", text: "Loading documents…" }));
+    const db = store.db;
+    const [pubSnap, files] = await Promise.all([db.doc("driverPublic/" + id).get(),
+      Promise.all(["idCopy", "licence", "prdp"].map((k) => db.doc("driverFiles/" + id + "/files/" + k).get().then((s) => [k, s.exists ? s.data() : null])))]);
+    if (reviewing !== id) return;
+    const pub = pubSnap.exists ? pubSnap.data() : {};
+    const idOk = d.idType === "passport" ? /^[A-Z0-9]{6,12}$/i.test(d.idNumber || "") : saIdValid(d.idNumber || "");
+    const fig = (label, f) => {
+      if (!f) return h("figure", null, h("span", { text: label + ": missing" }));
+      if (f.type === "application/pdf") {
+        const a = h("a", { class: "btn btn-ghost btn-sm", target: "_blank", rel: "noopener", style: "text-decoration:none" }, "Open PDF");
+        fetch(f.data).then((r) => r.blob()).then((b) => { a.href = URL.createObjectURL(b); });
+        return h("figure", null, h("span", { text: label }), a);
+      }
+      return h("figure", null, h("span", { text: label }), h("a", { href: f.data, target: "_blank", rel: "noopener" }, h("img", { src: f.data, alt: label })));
+    };
+    const fmap = Object.fromEntries(files);
+    const note = h("input", { placeholder: "Reason, if not approving (the driver sees this)", "aria-label": "Reason for not approving" });
+    const decide = async (vetting) => {
+      if (vetting === "rejected" && !note.value.trim()) { note.focus(); note.placeholder = "Please give the driver a reason"; return; }
+      try {
+        await db.doc("drivers/" + id).update({ vetting, vettingNote: vetting === "rejected" ? note.value.trim() : "", approvedAt: vetting === "approved" ? Date.now() : null, updatedAt: Date.now() });
+        reviewing = null; box.hidden = true; box.replaceChildren();
+      } catch (e) { console.warn(e); note.value = "That didn't save. Try again."; }
+    };
+    box.replaceChildren(h("div", { class: "panel", style: "margin-top:14px;background:var(--surface-2)" },
+      h("div", { class: "panel-head" }, h("h2", { text: "Review: " + (d.name || "driver") }), h("button", { type: "button", class: "linkbtn", onclick: () => { reviewing = null; box.hidden = true; } }, "Close")),
+      h("p", { class: "hint", style: "margin:0 0 10px", text: "Check that the name and number match the ID copy exactly, the copy is certified, the licence and PrDP are valid, and the plate on the vehicle photo matches the registration." }),
+      h("dl", { class: "kv" },
+        h("dt", { text: "Full name" }), h("dd", { text: d.name || "" }),
+        h("dt", { text: d.idType === "passport" ? "Passport number" : "ID number" }), h("dd", null, h("span", { text: (d.idNumber || "") + " " }), h("span", { class: "chip " + (idOk ? "ok" : "miss"), text: idOk ? "Format looks right" : "Check this number" })),
+        h("dt", { text: "Nationality" }), h("dd", { text: d.nationality || "" }),
+        h("dt", { text: "Race" }), h("dd", { text: d.race || "Not given" }),
+        h("dt", { text: "Cellphone" }), h("dd", { text: d.phone || "" }),
+        h("dt", { text: "Vehicle" }), h("dd", null, h("span", { text: (VEHICLES[d.vehicle] || VEHICLES.quantum).name + " " }), h("span", { class: "plate", text: d.reg || "" })),
+        h("dt", { text: "Long distance" }), h("dd", { text: d.pdp ? "Says their operating licence covers it" : "No" }),
+        h("dt", { text: "Payout bank" }), h("dd", { text: [d.bankName, d.bankHolder, d.bankAccount, d.bankBranch].filter(Boolean).join(" · ") || "Not given" })),
+      h("div", { class: "review" },
+        pub.photo ? h("figure", null, h("span", { text: "Profile photo" }), h("img", { src: pub.photo, alt: "Profile photo" })) : h("figure", null, h("span", { text: "Profile photo: missing" })),
+        pub.vehiclePhoto ? h("figure", null, h("span", { text: "Vehicle" }), h("img", { src: pub.vehiclePhoto, alt: "Vehicle photo" })) : h("figure", null, h("span", { text: "Vehicle photo: missing" })),
+        fig("ID or passport copy", fmap.idCopy), fig("Driver's licence", fmap.licence), fig("PrDP", fmap.prdp)),
+      h("div", { class: "field", style: "margin-top:14px" }, note),
+      h("div", { class: "actions" },
+        h("button", { type: "button", class: "btn btn-go", onclick: () => decide("approved") }, "Approve driver"),
+        h("button", { type: "button", class: "btn btn-danger", onclick: () => decide("rejected") }, "Don't approve"))));
+  }
+
+  // ---- Passenger payments ----
+  function renderPayments() {
+    const sec = allRequests.filter((r) => r.payMode === "secure");
+    const drivers = Object.fromEntries(admin.drivers.map((d) => [d.id, d]));
+    const claimed = sec.filter((r) => r.payStatus === "claimed" && r.status !== "cancelled");
+    const ready = sec.filter((r) => r.payStatus === "held" && r.status === "completed" && r.passengerConfirmed);
+    const problems = sec.filter((r) => r.payStatus === "disputed" || (r.status === "cancelled" && ["held", "claimed"].includes(r.payStatus)));
+    const waiting = sec.filter((r) => r.payStatus === "held" && r.status !== "cancelled" && !(r.status === "completed" && r.passengerConfirmed));
+    const act = (r, patch) => async (e) => { e.currentTarget.disabled = true; try { await store.update(r.id, patch); } catch (err) { console.warn(err); e.currentTarget.disabled = false; } };
+    const head = (r, extra) => h("div", { class: "trip-top" }, h("div", null, routeLine(r),
+      h("div", { class: "meta" }, h("span", { class: "ref", text: tripRef(r.id) }), h("span", null, h("b", { text: r.contactName || "" })), h("span", { class: "phone", text: r.contactPhone || "" }), extra || null)),
+      h("span", { class: "fare", text: money(r.fare) }));
+    const card = (r, kids) => h("article", { class: "trip", "data-status": r.status }, ...kids);
+    const section = (title, items, emptyText) => [h("h3", { text: title + " (" + items.length + ")", style: "margin-top:6px" }), ...(items.length ? items : [h("p", { class: "meta", style: "margin:0", text: emptyText })])];
+    const bank = (d) => d ? [d.bankName, d.bankHolder, d.bankAccount, d.bankBranch].filter(Boolean).join(" · ") || "No bank details saved" : "Driver not found";
+    $("admin-payments").replaceChildren(
+      ...section("Payments to check", claimed.map((r) => card(r, [head(r, h("span", { text: "says paid " + (r.paidClaimAt ? ago(r.paidClaimAt) : "") })),
+        h("p", { class: "hint", style: "margin:0", text: "Look for " + money(r.fare) + " with reference " + tripRef(r.id) + " in your bank account." }),
+        h("div", { class: "actions", style: "margin:0" },
+          h("button", { type: "button", class: "btn btn-go btn-sm", onclick: act(r, { payStatus: "held", heldAt: Date.now() }) }, "Money received"),
+          h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: act(r, { payStatus: "unpaid" }) }, "Not received"))])), "No payments to check."),
+      ...section("Ready to pay the driver", ready.map((r) => card(r, [head(r),
+        h("div", { class: "driver-box" }, h("span", null, "Pay ", h("b", { text: r.driverName || "the driver" })), h("span", { class: "phone", text: bank(drivers[r.driverId]) })),
+        h("p", { class: "hint", style: "margin:0", text: "Both sides confirmed: the driver marked the trip complete and the group confirmed they arrived." }),
+        h("div", { class: "actions", style: "margin:0" }, h("button", { type: "button", class: "btn btn-go btn-sm", onclick: act(r, { payStatus: "released", releasedAt: Date.now() }) }, "I've paid the driver"))])), "Nothing to pay out."),
+      ...section("Problems and refunds", problems.map((r) => card(r, [head(r),
+        h("div", { class: "notes", text: r.issue ? "Passenger: " + r.issue : r.status === "cancelled" ? "The group cancelled after paying." : "" }),
+        h("div", { class: "actions", style: "margin:0" },
+          h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: act(r, { payStatus: "refunded", refundedAt: Date.now() }) }, "I've refunded the group"),
+          r.driverId ? h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: act(r, { payStatus: "released", releasedAt: Date.now() }) }, "I've paid the driver") : null)])), "No problems."),
+      ...section("Held, trip not finished yet", waiting.map((r) => card(r, [head(r, h("span", { text: STATUS[r.status] ? STATUS[r.status].label : r.status }))])), "Nothing held."));
+  }
+
   async function adminDecide(btn, r, decision) {
     btn.disabled = true;
     try {
@@ -1585,37 +1962,155 @@ textarea { resize: vertical; min-height: 64px; }
     } catch (err) { console.warn(err); msg.classList.add("err"); msg.textContent = "That didn't save. Check that you're signed in as an owner."; }
   });
 
-  /* ---------- Driver profile ---------- */
+  /* ---------- Driver profile and vetting ---------- */
+  const DOC_KINDS = ["idCopy", "licence", "prdp"];
+  const newFiles = {};   // uploads chosen in this session, already shrunk: { photo, vehiclePhoto, idCopy, licence, prdp }
+  function readAsDataURL(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
+  async function shrinkImage(file, maxDim, maxChars) {
+    const bmp = await createImageBitmap(file);
+    let scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height)), q = 0.82, out = "";
+    for (let i = 0; i < 8; i++) {
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(bmp.width * scale)); c.height = Math.max(1, Math.round(bmp.height * scale));
+      const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+      out = c.toDataURL("image/jpeg", q);
+      if (out.length <= maxChars) return out;
+      if (q > 0.5) q -= 0.12; else scale *= 0.8;
+    }
+    throw new Error("too_big");
+  }
+  async function prepareFile(file, kind) {
+    if (file.type === "application/pdf") {
+      if (kind === "photo" || kind === "vehiclePhoto") throw new Error("need_photo");
+      if (file.size > 700 * 1024) throw new Error("pdf_big");
+      return { data: await readAsDataURL(file), type: "application/pdf", name: file.name.slice(0, 120), size: file.size };
+    }
+    if (!/^image\//.test(file.type)) throw new Error("type");
+    const lim = { photo: [600, 250000], vehiclePhoto: [1400, 550000] }[kind] || [1800, 950000];
+    const data = await shrinkImage(file, lim[0], lim[1]);
+    return { data, type: "image/jpeg", name: file.name.slice(0, 120), size: data.length };
+  }
+  ["photo", "vehiclePhoto", ...DOC_KINDS].forEach((kind) => {
+    $("d-" + kind).addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0], msg = $("driver-msg");
+      if (!file) return;
+      msg.className = "form-msg"; msg.textContent = "Preparing " + file.name + "…";
+      try {
+        newFiles[kind] = await prepareFile(file, kind);
+        msg.textContent = "";
+        showDocState();
+      } catch (err) {
+        console.warn(err); e.target.value = "";
+        msg.classList.add("err");
+        msg.textContent = err.message === "pdf_big" ? "That PDF is too big (over 700 KB). Take a clear photo of the document instead."
+          : err.message === "need_photo" ? "Please choose a photo, not a PDF."
+          : "We couldn't read that file. Choose a JPG or PNG photo, or a PDF.";
+      }
+    });
+  });
+  function showDocState() {
+    const docs = (account && account.docs) || (driver && driver.docs) || {};
+    DOC_KINDS.forEach((k) => {
+      const has = !!(newFiles[k] || docs[k]);
+      const chip = $("chip-" + k); chip.className = "chip " + (has ? "ok" : "miss");
+      chip.textContent = newFiles[k] ? "Ready to send" : docs[k] ? "Uploaded" : "Missing";
+    });
+    const photo = (newFiles.photo && newFiles.photo.data) || myPublic.photo || "";
+    const vphoto = (newFiles.vehiclePhoto && newFiles.vehiclePhoto.data) || myPublic.vehiclePhoto || "";
+    if (photo) $("d-photo-preview").src = photo; else $("d-photo-preview").removeAttribute("src");
+    if (vphoto) $("d-vehiclePhoto-preview").src = vphoto; else $("d-vehiclePhoto-preview").removeAttribute("src");
+  }
+  function idLabel() {
+    const pass = $("d-idtype").value === "passport";
+    $("d-idnumber-label").textContent = pass ? "Passport number" : "ID number";
+    $("d-idnumber").placeholder = pass ? "As printed in your passport" : "13 digits";
+    $("d-idnumber").inputMode = pass ? "text" : "numeric";
+  }
+  $("d-idtype").addEventListener("change", idLabel);
+
+  function vettingOf() { return (store.mode === "db" ? account && account.vetting : (driver && driver.vetting) || (account && account.vetting)) || "incomplete"; }
   function showProfile() {
+    const vet = vettingOf(), info = VET[vet] || VET.incomplete;
+    const box = $("vet-status"); box.className = "vet " + info.cls;
+    box.replaceChildren(h("b", { text: info.title }), vet === "rejected"
+      ? ((account && account.vettingNote) ? "Reason: " + account.vettingNote + ". Update your profile and send it again." : "Update your profile and send it again.")
+      : info.text);
     const sum = $("profile-summary");
-    const show = driver && !editingProfile;
+    const show = !!driver && !editingProfile;
     sum.hidden = !show; $("profile-fields").hidden = show; $("profile-actions").hidden = show; $("edit-profile").hidden = !show;
     if (show) {
-      const v = VEHICLES[driver.vehicle];
-      sum.replaceChildren(...[
-        h("b", { text: driver.name }),
-        h("span", { text: v.name + ", " + v.seats + " seats" }),
-        h("span", { class: "plate", text: driver.reg }),
-        driver.assoc ? h("span", { class: "meta", text: driver.assoc }) : null,
-        h("span", { class: "pill " + (driver.pdp ? "go" : "done"), text: driver.pdp ? "Long trips allowed" : "Short trips only" })].filter(Boolean)
-      );
+      const v = VEHICLES[driver.vehicle] || VEHICLES.quantum;
+      sum.replaceChildren(h("div", { class: "profile-sum", style: "align-items:center" },
+        myPublic.photo ? h("img", { class: "avatar lg", src: myPublic.photo, alt: "Your profile photo" }) : null,
+        h("div", { style: "display:flex;flex-direction:column;gap:4px;min-width:0" },
+          h("b", { text: driver.name || "" }),
+          h("span", { text: v.name + ", " + v.seats + " seats" }),
+          h("span", null, h("span", { class: "plate", text: driver.reg || "" })),
+          driver.assoc ? h("span", { class: "meta", text: driver.assoc }) : null,
+          h("span", { class: "pill " + (driver.pdp ? "go" : "done"), text: driver.pdp ? "Long trips allowed" : "Short trips only" }))),
+        myPublic.vehiclePhoto ? h("img", { class: "vehicle-shot", style: "margin-top:12px", src: myPublic.vehiclePhoto, alt: "Your vehicle" }) : null);
     } else if (driver) {
       $("d-name").value = driver.name || ""; $("d-phone").value = driver.phone || ""; $("d-vehicle").value = driver.vehicle || "quantum";
       $("d-reg").value = driver.reg || ""; $("d-assoc").value = driver.assoc || ""; $("d-pdp").checked = !!driver.pdp;
+      $("d-idtype").value = driver.idType || "sa_id"; $("d-idnumber").value = driver.idNumber || "";
+      $("d-nationality").value = driver.nationality || "South African"; $("d-race").value = driver.race || "";
+      ["bankName", "bankHolder", "bankAccount", "bankBranch"].forEach((k) => { $("d-" + k).value = driver[k] || ""; });
+      $("d-consent").checked = !!driver.consentAt;
+      idLabel();
     }
+    showDocState();
   }
   $("edit-profile").addEventListener("click", () => { editingProfile = true; showProfile(); });
+
+  const IDENTITY = ["name", "idType", "idNumber", "nationality", "vehicle", "reg", "pdp", "bankName", "bankHolder", "bankAccount", "bankBranch"];
   $("driver-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const msg = $("driver-msg"); msg.className = "form-msg";
-    const p = { name: $("d-name").value.trim(), phone: $("d-phone").value.trim(), vehicle: $("d-vehicle").value,
-      reg: $("d-reg").value.trim().toUpperCase(), assoc: $("d-assoc").value.trim(), pdp: $("d-pdp").checked };
+    const f = {
+      name: $("d-name").value.trim().replace(/\s+/g, " "), phone: $("d-phone").value.trim(), assoc: $("d-assoc").value.trim(), race: $("d-race").value,
+      idType: $("d-idtype").value, idNumber: $("d-idnumber").value.replace(/\s+/g, "").toUpperCase(), nationality: $("d-nationality").value.trim(),
+      vehicle: $("d-vehicle").value, reg: $("d-reg").value.trim().toUpperCase(), pdp: $("d-pdp").checked,
+      bankName: $("d-bankName").value.trim(), bankHolder: $("d-bankHolder").value.trim(), bankAccount: $("d-bankAccount").value.replace(/\s+/g, ""), bankBranch: $("d-bankBranch").value.replace(/\s+/g, "")
+    };
+    const docs = { ...(((account && account.docs) || (driver && driver.docs)) || {}) };
+    DOC_KINDS.forEach((k) => { if (newFiles[k]) docs[k] = true; });
     const miss = [];
-    if (!p.name) miss.push("name"); if (!/^[+\d][\d\s-]{8,}$/.test(p.phone)) miss.push("cellphone number"); if (!p.reg) miss.push("registration");
-    if (miss.length) { msg.classList.add("err"); msg.textContent = "Please add your " + miss.join(", ") + "."; return; }
-    try { await store.saveProfile(p); }
-    catch (err) { console.warn(err); msg.classList.add("err"); msg.textContent = "Saved on this phone only. Check your connection and save again."; }
-    driver = p; editingProfile = false; showProfile(); render();
+    if (!f.name || f.name.split(" ").length < 2) miss.push("your full names and surname");
+    if (!/^[+\d][\d\s-]{8,}$/.test(f.phone)) miss.push("a cellphone number");
+    if (f.idType === "sa_id" ? !saIdValid(f.idNumber) : !/^[A-Z0-9]{6,12}$/.test(f.idNumber)) miss.push(f.idType === "sa_id" ? "a valid 13-digit ID number" : "your passport number");
+    if (!f.nationality) miss.push("your nationality");
+    if (!f.reg) miss.push("your registration");
+    if (!(newFiles.photo || myPublic.photo)) miss.push("a profile photo");
+    if (!(newFiles.vehiclePhoto || myPublic.vehiclePhoto)) miss.push("a vehicle photo");
+    DOC_KINDS.forEach((k) => { if (!docs[k]) miss.push({ idCopy: "your ID or passport copy", licence: "your driver's licence", prdp: "your PrDP" }[k]); });
+    if (!$("d-consent").checked) miss.push("your agreement to the checks (tick the box)");
+    if (miss.length) { msg.classList.add("err"); msg.textContent = "Please add " + miss.join(", ") + "."; return; }
+
+    const prev = account || driver || {};
+    const identityChanged = !prev.vetting || prev.vetting !== "approved" || IDENTITY.some((k) => String(prev[k] ?? "") !== String(f[k] ?? ""))
+      || !!(newFiles.photo || newFiles.vehiclePhoto || DOC_KINDS.some((k) => newFiles[k]));
+    const fields = { phone: f.phone, assoc: f.assoc, race: f.race };
+    if (identityChanged) Object.assign(fields, f, { docs, submittedAt: Date.now(), consentAt: prev.consentAt || Date.now() });
+    const publicDoc = identityChanged ? { name: f.name, vehicle: f.vehicle, reg: f.reg } : null;
+    if (publicDoc && newFiles.photo) publicDoc.photo = newFiles.photo.data;
+    if (publicDoc && newFiles.vehiclePhoto) publicDoc.vehiclePhoto = newFiles.vehiclePhoto.data;
+    const files = {}; DOC_KINDS.forEach((k) => { if (newFiles[k]) files[k] = newFiles[k]; });
+
+    const btn = $("driver-save"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const saved = await store.saveRegistration(fields, publicDoc, files, "pending", identityChanged);
+      driver = { ...prev, ...saved };
+      if (store.mode !== "db") account = { ...store.localAccount(), ...driver };
+      if (publicDoc) myPublic = { ...myPublic, ...publicDoc };
+      Object.keys(newFiles).forEach((k) => delete newFiles[k]);
+      ["photo", "vehiclePhoto", ...DOC_KINDS].forEach((k) => { $("d-" + k).value = ""; });
+      editingProfile = false; showProfile(); render();
+      msg.classList.add("ok");
+      msg.textContent = store.mode !== "db" ? "Saved. Demo mode approves drivers automatically." : identityChanged ? "Sent for review. We'll let you know once you're approved." : "Saved.";
+    } catch (err) {
+      console.warn(err);
+      msg.classList.add("err"); msg.textContent = "Your profile didn't save. Check your connection and try again.";
+    } finally { btn.disabled = false; btn.textContent = "Save and send for review"; }
   });
 
   /* ---------- Owner sign-in ---------- */
@@ -1673,8 +2168,9 @@ textarea { resize: vertical; min-height: 64px; }
     store.loadLocal();
     store.subscribe((items) => { allRequests = items; render(); });
     driver = await store.loadProfile();
-    account = store.localAccount();
-    editingProfile = !driver; showProfile(); render();
+    myPublic = await store.loadPublic(store.me);
+    account = { ...store.localAccount(), ...(driver || {}) };
+    editingProfile = !driver || !driver.vetting; showProfile(); render();
     adminGate("demo");
 
     const cfg = window.SIYAHAMBA_FIREBASE;
@@ -1701,11 +2197,16 @@ textarea { resize: vertical; min-height: 64px; }
     // This driver's credit account and top-ups
     const local = safeLS.get("siyahamba.driver");
     driver = (await store.loadProfile()) || local;
-    if (driver && local) {
+    if (driver && local && !local.demo) {
       try { if (!(await db.doc("drivers/" + store.me).get()).exists) await store.saveProfile(driver); } catch (e) { console.warn(e); }
     }
-    editingProfile = !driver; showProfile();
-    db.doc("drivers/" + store.me).onSnapshot((s) => { account = s.exists ? s.data() : null; render(); }, (e) => console.warn(e));
+    myPublic = await store.loadPublic(store.me);
+    editingProfile = !driver || !driver.vetting || driver.vetting === "incomplete"; showProfile();
+    db.doc("drivers/" + store.me).onSnapshot((s) => {
+      account = s.exists ? s.data() : null;
+      if (account) driver = { ...(driver || {}), ...account };
+      showProfile(); render();
+    }, (e) => console.warn(e));
     db.collection("topups").where("driverId", "==", store.me).onSnapshot((snap) => {
       myTopups = snap.docs.map((d) => d.data()); renderCredit();
     }, (e) => console.warn(e));

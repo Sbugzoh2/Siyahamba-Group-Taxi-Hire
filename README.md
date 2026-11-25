@@ -69,6 +69,41 @@ window.SIYAHAMBA_TOPUP_INFO = "FNB Business\nAccount: 62xxxxxxxxx\nBranch: 25065
 
 To change the 10%, edit `COMMISSION_PCT` in `index.html` **and** `feeFor()` in `firestore.rules`. They must match.
 
+## Driver vetting
+
+Drivers can only accept jobs once you approve them. Their registration under **I'm a driver → My driver profile** asks for:
+
+- a **profile photo**, which passengers see
+- full names and surname **exactly as on their ID**, their **SA ID or passport number** (SA ID numbers are checked automatically), nationality, and cellphone number
+- **race**, which is optional ("Prefer not to say" is allowed) and only for B-BBEE reporting, because race is special personal information under POPIA
+- uploads of a **certified ID or passport copy**, their **driver's licence** and their **PrDP**
+- vehicle type, registration and a **vehicle photo with the number plate readable**
+- **bank details** for payouts
+- a POPIA consent tick
+
+Photos are shrunk on the phone and stored in Firestore, so you stay on the free plan. A PDF must be under 700 KB. ID numbers and documents are readable **only by the driver and owners**. Passengers only see the driver's name, photo, vehicle photo and registration.
+
+On the owner dashboard, open **Drivers to approve → Review** to see everything, then click **Approve driver** or **Don't approve** with a reason, which the driver sees. If an approved driver changes their name, ID, documents, photos, vehicle or bank details, they go back to review automatically.
+
+## Paying in the app (held until the trip is done)
+
+Passengers can choose **Pay in the app**. The money goes to your company account, and you pay the driver once the trip is done:
+
+1. The passenger pays by EFT with their trip reference (`TR-…`) and taps **I've paid**.
+2. Under **Passenger payments → Payments to check**, you check your bank and click **Money received**. The passenger and driver now see the money as **held**.
+3. The driver completes the trip. The passenger taps **Yes, pay the driver**, or **Report a problem**.
+4. The trip moves to **Ready to pay the driver**, showing the driver's bank details. Pay them by EFT and click **I've paid the driver**.
+5. Cancellations after paying, and reported problems, show under **Problems and refunds**.
+
+Optional settings in `config.js`:
+
+```js
+window.SIYAHAMBA_PAYMENT_INFO = "FNB Business\nAccount: 62xxxxxxxxx\nBranch: 250655";  // defaults to SIYAHAMBA_TOPUP_INFO
+window.SIYAHAMBA_CARD_PAY_URL = "https://payf.st/xxxxx";  // a PayFast or Yoco payment link, if you have one
+```
+
+Before taking passengers' money at scale, check with your bank or payment provider whether collecting money on behalf of drivers requires registration as a Third Party Payment Provider (PASA).
+
 ## Google Maps (place search, driving distance, route map)
 
 With a Google Maps key, passengers can search any address, suburb or taxi rank. The app measures the real driving distance and shows the route on a map. The **Exact pick-up spot** field searches Google Maps too. When it's filled in, the distance and price are measured from that exact spot, not from the middle of the pick-up area. Drivers also get **Directions to pick-up** and **Trip route** buttons that open Google Maps on their phone.

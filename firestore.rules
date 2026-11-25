@@ -11,35 +11,64 @@ service cloud.firestore {
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
     // Siyahamba's fee: 10% of the trip price. Keep this in step with COMMISSION_PCT in index.html.
     function feeFor(fare) { return fare / 10; }
+    // A driver's own changes always leave them "incomplete" or "pending" review, never approved.
+    function notApprovedAfter(id) { return getAfter(driverDoc(id)).data.get('vetting', 'incomplete') in ['incomplete', 'pending']; }
 
     match /admins/{id} {
       allow read: if signedIn() && uid() == id;
       allow write: if false;
     }
 
-    // Trip requests
+    // ---------------- Trip requests ----------------
     match /requests/{id} {
       allow read: if signedIn();
 
-      // A passenger creates a request in their own name, as "open", with no driver or fee.
+      // A passenger creates a request in their own name, as "open", with no driver, fee or payment progress.
       allow create: if signedIn()
         && request.resource.data.requesterId == uid()
         && request.resource.data.status == 'open'
         && request.resource.data.fare is number && request.resource.data.fare > 0
-        && !('commission' in request.resource.data)
-        && !('driverId' in request.resource.data);
+        && request.resource.data.get('payStatus', 'unpaid') == 'unpaid'
+        && !request.resource.data.keys().hasAny(['commission', 'driverId', 'heldAt', 'releasedAt', 'refundedAt', 'passengerConfirmed', 'issue', 'commissionDecision']);
 
-      allow update: if isAdmin() || passengerCancels() || driverAccepts() || driverMovesOn() || driverGivesBack();
+      allow update: if isAdmin() || passengerCancels() || passengerClaimsPaid() || passengerConfirms() || passengerReports()
+        || driverAccepts() || driverMovesOn() || driverGivesBack();
       allow delete: if isAdmin();
 
+      function isPassenger() { return resource.data.requesterId == uid(); }
+
       function passengerCancels() {
-        return resource.data.requesterId == uid()
+        return isPassenger()
           && resource.data.status in ['open', 'accepted']
           && request.resource.data.status == 'cancelled'
           && changed().hasOnly(['status', 'updatedAt']);
       }
+      // "I've paid": only the owner can later mark the money as received.
+      function passengerClaimsPaid() {
+        return isPassenger()
+          && resource.data.get('payMode', '') == 'secure'
+          && resource.data.get('payStatus', '') == 'unpaid'
+          && resource.data.status != 'cancelled'
+          && request.resource.data.payStatus == 'claimed'
+          && changed().hasOnly(['payStatus', 'paidClaimAt', 'updatedAt']);
+      }
+      // "We arrived safely": the passenger's half of releasing the payment.
+      function passengerConfirms() {
+        return isPassenger()
+          && resource.data.status == 'completed'
+          && request.resource.data.passengerConfirmed == true
+          && changed().hasOnly(['passengerConfirmed', 'updatedAt']);
+      }
+      // "Report a problem": stops the payment from being released until the owner decides.
+      function passengerReports() {
+        return isPassenger()
+          && resource.data.get('payStatus', '') in ['claimed', 'held']
+          && request.resource.data.payStatus == 'disputed'
+          && request.resource.data.issue is string && request.resource.data.issue.size() <= 1000
+          && changed().hasOnly(['payStatus', 'issue', 'updatedAt']);
+      }
 
-      // Accepting a job must pay exactly 10% from the driver's own credit in the same write.
+      // Accepting a job: approved drivers only, paying exactly 10% from their own credit in the same write.
       function driverAccepts() {
         return resource.data.status == 'open'
           && request.resource.data.status == 'accepted'
@@ -47,6 +76,7 @@ service cloud.firestore {
           && request.resource.data.commission == feeFor(resource.data.fare)
           && changed().hasOnly(['status', 'driverId', 'driverName', 'driverPhone', 'driverVehicle', 'driverReg', 'acceptedAt', 'commission', 'updatedAt'])
           && exists(driverDoc(uid()))
+          && get(driverDoc(uid())).data.get('vetting', '') == 'approved'
           && getAfter(driverDoc(uid())).data.credit == get(driverDoc(uid())).data.credit - feeFor(resource.data.fare)
           && getAfter(driverDoc(uid())).data.credit >= 0;
       }
@@ -71,17 +101,26 @@ service cloud.firestore {
       }
     }
 
-    // Driver accounts: profile and prepaid credit. Only an owner can add credit.
+    // ---------------- Driver accounts (private: the driver and owners only) ----------------
     match /drivers/{id} {
       allow read: if signedIn() && (uid() == id || isAdmin());
       allow create: if isAdmin() || (signedIn() && uid() == id
         && request.resource.data.credit == 0
-        && request.resource.data.keys().hasOnly(['name', 'phone', 'vehicle', 'reg', 'assoc', 'pdp', 'credit', 'code', 'createdAt', 'updatedAt']));
+        && request.resource.data.get('vetting', 'incomplete') in ['incomplete', 'pending']
+        && request.resource.data.keys().hasOnly(openKeys().concat(identityKeys()).concat(['credit', 'code', 'createdAt'])));
       allow update: if isAdmin() || (signedIn() && uid() == id && (profileEdit() || payForJob() || refundForJob()));
       allow delete: if isAdmin();
 
+      // Fields a driver can change at any time.
+      function openKeys() { return ['phone', 'assoc', 'race', 'updatedAt']; }
+      // Fields the owner checks. Changing any of them sends the driver back for review.
+      function identityKeys() {
+        return ['name', 'idType', 'idNumber', 'nationality', 'vehicle', 'reg', 'pdp',
+          'bankName', 'bankHolder', 'bankAccount', 'bankBranch', 'docs', 'vetting', 'submittedAt', 'consentAt'];
+      }
       function profileEdit() {
-        return changed().hasOnly(['name', 'phone', 'vehicle', 'reg', 'assoc', 'pdp', 'updatedAt']);
+        return changed().hasOnly(openKeys().concat(identityKeys()))
+          && (!changed().hasAny(identityKeys()) || request.resource.data.get('vetting', 'incomplete') in ['incomplete', 'pending']);
       }
       function payForJob() {
         let job = request.resource.data.lastJob;
@@ -100,6 +139,25 @@ service cloud.firestore {
           && getAfter(requestDoc(job)).data.status == 'open'
           && request.resource.data.credit == resource.data.credit + get(requestDoc(job)).data.get('commission', 0);
       }
+    }
+
+    // ID copy, driver's licence and PrDP: the driver and owners only.
+    match /driverFiles/{id}/files/{kind} {
+      allow read: if signedIn() && (uid() == id || isAdmin());
+      allow write: if isAdmin() || (signedIn() && uid() == id
+        && kind in ['idCopy', 'licence', 'prdp']
+        && request.resource.data.data is string && request.resource.data.data.size() < 1000000
+        && notApprovedAfter(id));
+    }
+
+    // What passengers may see about a driver: name, photo, vehicle photo and registration.
+    match /driverPublic/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin() || (signedIn() && uid() == id
+        && request.resource.data.keys().hasOnly(['name', 'photo', 'vehiclePhoto', 'vehicle', 'reg', 'updatedAt'])
+        && request.resource.data.get('photo', '').size() < 300000
+        && request.resource.data.get('vehiclePhoto', '').size() < 600000
+        && notApprovedAfter(id));
     }
 
     // Credit top-ups, recorded by an owner. Drivers can see their own.
