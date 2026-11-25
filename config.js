@@ -30,3 +30,7 @@ window.SIYAHAMBA_FIREBASE = {
 // and a route map. Leave it as "" to use the built-in places and estimates.
 // Setup steps are in README.md under "Google Maps".
 window.SIYAHAMBA_GOOGLE_MAPS_KEY = "";
+
+
+// How drivers pay you for credit. Shown on the driver's "My credit" panel.
+window.SIYAHAMBA_TOPUP_INFO = "Bank: Capitec Business\nAccount name: Malita (Pty) Ltd\nAccount number: 1055794123\nBranch code: 450105\nAccount type: Current";

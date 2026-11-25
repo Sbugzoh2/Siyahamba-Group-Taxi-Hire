@@ -188,6 +188,28 @@ textarea { resize: vertical; min-height: 64px; }
 .map-wrap { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
 .map-wrap iframe { display: block; width: 100%; height: 240px; border: 0; }
 .hint.warn-text { color: var(--warn); font-weight: 600; }
+.credit-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.credit-num { font-family: var(--f-mono); font-weight: 700; font-size: 2rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.credit-num.low { color: var(--warn); }
+.topup-box { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; margin-top: 14px; font-size: 0.88rem; display: flex; flex-direction: column; gap: 6px; }
+.topup-box p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+.ref { font-family: var(--f-mono); font-weight: 700; letter-spacing: 0.06em; }
+.mini-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 0.86rem; }
+.mini-list div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+.mini-list b { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.split { font-size: 0.85rem; color: var(--muted); }
+.split b { color: var(--ink); font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.stat b { font-family: var(--f-mono); font-size: 1.45rem; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.8rem; color: var(--muted); }
+.table-wrap { overflow-x: auto; }
+.table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 560px; }
+.table-wrap th { text-align: left; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 8px; border-bottom: 1.5px solid var(--line); }
+.table-wrap td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.table-wrap td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.admin-form { display: grid; grid-template-columns: 2fr 1fr 1.4fr auto; gap: 10px; align-items: end; }
+@media (max-width: 640px) { .admin-form { grid-template-columns: 1fr; } }
 .install { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
 .install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
 .install-text { flex: 1 1 220px; min-width: 0; font-size: 0.9rem; }
@@ -419,6 +441,27 @@ textarea { resize: vertical; min-height: 64px; }
       </div>
 
       <div class="stack">
+        <div class="panel" id="credit-panel">
+          <div class="panel-head">
+            <h2>My credit</h2>
+            <span class="count">10% fee per job</span>
+          </div>
+          <div class="credit-row">
+            <div>
+              <div class="label">Balance</div>
+              <div class="credit-num" id="credit-bal">R 0</div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="demo-topup" hidden>Add R500 test credit</button>
+          </div>
+          <p class="hint" id="credit-note" style="margin:10px 0 0"></p>
+          <div class="topup-box" id="topup-box">
+            <div class="label">How to top up</div>
+            <p id="topup-info"></p>
+            <div>Your reference: <span class="ref" id="topup-ref">—</span></div>
+          </div>
+          <div class="mini-list" id="topup-list"></div>
+        </div>
+
         <form class="panel" id="driver-form" novalidate>
           <div class="panel-head">
             <h2>My vehicle</h2>
@@ -469,6 +512,67 @@ textarea { resize: vertical; min-height: 64px; }
           <div class="list" id="my-jobs"></div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- OWNER -->
+  <section id="view-admin" hidden>
+    <div class="view-head">
+      <h1>Owner dashboard</h1>
+      <p class="lede">Your 10% fees, driver credit and top-ups. Only owners can open this page.</p>
+    </div>
+    <div class="panel" id="admin-gate">
+      <p id="admin-msg" style="margin:0 0 12px">Sign in with the Google account you use for Siyahamba.</p>
+      <div class="actions" style="margin:0">
+        <button type="button" class="btn btn-primary" id="admin-signin" hidden>Sign in with Google</button>
+      </div>
+      <div class="topup-box" id="admin-uid-box" hidden>
+        <div class="label">Make this account an owner (once only)</div>
+        <p>In the Firebase console, open Firestore, Data. Start a collection named <b>admins</b>. For the document ID, paste the ID below and add a field <b>role</b> with the value <b>owner</b>. Then reload this page.</p>
+        <div><span class="ref" id="admin-uid"></span></div>
+      </div>
+    </div>
+    <div id="admin-body" hidden>
+      <div class="stats" id="admin-stats"></div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><h2>Add credit for a driver</h2></div>
+        <form class="admin-form" id="admin-topup" novalidate>
+          <div class="field">
+            <label for="a-driver">Driver</label>
+            <select id="a-driver"></select>
+          </div>
+          <div class="field">
+            <label for="a-amount">Amount (R)</label>
+            <input id="a-amount" type="number" inputmode="numeric" min="1" max="100000" placeholder="500">
+          </div>
+          <div class="field">
+            <label for="a-ref">Payment reference</label>
+            <input id="a-ref" placeholder="e.g. EFT 25 Nov, FNB">
+          </div>
+          <button type="submit" class="btn btn-primary">Add credit</button>
+        </form>
+        <p class="form-msg" id="admin-topup-msg" role="status" aria-live="polite" style="margin:10px 0 0"></p>
+      </div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><h2>Drivers</h2><span class="count" id="admin-driver-count">0</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Driver</th><th>Reference</th><th>Vehicle</th><th style="text-align:right">Credit</th><th style="text-align:right">Fees paid</th></tr></thead>
+            <tbody id="admin-drivers"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="panel">
+          <div class="panel-head"><h2>Cancelled after a driver accepted</h2></div>
+          <div class="list" id="admin-refunds"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Recent top-ups</h2></div>
+          <div class="mini-list" id="admin-topups" style="margin-top:0"></div>
+        </div>
+      </div>
+      <div class="actions"><button type="button" class="btn btn-ghost btn-sm" id="admin-signout">Sign out of owner account</button></div>
     </div>
   </section>
 
@@ -627,6 +731,13 @@ textarea { resize: vertical; min-height: 64px; }
     crossBorder: 1500    // cross-border permit and border costs, per vehicle
   };
   const SHORT_MAX_KM = 60;
+  // Siyahamba's fee, taken from the driver's prepaid credit when they accept a job.
+  // If you change this, change feeFor() in firestore.rules to match.
+  const COMMISSION_PCT = 10;
+  const feeFor = (fare) => (Number(fare) || 0) * COMMISSION_PCT / 100;
+  const codeFor = (id) => "SH-" + String(id || "").replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase();
+  const TOPUP_INFO = String(window.SIYAHAMBA_TOPUP_INFO || "").trim() ||
+    "Pay Siyahamba by EFT and use your reference below. Your credit is added once the payment clears.";
 
   const STATUS = {
     open:      { label: "Waiting for a driver", cls: "open" },
@@ -754,30 +865,71 @@ textarea { resize: vertical; min-height: 64px; }
       this.items = this.items.map((r) => (r.id === id ? { ...r, ...patch } : r));
       this.saveLocal();
     },
+    // Accept a job: pay the 10% fee from credit and take the job, in one step.
     async claim(id, patch) {
+      const now = Date.now();
       if (this.mode === "db") {
-        const ref = this.db.doc("requests/" + id);
-        return this.db.runTransaction(async (tx) => {
-          const snap = await tx.get(ref);
-          if (!snap.exists || snap.data().status !== "open") return false;
-          tx.update(ref, { ...patch, updatedAt: Date.now() });
-          return true;
+        const db = this.db, reqRef = db.doc("requests/" + id), drvRef = db.doc("drivers/" + this.me);
+        return db.runTransaction(async (tx) => {
+          const rs = await tx.get(reqRef), ds = await tx.get(drvRef);
+          if (!rs.exists || rs.data().status !== "open") return "taken";
+          if (!ds.exists) return "no_account";
+          const fee = feeFor(rs.data().fare), credit = Number(ds.data().credit) || 0;
+          if (credit < fee) return "no_credit";
+          tx.update(reqRef, { ...patch, commission: fee, updatedAt: now });
+          tx.update(drvRef, { credit: credit - fee, lastJob: id, updatedAt: now });
+          return "ok";
         });
       }
       const r = this.items.find((x) => x.id === id);
-      if (!r || r.status !== "open") return false;
-      await this.update(id, patch);
-      return true;
+      if (!r || r.status !== "open") return "taken";
+      const acc = this.localAccount(), fee = feeFor(r.fare);
+      if (acc.credit < fee) return "no_credit";
+      this.saveLocalAccount({ ...acc, credit: acc.credit - fee });
+      await this.update(id, { ...patch, commission: fee });
+      return "ok";
     },
+    // Give a job back: reopen it and return the fee to credit.
+    async giveBack(id) {
+      const now = Date.now();
+      const reset = { status: "open", driverId: null, driverName: null, driverPhone: null, driverVehicle: null, driverReg: null, commission: null };
+      if (this.mode === "db") {
+        const db = this.db, reqRef = db.doc("requests/" + id), drvRef = db.doc("drivers/" + this.me);
+        return db.runTransaction(async (tx) => {
+          const rs = await tx.get(reqRef), ds = await tx.get(drvRef);
+          if (!rs.exists || rs.data().status !== "accepted" || rs.data().driverId !== this.me) return "changed";
+          const refund = Number(rs.data().commission) || 0;
+          tx.update(reqRef, { ...reset, updatedAt: now });
+          if (ds.exists) tx.update(drvRef, { credit: (Number(ds.data().credit) || 0) + refund, lastJob: id, updatedAt: now });
+          return "ok";
+        });
+      }
+      const r = this.items.find((x) => x.id === id);
+      if (!r) return "changed";
+      const acc = this.localAccount();
+      this.saveLocalAccount({ ...acc, credit: acc.credit + (Number(r.commission) || 0) });
+      await this.update(id, reset);
+      return "ok";
+    },
+    localAccount() { return safeLS.get("siyahamba.account") || { credit: 0 }; },
+    saveLocalAccount(acc) { safeLS.set("siyahamba.account", acc); account = acc; renderCredit(); },
     async loadProfile() {
-      if (this.mode === "db" && this.realId) {
-        try { const s = await this.db.doc("data/users/" + this.realId + "/driver").get(); if (s.exists) return s.data(); } catch (e) {}
+      if (this.mode === "db") {
+        try {
+          const s = await this.db.doc("drivers/" + this.me).get();
+          if (s.exists) { const d = s.data(); return { name: d.name, phone: d.phone, vehicle: d.vehicle, reg: d.reg, assoc: d.assoc || "", pdp: !!d.pdp }; }
+        } catch (e) { console.warn(e); }
       }
       return safeLS.get("siyahamba.driver");
     },
     async saveProfile(p) {
       safeLS.set("siyahamba.driver", p);
-      if (this.mode === "db" && this.realId) await this.db.doc("data/users/" + this.realId + "/driver").set(p);
+      if (this.mode !== "db") return;
+      const ref = this.db.doc("drivers/" + this.me), now = Date.now();
+      const fields = { name: p.name, phone: p.phone, vehicle: p.vehicle, reg: p.reg, assoc: p.assoc || "", pdp: !!p.pdp };
+      const snap = await ref.get();
+      if (snap.exists) await ref.update({ ...fields, updatedAt: now });
+      else await ref.set({ ...fields, credit: 0, code: codeFor(this.me), createdAt: now, updatedAt: now });
     }
   };
 
@@ -793,12 +945,16 @@ textarea { resize: vertical; min-height: 64px; }
   let driver = null;
   let editingProfile = true;
   let allRequests = [];
+  let account = null;          // this driver's credit account
+  let myTopups = [];
+  const admin = { on: false, drivers: [], topups: [] };
 
   /* ---------- Routing ---------- */
   function showView() {
-    const r = location.hash === "#driver" ? "driver" : "passenger";
+    const r = location.hash === "#driver" ? "driver" : location.hash === "#admin" ? "admin" : "passenger";
     $("view-passenger").hidden = r !== "passenger";
     $("view-driver").hidden = r !== "driver";
+    $("view-admin").hidden = r !== "admin";
     $("nav-passenger").toggleAttribute("aria-current", r === "passenger");
     $("nav-driver").toggleAttribute("aria-current", r === "driver");
     if (r === "passenger") $("nav-passenger").setAttribute("aria-current", "page"); else $("nav-driver").setAttribute("aria-current", "page");
@@ -1231,16 +1387,22 @@ textarea { resize: vertical; min-height: 64px; }
     if (mine && mine.seats < need.seats) msg.textContent = "Needs a " + need.short + ". Your " + mine.short + " has " + mine.seats + " seats.";
     else if (r.vehicles > 1) msg.textContent = "Needs " + r.vehicles + " vehicles. Bring drivers from your rank.";
     if (r.type === "long" && driver && !driver.pdp) msg.textContent = "Long trips need a PrDP and operating licence.";
-    const btn = h("button", { type: "button", class: "btn btn-go btn-sm", disabled: !driver || !store.canWrite || (r.type === "long" && !driver.pdp) }, "Accept job");
+    const fee = feeFor(r.fare), credit = account ? Number(account.credit) || 0 : 0;
+    const short = Math.max(0, fee - credit);
+    card.insertBefore(h("div", { class: "split" }, "Siyahamba fee ", h("b", { text: money(fee) }), " from your credit · You receive ", h("b", { text: money(r.fare - fee) })), card.lastChild);
+    if (driver && short > 0) msg.textContent = "Top up at least " + money(short) + " to accept this job.";
+    const btn = h("button", { type: "button", class: "btn btn-go btn-sm", disabled: !driver || !store.canWrite || (r.type === "long" && !driver.pdp) || short > 0 }, "Accept job");
     btn.addEventListener("click", async () => {
       btn.disabled = true; btn.textContent = "Accepting…";
       try {
-        const ok = await store.claim(r.id, {
+        const res = await store.claim(r.id, {
           status: "accepted", driverId: store.me, driverName: driver.name, driverPhone: driver.phone,
           driverVehicle: driver.vehicle, driverReg: driver.reg, acceptedAt: Date.now()
         });
-        if (!ok) { msg.textContent = "Another driver took this job."; btn.textContent = "Taken"; }
-      } catch (e) { msg.textContent = "Couldn't accept. Try again."; btn.disabled = false; btn.textContent = "Accept job"; }
+        if (res === "taken") { msg.textContent = "Another driver took this job."; btn.textContent = "Taken"; }
+        else if (res === "no_credit") { msg.textContent = "Not enough credit. Top up to accept."; btn.textContent = "Accept job"; }
+        else if (res === "no_account") { msg.textContent = "Save your vehicle details again, then accept."; btn.disabled = false; btn.textContent = "Accept job"; }
+      } catch (e) { console.warn(e); msg.textContent = "Couldn't accept. Try again."; btn.disabled = false; btn.textContent = "Accept job"; }
     });
     if (!driver) msg.textContent = "Save your vehicle details to accept jobs.";
     foot.append(h("span", { class: "actions", style: "margin:0" }, msg, btn));
@@ -1268,6 +1430,7 @@ textarea { resize: vertical; min-height: 64px; }
         h("span", { text: r.payment })
       ));
     }
+    if (r.commission && r.status !== "cancelled") card.append(h("div", { class: "split" }, "You receive ", h("b", { text: money(r.fare - r.commission) }), " · Siyahamba fee ", h("b", { text: money(r.commission) }), " paid from credit"));
     const foot = h("div", { class: "trip-foot" }, h("span", null, typeTag(r), " ", h("span", { class: "fare", text: money(r.fare) })));
     const acts = h("span", { class: "actions", style: "margin:0" });
     const nx = NEXT[r.status];
@@ -1275,10 +1438,13 @@ textarea { resize: vertical; min-height: 64px; }
       e.currentTarget.disabled = true;
       try { await store.update(r.id, { status: nx.to }); } catch (err) { e.currentTarget.disabled = false; }
     } }, nx.label));
-    if (r.status === "accepted") acts.append(h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: (e) => confirmInline(e.currentTarget, "Give this job back?", async () => {
-      await store.update(r.id, { status: "open", driverId: null, driverName: null, driverPhone: null, driverVehicle: null, driverReg: null });
+    if (r.status === "accepted") acts.append(h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: (e) => confirmInline(e.currentTarget, r.commission ? "Give this job back? Your " + money(r.commission) + " fee comes back to your credit." : "Give this job back?", async () => {
+      const res = await store.giveBack(r.id);
+      if (res !== "ok") throw new Error(res);
     }) }, "Give job back"));
-    if (r.status === "cancelled") acts.append(h("span", { class: "meta", text: "The group cancelled" }));
+    if (r.status === "cancelled") acts.append(h("span", { class: "meta", text: r.commission
+      ? (r.commissionDecision === "refunded" ? "The group cancelled. Your fee was refunded." : r.commissionDecision === "kept" ? "The group cancelled. The fee was not refunded." : "The group cancelled. Siyahamba will review your fee.")
+      : "The group cancelled" }));
     foot.append(acts);
     card.append(foot);
     return card;
@@ -1300,10 +1466,12 @@ textarea { resize: vertical; min-height: 64px; }
     $("board").replaceChildren(...(open.length ? open.map(boardCard) : [empty("No open requests right now", "New group requests appear here the moment a passenger sends one.")]));
 
     const order = { accepted: 0, enroute: 0, ontrip: 0, completed: 1, cancelled: 2 };
-    const jobs = allRequests.filter((r) => r.driverId === me || (r.status === "cancelled" && r.lastDriverId === me))
+    const jobs = allRequests.filter((r) => r.driverId === me)
       .sort((a, b) => (order[a.status] - order[b.status]) || byNew(a, b));
     $("job-count").textContent = jobs.length;
     $("my-jobs").replaceChildren(...(jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
+    renderCredit();
+    renderAdmin();
   }
 
   document.querySelectorAll(".filters button").forEach((b) => b.addEventListener("click", () => {
@@ -1311,6 +1479,111 @@ textarea { resize: vertical; min-height: 64px; }
     document.querySelectorAll(".filters button").forEach((x) => x.setAttribute("aria-pressed", x === b));
     render();
   }));
+
+  /* ---------- Driver credit ---------- */
+  function renderCredit() {
+    const credit = account ? Number(account.credit) || 0 : 0;
+    const bal = $("credit-bal");
+    bal.textContent = money(credit);
+    bal.classList.toggle("low", credit < 100);
+    $("topup-info").textContent = TOPUP_INFO;
+    $("topup-ref").textContent = driver ? (account && account.code) || codeFor(store.me) : "Save your vehicle first";
+    $("demo-topup").hidden = store.mode === "db";
+    $("credit-note").textContent = !driver
+      ? "Save your vehicle details below to open your credit account."
+      : "When you accept a job, Siyahamba's " + COMMISSION_PCT + "% fee comes off your credit. If you give the job back, the fee is returned.";
+    const list = myTopups.slice().sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 5);
+    $("topup-list").replaceChildren(...list.map((t) => h("div", null,
+      h("span", { text: new Date(t.at).toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) + (t.ref ? " · " + t.ref : "") }),
+      h("b", { text: "+" + money(t.amount) }))));
+  }
+  $("demo-topup").addEventListener("click", () => {
+    const acc = store.localAccount();
+    store.saveLocalAccount({ ...acc, credit: (Number(acc.credit) || 0) + 500 });
+    myTopups = [{ amount: 500, ref: "Test credit", at: Date.now() }, ...myTopups];
+    renderCredit(); render();
+  });
+
+  /* ---------- Owner dashboard ---------- */
+  function earnedFrom(r) {
+    if (!r.commission) return 0;
+    if (r.status === "cancelled" && r.commissionDecision !== "kept") return 0;
+    return Number(r.commission) || 0;
+  }
+  function renderAdmin() {
+    if (!admin.on) return;
+    const now = new Date(), monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const paid = allRequests.filter((r) => r.commission);
+    const earned = paid.reduce((t, r) => t + earnedFrom(r), 0);
+    const month = paid.filter((r) => (r.acceptedAt || 0) >= monthStart);
+    const earnedMonth = month.reduce((t, r) => t + earnedFrom(r), 0);
+    const held = admin.drivers.reduce((t, d) => t + (Number(d.credit) || 0), 0);
+    const pending = allRequests.filter((r) => r.status === "cancelled" && r.commission && !r.commissionDecision);
+    const stat = (label, value, note) => h("div", { class: "stat" }, h("span", { text: label }), h("b", { text: value }), note ? h("span", { text: note }) : null);
+    $("admin-stats").replaceChildren(
+      stat("Earned this month", money(earnedMonth), month.length + " job" + (month.length === 1 ? "" : "s") + " accepted"),
+      stat("Earned all time", money(earned), paid.length + " job" + (paid.length === 1 ? "" : "s") + " with a fee"),
+      stat("Driver credit held", money(held), "Paid in, not yet used"),
+      stat("Fees to review", String(pending.length), pending.length ? money(pending.reduce((t, r) => t + r.commission, 0)) + " waiting" : "Nothing waiting"));
+
+    const feesBy = {};
+    paid.forEach((r) => { if (r.driverId || r.status === "cancelled") feesBy[r.driverId] = (feesBy[r.driverId] || 0) + earnedFrom(r); });
+    const drivers = admin.drivers.slice().sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    $("admin-driver-count").textContent = drivers.length;
+    $("admin-drivers").replaceChildren(...(drivers.length ? drivers.map((d) => h("tr", null,
+      h("td", null, h("b", { text: d.name || "Unnamed" }), h("div", { class: "meta" }, h("span", { class: "phone", text: d.phone || "" }))),
+      h("td", null, h("span", { class: "ref", text: d.code || codeFor(d.id) })),
+      h("td", null, h("span", { text: (VEHICLES[d.vehicle] || VEHICLES.quantum).short + " " }), d.reg ? h("span", { class: "plate", text: d.reg }) : null),
+      h("td", { class: "num", text: money(Number(d.credit) || 0) }),
+      h("td", { class: "num", text: money(feesBy[d.id] || 0) })))
+      : [h("tr", null, h("td", { colspan: "5", class: "meta", text: "No drivers yet. Drivers appear here once they save their vehicle details." }))]));
+
+    const sel = $("a-driver"), keep = sel.value;
+    sel.replaceChildren(h("option", { value: "", text: "Choose a driver" }), ...drivers.map((d) =>
+      h("option", { value: d.id, text: (d.name || "Unnamed") + " · " + (d.code || codeFor(d.id)) + " · " + money(Number(d.credit) || 0) })));
+    sel.value = drivers.some((d) => d.id === keep) ? keep : "";
+
+    $("admin-refunds").replaceChildren(...(pending.length ? pending.map((r) => {
+      const box = h("article", { class: "trip", "data-status": "cancelled" },
+        h("div", { class: "trip-top" }, h("div", null, routeLine(r)), h("span", { class: "fare", text: money(r.commission) })),
+        h("div", { class: "meta" }, h("span", null, "Driver ", h("b", { text: r.driverName || "Unknown" })), h("span", { text: "Accepted " + (r.acceptedAt ? ago(r.acceptedAt) : "") })));
+      const acts = h("div", { class: "actions", style: "margin:0" },
+        h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: (e) => adminDecide(e.currentTarget, r, "refunded") }, "Refund " + money(r.commission)),
+        h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: (e) => adminDecide(e.currentTarget, r, "kept") }, "Keep fee"));
+      box.append(acts);
+      return box;
+    }) : [empty("Nothing to review", "If a group cancels after a driver accepts, the job shows here so you can decide about the fee.")]));
+
+    const tops = admin.topups.slice().sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 12);
+    const names = Object.fromEntries(admin.drivers.map((d) => [d.id, d.name]));
+    $("admin-topups").replaceChildren(...(tops.length ? tops.map((t) => h("div", null,
+      h("span", { text: (names[t.driverId] || "Driver") + " · " + new Date(t.at).toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) + (t.ref ? " · " + t.ref : "") }),
+      h("b", { text: "+" + money(t.amount) }))) : [h("div", { class: "meta", text: "No top-ups yet." })]));
+  }
+  async function adminDecide(btn, r, decision) {
+    btn.disabled = true;
+    try {
+      const db = store.db, batch = db.batch(), now = Date.now();
+      batch.update(db.doc("requests/" + r.id), { commissionDecision: decision, updatedAt: now });
+      if (decision === "refunded" && r.driverId) batch.update(db.doc("drivers/" + r.driverId), { credit: firebase.firestore.FieldValue.increment(r.commission), updatedAt: now });
+      await batch.commit();
+    } catch (e) { console.warn(e); btn.disabled = false; btn.textContent = "Try again"; }
+  }
+  $("admin-topup").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("admin-topup-msg"); msg.className = "form-msg";
+    const driverId = $("a-driver").value, amount = Math.round(Number($("a-amount").value) || 0), ref = $("a-ref").value.trim();
+    if (!driverId || amount <= 0) { msg.classList.add("err"); msg.textContent = "Choose a driver and enter an amount."; return; }
+    const d = admin.drivers.find((x) => x.id === driverId);
+    try {
+      const db = store.db, batch = db.batch(), now = Date.now();
+      batch.update(db.doc("drivers/" + driverId), { credit: firebase.firestore.FieldValue.increment(amount), updatedAt: now });
+      batch.set(db.collection("topups").doc(), { driverId, amount, ref, at: now, by: store.me });
+      await batch.commit();
+      msg.classList.add("ok"); msg.textContent = "Added " + money(amount) + " for " + ((d && d.name) || "the driver") + ".";
+      $("a-amount").value = ""; $("a-ref").value = "";
+    } catch (err) { console.warn(err); msg.classList.add("err"); msg.textContent = "That didn't save. Check that you're signed in as an owner."; }
+  });
 
   /* ---------- Driver profile ---------- */
   function showProfile() {
@@ -1340,9 +1613,51 @@ textarea { resize: vertical; min-height: 64px; }
     const miss = [];
     if (!p.name) miss.push("name"); if (!/^[+\d][\d\s-]{8,}$/.test(p.phone)) miss.push("cellphone number"); if (!p.reg) miss.push("registration");
     if (miss.length) { msg.classList.add("err"); msg.textContent = "Please add your " + miss.join(", ") + "."; return; }
-    try { await store.saveProfile(p); } catch (err) { /* kept on this device */ }
+    try { await store.saveProfile(p); }
+    catch (err) { console.warn(err); msg.classList.add("err"); msg.textContent = "Saved on this phone only. Check your connection and save again."; }
     driver = p; editingProfile = false; showProfile(); render();
   });
+
+  /* ---------- Owner sign-in ---------- */
+  async function adminGate(mode) {
+    const msg = $("admin-msg"), btn = $("admin-signin");
+    $("admin-body").hidden = true; $("admin-uid-box").hidden = true; $("admin-gate").hidden = false;
+    if (mode !== "db") { msg.textContent = "Connect Firebase in config.js to use the owner dashboard."; btn.hidden = true; return; }
+    const user = store.user;
+    if (!user || user.isAnonymous) {
+      msg.textContent = "Sign in with the Google account you use for Siyahamba. Use a computer or phone you don't drive with: signing in replaces this device's driver and passenger account.";
+      btn.hidden = false; return;
+    }
+    btn.hidden = true;
+    let isAdmin = false;
+    try { isAdmin = (await store.db.doc("admins/" + user.uid).get()).exists; } catch (e) { console.warn(e); }
+    if (!isAdmin) {
+      msg.textContent = "You're signed in as " + (user.displayName || user.email || "a Google account") + ", but this account isn't an owner yet.";
+      $("admin-uid").textContent = user.uid; $("admin-uid-box").hidden = false; return;
+    }
+    admin.on = true;
+    $("admin-gate").hidden = true; $("admin-body").hidden = false;
+    store.db.collection("drivers").onSnapshot((snap) => { admin.drivers = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderAdmin(); }, (e) => console.warn(e));
+    store.db.collection("topups").orderBy("at", "desc").limit(50).onSnapshot((snap) => { admin.topups = snap.docs.map((d) => d.data()); renderAdmin(); }, (e) => console.warn(e));
+    renderAdmin();
+  }
+  $("admin-signin").addEventListener("click", async () => {
+    const auth = firebase.auth(), provider = new firebase.auth.GoogleAuthProvider();
+    const msg = $("admin-msg");
+    try {
+      try { await auth.signInWithPopup(provider); }
+      catch (e) { if (e.code === "auth/popup-blocked") { await auth.signInWithRedirect(provider); return; } throw e; }
+      location.reload();
+    } catch (e) {
+      console.warn(e);
+      msg.textContent = e.code === "auth/operation-not-allowed"
+        ? "Google sign-in is turned off. In Firebase, open Authentication, Sign-in method, and enable Google."
+        : e.code === "auth/unauthorized-domain"
+        ? "This website isn't allowed to sign in yet. In Firebase, add it under Authentication, Settings, Authorized domains."
+        : "Sign-in didn't finish. Try again.";
+    }
+  });
+  $("admin-signout").addEventListener("click", async () => { await firebase.auth().signOut(); location.hash = "#passenger"; location.reload(); });
 
   /* ---------- Boot ---------- */
   function banner(text, warn) { const b = $("conn-banner"); b.textContent = text; b.className = "banner" + (warn ? " warn" : ""); b.hidden = !text; }
@@ -1358,7 +1673,9 @@ textarea { resize: vertical; min-height: 64px; }
     store.loadLocal();
     store.subscribe((items) => { allRequests = items; render(); });
     driver = await store.loadProfile();
+    account = store.localAccount();
     editingProfile = !driver; showProfile(); render();
+    adminGate("demo");
 
     const cfg = window.SIYAHAMBA_FIREBASE;
     if (!cfg || !cfg.apiKey) { banner("Demo mode: requests are saved on this device only. Add your Firebase settings to config.js to connect passengers and drivers.", false); return; }
@@ -1368,14 +1685,32 @@ textarea { resize: vertical; min-height: 64px; }
       const V = "10.12.2", base = "https://www.gstatic.com/firebasejs/" + V + "/";
       for (const f of ["firebase-app-compat.js", "firebase-auth-compat.js", "firebase-firestore-compat.js"]) await loadScript(base + f);
       firebase.initializeApp(cfg);
-      const cred = await firebase.auth().signInAnonymously();
+      const auth = firebase.auth();
+      // For local testing only: config.js can point the app at the Firebase emulators.
+      if (cfg.emulatorHost) { auth.useEmulator("http://" + cfg.emulatorHost + ":9099"); firebase.firestore().useEmulator(cfg.emulatorHost, 8181); }
+      let user = await new Promise((res) => { const off = auth.onAuthStateChanged((u) => { off(); res(u); }); });
+      if (!user) user = (await auth.signInAnonymously()).user;
       db = firebase.firestore();
-      store.mode = "db"; store.db = db; store.me = cred.user.uid;
+      store.mode = "db"; store.db = db; store.me = user.uid; store.user = user;
+      account = null; myTopups = [];
     } catch (e) {
       console.error(e);
       banner("Couldn't connect to Firebase. Check config.js and that Anonymous sign-in is turned on. Running in demo mode.", true);
       return;
     }
+    // This driver's credit account and top-ups
+    const local = safeLS.get("siyahamba.driver");
+    driver = (await store.loadProfile()) || local;
+    if (driver && local) {
+      try { if (!(await db.doc("drivers/" + store.me).get()).exists) await store.saveProfile(driver); } catch (e) { console.warn(e); }
+    }
+    editingProfile = !driver; showProfile();
+    db.doc("drivers/" + store.me).onSnapshot((s) => { account = s.exists ? s.data() : null; render(); }, (e) => console.warn(e));
+    db.collection("topups").where("driverId", "==", store.me).onSnapshot((snap) => {
+      myTopups = snap.docs.map((d) => d.data()); renderCredit();
+    }, (e) => console.warn(e));
+    await adminGate("db");
+
     let loaded = false;
     const timer = setTimeout(() => { if (!loaded) banner("Still connecting. Trips may be out of date until the connection comes back.", true); }, 10000);
     db.collection("requests").onSnapshot((snap) => {

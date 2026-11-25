@@ -43,6 +43,32 @@ Without Firebase, the app runs in **demo mode**: each phone keeps its own reques
 
 Firebase web keys are safe to put in a public repository. Access is controlled by the security rules.
 
+## Your earnings: 10% commission from driver credit
+
+Siyahamba takes **10% of each trip's price** from the driver's prepaid credit when they accept a job. Passengers pay drivers directly, as before.
+
+- **Drivers** see their balance under **I'm a driver → My credit**, along with your bank details and their own reference, like `SH-AB12CD`. Each job on the board shows the fee and what the driver will receive. A driver with too little credit can't accept a job until they top up.
+- **Giving a job back** automatically returns the fee to the driver.
+- **If a group cancels after a driver accepts**, the job shows on your dashboard. You choose **Refund** or **Keep fee**.
+- **Security:** the database rules (`firestore.rules`) make it impossible for a driver to accept without paying the exact 10%, or to add credit themselves.
+
+### Owner dashboard: `https://sbugzoh2.github.io/Siyahamba-Group-Taxi-Hire/#admin`
+
+Set it up once:
+1. In Firebase, go to **Authentication → Sign-in method → Add new provider → Google**, and enable it.
+2. Open the `#admin` link and click **Sign in with Google**. The page shows your account ID.
+3. In Firebase, go to **Firestore → Data → Start collection**. Name the collection `admins`, use your account ID as the **Document ID**, and add a field `role` with the value `owner`. Then reload the page.
+
+When a driver pays you by EFT, choose them under **Add credit for a driver** (match their `SH-` reference), enter the amount, and click **Add credit**. Their balance updates on their phone straight away.
+
+Put your bank details in `config.js`, for example:
+
+```js
+window.SIYAHAMBA_TOPUP_INFO = "FNB Business\nAccount: 62xxxxxxxxx\nBranch: 250655";
+```
+
+To change the 10%, edit `COMMISSION_PCT` in `index.html` **and** `feeFor()` in `firestore.rules`. They must match.
+
 ## Google Maps (place search, driving distance, route map)
 
 With a Google Maps key, passengers can search any address, suburb or taxi rank. The app measures the real driving distance and shows the route on a map. The **Exact pick-up spot** field searches Google Maps too. When it's filled in, the distance and price are measured from that exact spot, not from the middle of the pick-up area. Drivers also get **Directions to pick-up** and **Trip route** buttons that open Google Maps on their phone.

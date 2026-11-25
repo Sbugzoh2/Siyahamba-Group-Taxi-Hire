@@ -1,24 +1,111 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /requests/{requestId} {
-      // Everyone signed in (anonymous sign-in is fine) can see the job board.
-      allow read: if request.auth != null;
 
-      // A passenger can only create a request in their own name, as "open".
-      allow create: if request.auth != null
-        && request.resource.data.requesterId == request.auth.uid
-        && request.resource.data.status == 'open';
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    // Owners are listed in the "admins" collection (added by hand in the Firebase console).
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function driverDoc(id) { return /databases/$(database)/documents/drivers/$(id); }
+    function requestDoc(id) { return /databases/$(database)/documents/requests/$(id); }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    // Siyahamba's fee: 10% of the trip price. Keep this in step with COMMISSION_PCT in index.html.
+    function feeFor(fare) { return fare / 10; }
 
-      // Updates: the passenger who made it, the driver who has it,
-      // or a driver accepting an open job for themselves.
-      allow update: if request.auth != null && (
-        resource.data.requesterId == request.auth.uid
-        || resource.data.driverId == request.auth.uid
-        || (resource.data.status == 'open' && request.resource.data.driverId == request.auth.uid)
-      );
+    match /admins/{id} {
+      allow read: if signedIn() && uid() == id;
+      allow write: if false;
+    }
 
-      allow delete: if false;
+    // Trip requests
+    match /requests/{id} {
+      allow read: if signedIn();
+
+      // A passenger creates a request in their own name, as "open", with no driver or fee.
+      allow create: if signedIn()
+        && request.resource.data.requesterId == uid()
+        && request.resource.data.status == 'open'
+        && request.resource.data.fare is number && request.resource.data.fare > 0
+        && !('commission' in request.resource.data)
+        && !('driverId' in request.resource.data);
+
+      allow update: if isAdmin() || passengerCancels() || driverAccepts() || driverMovesOn() || driverGivesBack();
+      allow delete: if isAdmin();
+
+      function passengerCancels() {
+        return resource.data.requesterId == uid()
+          && resource.data.status in ['open', 'accepted']
+          && request.resource.data.status == 'cancelled'
+          && changed().hasOnly(['status', 'updatedAt']);
+      }
+
+      // Accepting a job must pay exactly 10% from the driver's own credit in the same write.
+      function driverAccepts() {
+        return resource.data.status == 'open'
+          && request.resource.data.status == 'accepted'
+          && request.resource.data.driverId == uid()
+          && request.resource.data.commission == feeFor(resource.data.fare)
+          && changed().hasOnly(['status', 'driverId', 'driverName', 'driverPhone', 'driverVehicle', 'driverReg', 'acceptedAt', 'commission', 'updatedAt'])
+          && exists(driverDoc(uid()))
+          && getAfter(driverDoc(uid())).data.credit == get(driverDoc(uid())).data.credit - feeFor(resource.data.fare)
+          && getAfter(driverDoc(uid())).data.credit >= 0;
+      }
+
+      function driverMovesOn() {
+        return resource.data.driverId == uid()
+          && changed().hasOnly(['status', 'updatedAt'])
+          && ((resource.data.status == 'accepted' && request.resource.data.status == 'enroute')
+            || (resource.data.status == 'enroute' && request.resource.data.status == 'ontrip')
+            || (resource.data.status == 'ontrip' && request.resource.data.status == 'completed'));
+      }
+
+      // Giving a job back reopens it and returns the fee to the driver's credit.
+      function driverGivesBack() {
+        return resource.data.driverId == uid()
+          && resource.data.status == 'accepted'
+          && request.resource.data.status == 'open'
+          && request.resource.data.driverId == null
+          && request.resource.data.commission == null
+          && changed().hasOnly(['status', 'driverId', 'driverName', 'driverPhone', 'driverVehicle', 'driverReg', 'commission', 'updatedAt'])
+          && getAfter(driverDoc(uid())).data.credit == get(driverDoc(uid())).data.credit + resource.data.get('commission', 0);
+      }
+    }
+
+    // Driver accounts: profile and prepaid credit. Only an owner can add credit.
+    match /drivers/{id} {
+      allow read: if signedIn() && (uid() == id || isAdmin());
+      allow create: if isAdmin() || (signedIn() && uid() == id
+        && request.resource.data.credit == 0
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'vehicle', 'reg', 'assoc', 'pdp', 'credit', 'code', 'createdAt', 'updatedAt']));
+      allow update: if isAdmin() || (signedIn() && uid() == id && (profileEdit() || payForJob() || refundForJob()));
+      allow delete: if isAdmin();
+
+      function profileEdit() {
+        return changed().hasOnly(['name', 'phone', 'vehicle', 'reg', 'assoc', 'pdp', 'updatedAt']);
+      }
+      function payForJob() {
+        let job = request.resource.data.lastJob;
+        return changed().hasOnly(['credit', 'lastJob', 'updatedAt'])
+          && get(requestDoc(job)).data.status == 'open'
+          && getAfter(requestDoc(job)).data.status == 'accepted'
+          && getAfter(requestDoc(job)).data.driverId == uid()
+          && request.resource.data.credit == resource.data.credit - getAfter(requestDoc(job)).data.commission
+          && request.resource.data.credit >= 0;
+      }
+      function refundForJob() {
+        let job = request.resource.data.lastJob;
+        return changed().hasOnly(['credit', 'lastJob', 'updatedAt'])
+          && get(requestDoc(job)).data.status == 'accepted'
+          && get(requestDoc(job)).data.driverId == uid()
+          && getAfter(requestDoc(job)).data.status == 'open'
+          && request.resource.data.credit == resource.data.credit + get(requestDoc(job)).data.get('commission', 0);
+      }
+    }
+
+    // Credit top-ups, recorded by an owner. Drivers can see their own.
+    match /topups/{id} {
+      allow read: if signedIn() && (isAdmin() || resource.data.driverId == uid());
+      allow write: if isAdmin();
     }
   }
 }
