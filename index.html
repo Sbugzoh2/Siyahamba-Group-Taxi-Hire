@@ -1432,7 +1432,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     // Long trips (between cities): the group pays for the drive there only.
     // If the driver waits and brings them back, the drive back is charged too.
     longPerKm: 9.5,      // per km driven with the group
-    longMin: 2000,       // smallest price for a long trip
+    longMin: 1500,       // smallest price for a long trip
     tollPerKm: 0.55,     // toll allowance per km driven with the group on long trips
     trailerLong: 800,    // luggage trailer
     crossBorder: 1500    // cross-border permit and border costs, per vehicle
@@ -1870,13 +1870,16 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
   /* ---------- Passenger form ---------- */
   const MAPS_KEY = String(window.SIYAHAMBA_GOOGLE_MAPS_KEY || "").trim();
 
-  function setType(t) {
+  // Trips over 60 km become long trips by themselves (and go back to short if the distance drops again).
+  let autoLong = false;
+  function setType(t, auto) {
     tripType = t;
+    if (!auto) autoLong = false;
     $("t-short").setAttribute("aria-pressed", t === "short");
     $("t-long").setAttribute("aria-pressed", t === "long");
     $("return-wrap").hidden = t !== "long";
     $("nights-wrap").hidden = t !== "long" || !$("f-return").checked;
-    if (t === "long" && $("f-when").value === "now") { $("f-when").value = "later"; syncWhen(); }
+    if (t === "long" && !auto && $("f-when").value === "now") { $("f-when").value = "later"; syncWhen(); }
     refreshQuote();
   }
   $("t-short").addEventListener("click", () => setType("short"));
@@ -2241,6 +2244,9 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
   }
 
   function refreshQuote() {
+    const km = Math.round(Number($("f-km").value) || 0);
+    if (tripType === "short" && km > SHORT_MAX_KM) { autoLong = true; setType("long", true); return; }
+    if (autoLong && tripType === "long" && km && km <= SHORT_MAX_KM) { autoLong = false; setType("short", true); return; }
     const f = readForm();
     const rows = $("q-rows"); rows.replaceChildren();
     const warn = $("q-warn");
@@ -2272,6 +2278,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     let w = "";
     if (f.type === "short" && f.km > SHORT_MAX_KM) w = "This is " + f.km + " km. Trips over " + SHORT_MAX_KM + " km are priced as long trips.";
     if (f.type === "long" && f.km <= SHORT_MAX_KM) w = "This is only " + f.km + " km. A short trip will cost you less.";
+    if (autoLong && f.type === "long") w = "This trip is " + f.km + " km, so it's a long trip (over " + SHORT_MAX_KM + " km) and priced as one.";
     if (f.crossBorder) w = (f.type === "short" ? "Cross-border trips are long trips. " : "") + "Everyone needs a valid passport, and the driver needs a cross-border permit.";
     warn.textContent = w; warn.hidden = !w;
     $("q-note").textContent = "This is the final amount. It includes the driver, fuel, " + (f.type === "long" ? (f.roundTrip ? "the drive back with the group, " : "") + "toll allowance, " : "") + (f.luggage === "trailer" ? "the trailer, " : "") + "and Siyahamba's fee." + (f.roundTrip ? " The driver pays for their own accommodation." : "") + " Nothing more to pay.";
