@@ -1187,6 +1187,41 @@ window.SIYAHAMBA_I18N = {
       "st": "Kgetha koloi e kgolwanyane",
       "tn": "Tlhopha koloi e kgolwane",
       "af": "Kies 'n groter voertuig"
+    },
+    "My details": {
+      "zu": "Imininingwane yami",
+      "xh": "Iinkcukacha zam",
+      "st": "Dintlha tsa ka",
+      "tn": "Dintlha tsa me",
+      "af": "My besonderhede"
+    },
+    "Save my details": {
+      "zu": "Gcina imininingwane yami",
+      "xh": "Gcina iinkcukacha zam",
+      "st": "Boloka dintlha tsa ka",
+      "tn": "Boloka dintlha tsa me",
+      "af": "Stoor my besonderhede"
+    },
+    "Booking as": {
+      "zu": "Ubhukha njengo",
+      "xh": "Ubhukisha njengo",
+      "st": "O buka jwalo ka",
+      "tn": "O buka jaaka",
+      "af": "Bespreek as"
+    },
+    "Change": {
+      "zu": "Shintsha",
+      "xh": "Tshintsha",
+      "st": "Fetola",
+      "tn": "Fetola",
+      "af": "Verander"
+    },
+    "Add my details": {
+      "zu": "Faka imininingwane yami",
+      "xh": "Yongeza iinkcukacha zam",
+      "st": "Kenya dintlha tsa ka",
+      "tn": "Tsenya dintlha tsa me",
+      "af": "Voeg my besonderhede by"
     }
   }
 };

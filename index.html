@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Group taxi hire for South Africa: book a minibus taxi, Sprinter or bus for short or long group trips.">
 <meta name="theme-color" content="#1B2631">
+<meta name="color-scheme" content="only light">
 <script>
 // Light by day, dark at night: switches at sunrise and sunset where the person is (Johannesburg if not known).
 // People can also choose Light or Dark under Account > Appearance.
@@ -28,6 +29,9 @@
     var theme = pref === "light" || pref === "dark" ? pref : auto(new Date());
     if (document.documentElement.getAttribute("data-theme") !== theme) document.documentElement.setAttribute("data-theme", theme);
     var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", theme === "dark" ? "#0A1016" : "#1B2631");
+    // "only" stops phone browsers (Chrome's "dark theme for sites", Samsung dark mode) from repainting the app themselves.
+    var cs = document.querySelector('meta[name="color-scheme"]'); if (cs) cs.setAttribute("content", "only " + theme);
+    document.documentElement.style.colorScheme = "only " + theme;
   }
   apply();
   setInterval(apply, 60000);
@@ -501,6 +505,14 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
 .menu-row select { font: inherit; font-weight: 500; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
 .menu-row.danger { color: #C0392B; }
 .menu-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.details-form { display: flex; flex-direction: column; gap: 12px; padding: 14px 0 18px; border-top: 1px solid var(--line); }
+.details-form h3 { margin: 0; font-size: 1.05rem; }
+.details-form.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { 0% { background: var(--accent-soft); } 100% { background: transparent; } }
+.booker { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 0.92rem; }
+.booker .who { min-width: 0; flex: 1; }
+.booker .who b { display: block; }
+.booker.missing { background: var(--warn-soft); border-color: transparent; color: var(--ink); }
 :root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.6); }
 
 /* Weather at the destination */
@@ -693,18 +705,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
             <input id="f-nights" type="number" inputmode="numeric" min="0" max="14" value="2">
           </div>
 
-          <div class="field">
-            <label for="f-name">Group leader's name</label>
-            <input id="f-name" autocomplete="name" placeholder="Who the driver should ask for">
-          </div>
-          <div class="field">
-            <label for="f-phone">Cellphone number</label>
-            <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 072 123 4567">
-          </div>
-          <div class="field">
-            <label for="f-email">Email for receipts</label>
-            <input id="f-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
-          </div>
+          <div class="booker" id="p-booker"></div>
           <div class="field">
             <label for="f-pay">Payment</label>
             <select id="f-pay">
@@ -780,6 +781,23 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
             <div class="avatar" id="p-avatar" aria-hidden="true">S</div>
             <div><b id="p-acct-name">Your account</b><span class="meta" id="p-acct-sub"></span></div>
           </div>
+          <form class="details-form" id="p-details" novalidate>
+            <h3>My details</h3>
+            <p class="hint" style="margin:0">Used for every trip you book. Your driver sees your name and cellphone number. Receipts go to your email.</p>
+            <div class="field">
+              <label for="f-name">Group leader's name</label>
+              <input id="f-name" autocomplete="name" placeholder="Who the driver should ask for">
+            </div>
+            <div class="field">
+              <label for="f-phone">Cellphone number</label>
+              <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 072 123 4567">
+            </div>
+            <div class="field">
+              <label for="f-email">Email for receipts</label>
+              <input id="f-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+            </div>
+            <div class="actions" style="margin:0"><button type="submit" class="btn btn-primary btn-sm" id="p-save">Save my details</button><span class="form-msg" id="p-save-msg" role="status" aria-live="polite"></span></div>
+          </form>
           <div class="menu">
             <button type="button" class="menu-row" data-act="auth"><span>Sign-in and account</span><span class="chev" aria-hidden="true">›</span></button>
             <label class="menu-row"><span>Language</span><select class="acct-lang" aria-label="Language"></select></label>
@@ -1734,7 +1752,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     earnings: '<path d="M4 20h16"/><path d="M7 16v-4M12 16V8M17 16v-7"/>'
   };
   const TABS = {
-    passenger: [["home", "Home", "home"], ["activity", "Activity", "activity"], ["wallet", "Wallet", "wallet"], ["account", "Account", "account"]],
+    passenger: [["home", "Home", "home"], ["activity", "Activity", "activity"], ["wallet", "Wallet", "wallet"], ["account", "Profile", "account"]],
     driver: [["home", "Home", "home"], ["jobs", "Jobs", "jobs"], ["earnings", "Earnings", "earnings"], ["wallet", "Wallet", "wallet"], ["profile", "Profile", "account"]]
   };
   const tabsOff = !!safeLS.get("siyahamba.allTabs");
@@ -2259,6 +2277,58 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     $("q-note").textContent = "This is the final amount. It includes the driver, fuel, " + (f.type === "long" ? (f.roundTrip ? "the drive back with the group, " : "") + "toll allowance, " : "") + (f.luggage === "trailer" ? "the trailer, " : "") + "and Siyahamba's fee." + (f.roundTrip ? " The driver pays for their own accommodation." : "") + " Nothing more to pay.";
   }
 
+  /* ---------- My details (Profile tab) ---------- */
+  function detailsMissing() {
+    const miss = [];
+    if (!$("f-name").value.trim()) miss.push(["f-name", "your name"]);
+    if (!/^[+\d][\d\s-]{8,}$/.test($("f-phone").value.trim())) miss.push(["f-phone", "a cellphone number"]);
+    if (!/^\S+@\S+\.\S+$/.test($("f-email").value.trim())) miss.push(["f-email", "an email address"]);
+    return miss;
+  }
+  function editDetails(focusId) {
+    goTab("account");
+    const f = $("p-details"); f.classList.remove("flash"); void f.offsetWidth; f.classList.add("flash");
+    f.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => { const el = $(focusId || "f-name"); if (el) el.focus({ preventScroll: true }); }, 350);
+  }
+  function renderBooker() {
+    const box = $("p-booker"), miss = detailsMissing();
+    box.classList.toggle("missing", miss.length > 0);
+    if (miss.length) {
+      box.replaceChildren(h("span", { class: "who", text: "Add " + miss.map((m) => m[1]).join(", ") + " in your profile before you book." }),
+        h("button", { type: "button", class: "btn btn-primary btn-sm", onclick: () => editDetails(miss[0][0]) }, "Add my details"));
+    } else {
+      box.replaceChildren(h("span", { class: "who" }, h("span", { class: "meta", text: "Booking as" }), h("b", { text: $("f-name").value.trim() }),
+        h("span", { class: "meta", text: $("f-phone").value.trim() + " · " + $("f-email").value.trim() })),
+        h("button", { type: "button", class: "btn btn-ghost btn-sm", onclick: () => editDetails() }, "Change"));
+    }
+  }
+  ["f-name", "f-phone", "f-email"].forEach((id) => $(id).addEventListener("input", renderBooker));
+  $("p-details").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("p-save-msg"), miss = detailsMissing();
+    msg.className = "form-msg";
+    if (miss.length) { msg.classList.add("err"); msg.textContent = "Please add " + miss.map((m) => m[1]).join(", ") + "."; $(miss[0][0]).focus(); return; }
+    const d = { name: $("f-name").value.trim(), phone: $("f-phone").value.trim(), email: $("f-email").value.trim() };
+    saveDraft();
+    if (store.mode === "db" && !isPermanent()) { msg.classList.add("ok"); msg.textContent = "Saved on this phone. Sign in to keep it on any phone."; renderBooker(); return; }
+    const btn = $("p-save"); btn.disabled = true;
+    try {
+      if (store.mode === "db") await store.db.doc("profiles/" + store.me).set({ ...d, updatedAt: Date.now() }, { merge: true });
+      myProfile = { ...myProfile, ...d };
+      msg.classList.add("ok"); msg.textContent = "Saved.";
+      fillDriverFromProfile();
+      render();
+    } catch (err) { console.warn(err); msg.classList.add("err"); msg.textContent = "That didn't save. Check your connection and try again."; }
+    btn.disabled = false;
+  });
+  // A new driver's form starts with the details they already gave as a passenger.
+  function fillDriverFromProfile() {
+    if (driver && driver.name) return;
+    const pairs = [["d-name", "f-name"], ["d-phone", "f-phone"], ["d-email", "f-email"]];
+    pairs.forEach(([d, f]) => { if (!$(d).value.trim() && $(f).value.trim()) $(d).value = $(f).value.trim(); });
+  }
+
   $("req-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const msg = $("form-msg"); msg.className = "form-msg";
@@ -2273,10 +2343,12 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     if (!f.km) problems.push("distance");
     if (f.pax < 2) problems.push("group size (at least 2)");
     if (f.when !== "now" && !f.when) problems.push("date and time");
-    if (!f.contactName) problems.push("group leader's name");
-    if (!/^[+\d][\d\s-]{8,}$/.test(f.contactPhone)) problems.push("a cellphone number the driver can call");
-    if (!/^\S+@\S+\.\S+$/.test(f.contactEmail)) problems.push("an email address for your receipts");
     if (problems.length) { msg.classList.add("err"); msg.textContent = "Please add: " + problems.join(", ") + "."; return; }
+    const missDetails = detailsMissing();
+    if (missDetails.length) {
+      msg.classList.add("err"); msg.textContent = "Add " + missDetails.map((m) => m[1]).join(", ") + " in your profile, then tap Request taxi.";
+      toast(h("span", { text: msg.textContent })); editDetails(missDetails[0][0]); return;
+    }
     if (f.type === "short" && f.km > SHORT_MAX_KM) { msg.classList.add("err"); msg.textContent = "This trip is over " + SHORT_MAX_KM + " km. Choose Long trip."; return; }
     if (f.type === "short" && f.crossBorder) { msg.classList.add("err"); msg.textContent = "Cross-border trips are long trips. Choose Long trip."; return; }
 
@@ -3589,6 +3661,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
     $("job-count").textContent = jobs.length;
     $("my-jobs").replaceChildren(...(loading ? skeletons(1) : jobs.length ? jobs.map(jobCard) : [empty("No jobs yet", "Accept a request from the job board to start.")]));
     renderTabs(mine, jobs, allOpen.length);
+    renderBooker();
     renderCredit();
     renderWallet();
     renderEarnings();
@@ -4390,6 +4463,7 @@ body.tabbed .now-strip { max-width: 760px; margin-inline: auto; }
         else if (store.user.displayName && !$("f-name").value) $("f-name").value = store.user.displayName;
       } catch (e) { console.warn(e); }
     }
+    renderBooker(); fillDriverFromProfile();
     let firstAccount = true;
     db.doc("drivers/" + store.me).onSnapshot((s) => {
       account = s.exists ? s.data() : null;
